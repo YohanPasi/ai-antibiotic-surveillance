@@ -86,7 +86,7 @@ The dataset consists of one year of microbiology culture data, including blood, 
 ## 🧾 Citation  
 If you use this work in your research, please cite as:  
 
-> Dissanayake, S.H.J.A., Hettige, M.H.T.P., Jayalath, K.N.R., & Nishshanke, K.T.Y.P. (2025).  
+> Dissanayake, S.H.J.A., Hettige, M.H.T.P., Jayalath, K.N.R., & Nishshanke, K.T.Y.P..  
 > *AI-Driven Prediction and Surveillance of Antibiotic Resistance and Ward-Level Outbreaks.*  
 > Sri Lanka Institute of Information Technology (SLIIT), Faculty of Computing.
 
@@ -99,10 +99,4 @@ If you use this work in your research, please cite as:
 
 ---
 
-## 📬 Contact  
-For further details or collaboration inquiries, please contact:  
-**📧 Jayath Dissanayake** – [your.email@example.com]  
-**Faculty of Computing**, Sri Lanka Institute of Information Technology (SLIIT)
-
----
 
