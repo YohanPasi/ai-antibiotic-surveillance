@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+
+# Node
+node_modules/
+dist/
+
+# Data
+data/raw/
+data/interim/
+*.parquet
+*.csv
+
+# Models
+backend/app/models_store/**
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Env
+.env
