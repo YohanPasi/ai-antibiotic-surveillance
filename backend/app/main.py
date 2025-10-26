@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from app.routers import patients
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import Base and engine
@@ -9,7 +8,7 @@ from .db.base import Base, engine
 from .db.models import Patient, Sample, ASTResult
 
 from .config import settings
-from .routers import health
+from .routers import health, patients, mrsa
 
 app = FastAPI(title="AI Antibiotic Surveillance API")
 
@@ -25,6 +24,7 @@ app.add_middleware(
 Base.metadata.create_all(bind=engine)
 
 app.include_router(health.router, prefix="/api")
+app.include_router(mrsa.router)
 app.include_router(patients.router)
 
 @app.get("/")
