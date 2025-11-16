@@ -5,7 +5,7 @@ import {
   fetchIsolate,
   fetchIsolates,
   fetchWardSummary,
-} from "../api/mrsa";
+} from "./api_mrsa";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Cell
 } from "recharts";

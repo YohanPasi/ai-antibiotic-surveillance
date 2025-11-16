@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import MrsaDashboard from "./mrsa/MrsaDashboard";
-import EsblDashboard from "./esbl/EsblDashboard";
-import ModuleSelect from "./ModuleSelect";
+import ModuleSelect from "../pages/ModuleSelect";
+import MrsaDashboard from "../mrsa/MrsaDashboard";
+import EsblDashboard from "../esbl/EsblDashboard";
 
-export default function App() {
+export default function Router() {
   return (
     <BrowserRouter>
       <Routes>
