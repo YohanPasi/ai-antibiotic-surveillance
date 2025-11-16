@@ -9,6 +9,8 @@ class Settings(BaseModel):
     api_host: str = os.getenv("API_HOST", "0.0.0.0")
     api_port: int = int(os.getenv("API_PORT", "8000"))
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
     db_url: str = (
         f"postgresql+psycopg2://{os.getenv('POSTGRES_USER','postgres')}:"
         f"{os.getenv('POSTGRES_PASSWORD','postgres')}@"
