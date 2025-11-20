@@ -1,0 +1,23 @@
+{
+  "generated_at": "2025-11-20T22:58:55.073200",
+  "rows": 61,
+  "columns": [
+    "sample_id",
+    "sample_type",
+    "ward",
+    "collection_time",
+    "organism",
+    "gram",
+    "meropenem",
+    "imipenem",
+    "ceftazidime",
+    "cefepime",
+    "amikacin",
+    "gentamicin",
+    "ciprofloxacin",
+    "colistin",
+    "carbapenem_resistant"
+  ],
+  "label_definition": "1 = Carbapenem-resistant (Meropenem R or Imipenem R)",
+  "source": "E:\\SLIIT\\SLIIT STUDY\\Y4S1\\Research\\AI DRIVEN RESEARCH JAYATH\\ai-antibiotic-surveillance\\data\\raw\\Microbiology_Solid_Training_Dataset.xlsx"
+}

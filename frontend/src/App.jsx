@@ -7,6 +7,8 @@ import Register from "./pages/Register";
 import ModuleSelect from "./pages/ModuleSelect";
 import MrsaDashboard from "./mrsa/MrsaDashboard";
 import EsblDashboard from "./esbl/EsblDashboard";
+import NonfermenterDashboard from "./non_fem/NonfermenterDashboard";
+import MainLayout from "./components/layout/MainLayout";
 
 export default function App() {
   return (
@@ -16,25 +18,21 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          <Route path="/modules" element={
-            <ProtectedRoute>
-              <ModuleSelect />
-            </ProtectedRoute>
-          } />
+          <Route
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/modules" element={<ModuleSelect />} />
+            <Route path="/mrsa" element={<MrsaDashboard />} />
+            <Route path="/esbl" element={<EsblDashboard />} />
+            <Route path="/nonfermenter" element={<NonfermenterDashboard />} />
+            <Route path="/" element={<Navigate to="/modules" replace />} />
+            <Route path="*" element={<Navigate to="/modules" replace />} />
+          </Route>
 
-          <Route path="/mrsa" element={
-            <ProtectedRoute>
-              <MrsaDashboard />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/esbl" element={
-            <ProtectedRoute>
-              <EsblDashboard />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
