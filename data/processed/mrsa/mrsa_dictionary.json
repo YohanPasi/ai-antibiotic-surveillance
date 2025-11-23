@@ -1,26 +1,60 @@
 {
-  "generated_at": "2025-10-27T00:55:04",
-  "source_excel": "E:\\SLIIT\\SLIIT STUDY\\Y4S1\\Research\\AI DRIVEN RESEARCH JAYATH\\ai-antibiotic-surveillance\\data\\raw\\Microbiology_Solid_Training_Dataset.xlsx",
-  "column_map_detected": {
-    "sample_id": "Sample_ID",
-    "patient_id": null,
-    "organism": "Organism",
-    "sample_type": "Specimen_Type",
-    "ward": "Ward",
-    "sex": null,
-    "age": null,
-    "collection_time": "Sample_Collection_Time",
-    "gram": "Gram_Reaction",
-    "meca": null,
-    "oxacillin": "Cloxacillin",
-    "cefoxitin": "Cefoxitin_Result",
-    "vancomycin": "Vancomycin",
-    "linezolid": null,
-    "daptomycin": null,
-    "clindamycin": "Clindamycin",
-    "erythromycin": "Erythromycin",
-    "tmpsmx": null,
-    "tetracycline": null
-  },
-  "label_rule": "mrsa_label = 1 if (cefoxitin==R) OR (oxacillin==R) OR (mecA/mecC positive); else 0 if both S or missing; rows with unknown dropped."
+    "training_columns_original": [
+        "sample_id",
+        "collection_time",
+        "ward",
+        "sample_type",
+        "organism",
+        "gram",
+        "cefoxitin_result",
+        "oxacillin_result",
+        "vancomycin_result",
+        "clindamycin_result",
+        "erythromycin_result",
+        "mrsa_label"
+    ],
+    "light1_columns_original": [
+        "sample_id",
+        "collection_time",
+        "ward",
+        "sample_type",
+        "organism",
+        "mrsa_label"
+    ],
+    "light4_columns_original": [
+        "sample_id",
+        "collection_time",
+        "ward",
+        "sample_type",
+        "organism",
+        "gram",
+        "cefoxitin_result",
+        "oxacillin_result",
+        "vancomycin_result",
+        "clindamycin_result",
+        "erythromycin_result",
+        "mrsa_label"
+    ],
+    "light1_clean_columns": [
+        "sample_id",
+        "collection_time",
+        "ward",
+        "sample_type",
+        "organism",
+        "mrsa_label"
+    ],
+    "light4_clean_columns": [
+        "sample_id",
+        "collection_time",
+        "ward",
+        "sample_type",
+        "organism",
+        "gram",
+        "cefoxitin_result",
+        "oxacillin_result",
+        "vancomycin_result",
+        "clindamycin_result",
+        "erythromycin_result",
+        "mrsa_label"
+    ]
 }

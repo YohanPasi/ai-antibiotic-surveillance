@@ -1,0 +1,50 @@
+{
+    "model": "MRSA light1",
+    "accuracy": 0.6428571428571429,
+    "roc_auc": 0.5816326530612245,
+    "confusion_matrix": [
+        [
+            4,
+            3
+        ],
+        [
+            2,
+            5
+        ]
+    ],
+    "classification_report": {
+        "0": {
+            "precision": 0.6666666666666666,
+            "recall": 0.5714285714285714,
+            "f1-score": 0.6153846153846154,
+            "support": 7.0
+        },
+        "1": {
+            "precision": 0.625,
+            "recall": 0.7142857142857143,
+            "f1-score": 0.6666666666666666,
+            "support": 7.0
+        },
+        "accuracy": 0.6428571428571429,
+        "macro avg": {
+            "precision": 0.6458333333333333,
+            "recall": 0.6428571428571428,
+            "f1-score": 0.641025641025641,
+            "support": 14.0
+        },
+        "weighted avg": {
+            "precision": 0.6458333333333333,
+            "recall": 0.6428571428571429,
+            "f1-score": 0.6410256410256411,
+            "support": 14.0
+        }
+    },
+    "features": [
+        "ward",
+        "sample_type",
+        "organism",
+        "hour_of_day",
+        "day_of_week",
+        "month"
+    ]
+}

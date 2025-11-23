@@ -1,0 +1,56 @@
+{
+    "model": "MRSA light4",
+    "accuracy": 1.0,
+    "roc_auc": 1.0,
+    "confusion_matrix": [
+        [
+            7,
+            0
+        ],
+        [
+            0,
+            7
+        ]
+    ],
+    "classification_report": {
+        "0": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 7.0
+        },
+        "1": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 7.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 14.0
+        },
+        "weighted avg": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1-score": 1.0,
+            "support": 14.0
+        }
+    },
+    "features": [
+        "ward",
+        "sample_type",
+        "organism",
+        "gram",
+        "cefoxitin_result",
+        "oxacillin_result",
+        "vancomycin_result",
+        "clindamycin_result",
+        "erythromycin_result",
+        "hour_of_day",
+        "day_of_week",
+        "month"
+    ]
+}

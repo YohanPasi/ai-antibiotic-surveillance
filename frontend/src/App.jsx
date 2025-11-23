@@ -8,6 +8,7 @@ import ModuleSelect from "./pages/ModuleSelect";
 import MrsaDashboard from "./mrsa/MrsaDashboard";
 import EsblDashboard from "./esbl/EsblDashboard";
 import NonfermenterDashboard from "./non_fem/NonfermenterDashboard";
+import StrepDashboard from "./STREP/StrepDashboard";
 import MainLayout from "./components/layout/MainLayout";
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/mrsa" element={<MrsaDashboard />} />
             <Route path="/esbl" element={<EsblDashboard />} />
             <Route path="/nonfermenter" element={<NonfermenterDashboard />} />
+            <Route path="/strep" element={<StrepDashboard />} />
             <Route path="/" element={<Navigate to="/modules" replace />} />
             <Route path="*" element={<Navigate to="/modules" replace />} />
           </Route>

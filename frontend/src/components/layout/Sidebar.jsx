@@ -59,6 +59,7 @@ const sections = [
       { label: "MRSA", short: "MR", path: "/mrsa", icon: "shield" },
       { label: "ESBL", short: "ES", path: "/esbl", icon: "lab" },
       { label: "Non-Fermenter", short: "NF", path: "/nonfermenter", icon: "flask" },
+      { label: "Streptococcus", short: "ST", path: "/strep", icon: "flask" },
     ],
   },
 ];
