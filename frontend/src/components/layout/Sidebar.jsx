@@ -62,6 +62,14 @@ const sections = [
       { label: "Streptococcus", short: "ST", path: "/strep", icon: "flask" },
     ],
   },
+  {
+    title: "MRSA",
+    icon: "shield",
+    items: [
+      { label: "MRSA Prediction", short: "MP", path: "/mrsa/prediction", icon: "shield" },
+      { label: "MRSA Weekly inputs", short: "MW", path: "/mrsa/input", icon: "shield" },
+    ],
+  },
 ];
 
 export default function Sidebar({ isOpen }) {

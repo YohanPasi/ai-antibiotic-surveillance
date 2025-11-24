@@ -1,16 +1,21 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.base import SessionLocal
-from app.db.models import MRSAPrediction
+from app.db.models_mrsa import MrsaPrediction
 import joblib
 from datetime import datetime
 import numpy as np
+from pathlib import Path
 
 router = APIRouter(prefix="/mrsa", tags=["MRSA Prediction"])
 
+# Get the project root directory (two levels up from this file)
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+MODEL_DIR = PROJECT_ROOT / "ml" / "mrsa"
+
 # Load trained models
-LIGHT1_MODEL = joblib.load("ml/mrsa/light1_model.pkl")
-LIGHT4_MODEL = joblib.load("ml/mrsa/light4_model.pkl")
+LIGHT1_MODEL = joblib.load(MODEL_DIR / "mrsa_light1.pkl")
+LIGHT4_MODEL = joblib.load(MODEL_DIR / "mrsa_light4.pkl")
 
 def get_db():
     db = SessionLocal()
@@ -39,15 +44,17 @@ def predict_mrsa_light1(payload: dict, db: Session = Depends(get_db)):
     label = 1 if proba >= 0.5 else 0
 
     # Save to DB
-    pred = MRSAPrediction(
+    pred = MrsaPrediction(
         sample_id=payload.get("sample_id"),
         ward=payload.get("ward"),
         sample_type=payload.get("sample_type"),
         organism=payload.get("organism"),
         gram=None,  # Light-1 does not use gram
         model_type="light1",
+        model_name="light1_model",
         probability=proba,
         predicted_label=label,
+        p_mrsa=proba,
         created_at=datetime.utcnow()
     )
     
@@ -82,15 +89,17 @@ def predict_mrsa_light4(payload: dict, db: Session = Depends(get_db)):
     proba = float(LIGHT4_MODEL.predict_proba(sample_arr)[0][1])
     label = 1 if proba >= 0.5 else 0
 
-    pred = MRSAPrediction(
+    pred = MrsaPrediction(
         sample_id=payload.get("sample_id"),
         ward=payload.get("ward"),
         sample_type=payload.get("sample_type"),
         organism=payload.get("organism"),
         gram=payload.get("gram"),
         model_type="light4",
+        model_name="light4_model",
         probability=proba,
         predicted_label=label,
+        p_mrsa=proba,
         created_at=datetime.utcnow()
     )
 

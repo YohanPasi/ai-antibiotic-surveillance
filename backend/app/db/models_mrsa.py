@@ -66,13 +66,23 @@ class MrsaFeatures(Base):
 class MrsaPrediction(Base):
     __tablename__ = "mrsa_predictions"
     id = Column(Integer, primary_key=True)
-    sample_id = Column(Integer, ForeignKey("mrsa_isolates.sample_id", ondelete="CASCADE"), index=True)
+    sample_id = Column(Integer, ForeignKey("mrsa_isolates.sample_id", ondelete="CASCADE"), index=True, nullable=True)
 
-    model_name = Column(String(120))                   # e.g., "lightgbm_v1"
-    model_version = Column(String(40))                 # e.g., "2025.10.27"
+    # Metadata fields (for compatibility with prediction router)
+    ward = Column(String(100), nullable=True)
+    sample_type = Column(String(50), nullable=True)
+    organism = Column(String(120), nullable=True)
+    gram = Column(String(40), nullable=True)
+
+    # Model information
+    model_name = Column(String(120), nullable=True)    # e.g., "lightgbm_v1"
+    model_type = Column(String(40), nullable=True)     # e.g., "light1", "light4" (for compatibility)
+    model_version = Column(String(40), nullable=True) # e.g., "2025.10.27"
     created_at = Column(DateTime)
 
-    # outputs (example)
+    # Prediction outputs
+    probability = Column(Float, nullable=True)         # probability of MRSA (for compatibility)
+    predicted_label = Column(Integer, nullable=True)   # 0 or 1 (for compatibility)
     p_mrsa = Column(Float, nullable=True)              # probability of MRSA at current stage
     p_vanc_effective = Column(Float, nullable=True)    # optional per-drug predictions
     p_cefoxitin_effective = Column(Float, nullable=True)

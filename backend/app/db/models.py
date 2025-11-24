@@ -30,21 +30,3 @@ class ASTResult(Base):
     sir = Column(String(2))
     sample = relationship("Sample", back_populates="ast_results")
 
-class MRSAPrediction(Base):
-    __tablename__ = "mrsa_predictions"
-
-    id = Column(Integer, primary_key=True, index=True)
-
-    # Metadata
-    sample_id = Column(String, nullable=True)
-    ward = Column(String, nullable=True)
-    sample_type = Column(String, nullable=True)
-    organism = Column(String, nullable=True)
-    gram = Column(String, nullable=True)
-
-    # Prediction
-    model_type = Column(String, nullable=False)
-    probability = Column(Float, nullable=False)
-    predicted_label = Column(Integer, nullable=False)
-
-    created_at = Column(DateTime, default=datetime.utcnow)

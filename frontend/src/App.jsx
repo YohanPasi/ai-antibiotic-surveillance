@@ -9,7 +9,10 @@ import MrsaDashboard from "./mrsa/MrsaDashboard";
 import EsblDashboard from "./esbl/EsblDashboard";
 import NonfermenterDashboard from "./non_fem/NonfermenterDashboard";
 import StrepDashboard from "./STREP/StrepDashboard";
+import MrsaModalDashboard from "./pages/MrsaModalDashboard";
 import MainLayout from "./components/layout/MainLayout";
+
+import MrsaInput from "./pages/MrsaInput";
 
 export default function App() {
   return (
@@ -28,6 +31,8 @@ export default function App() {
           >
             <Route path="/modules" element={<ModuleSelect />} />
             <Route path="/mrsa" element={<MrsaDashboard />} />
+            <Route path="/mrsa/prediction" element={<MrsaModalDashboard />} />
+            <Route path="/mrsa/input" element={<MrsaInput />} />
             <Route path="/esbl" element={<EsblDashboard />} />
             <Route path="/nonfermenter" element={<NonfermenterDashboard />} />
             <Route path="/strep" element={<StrepDashboard />} />
