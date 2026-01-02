@@ -1,0 +1,2713 @@
+2025-12-29 20:00:58,533 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,536 - INFO - 🚀 PRODUCTION MODEL TRAINING - FULL EXECUTION
+2025-12-29 20:00:58,537 - INFO - ====================================================================================================
+2025-12-29 20:00:58,538 - INFO - ⚙️  Configuration: Minimum weeks = 3
+2025-12-29 20:00:58,540 - INFO - 📅 Start time: 2025-12-29 20:00:58
+2025-12-29 20:00:58,553 - INFO - 
+🔍 Searching for viable combinations...
+2025-12-29 20:00:58,565 - INFO -    Organism-level: 69 combinations found
+2025-12-29 20:00:58,569 - INFO -    Ward-level:     56 combinations found
+2025-12-29 20:00:58,571 - INFO - 
+✅ TOTAL: 125 combinations will be trained
+2025-12-29 20:00:58,576 - INFO - 🗑️  Cleared old model performance records
+2025-12-29 20:00:58,577 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,578 - INFO - [1/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:00:58,579 - INFO - ====================================================================================================
+2025-12-29 20:00:58,585 - INFO -   📊 Data: 13 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:58,588 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:58,590 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:58,591 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:58,594 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,597 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,598 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:58,599 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:58,602 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,607 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,608 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:58,609 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:58,611 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:58,637 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:58,638 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:58,639 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:58,640 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,642 - INFO - [2/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:00:58,644 - INFO - ====================================================================================================
+2025-12-29 20:00:58,649 - INFO -   📊 Data: 13 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:58,651 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:58,653 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:58,654 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:58,656 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,657 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,659 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:58,660 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:58,662 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,667 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,668 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:58,669 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:58,671 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:58,688 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:58,689 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:58,690 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:58,692 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,693 - INFO - [3/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:00:58,695 - INFO - ====================================================================================================
+2025-12-29 20:00:58,699 - INFO -   📊 Data: 12 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:58,701 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:58,702 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:58,703 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:58,704 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,706 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,707 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:58,708 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:58,710 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,717 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,718 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:58,719 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:58,721 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:58,741 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:58,742 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:58,743 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:58,745 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,746 - INFO - [4/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:00:58,747 - INFO - ====================================================================================================
+2025-12-29 20:00:58,752 - INFO -   📊 Data: 12 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:58,753 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:58,754 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:58,755 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:58,757 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,758 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,759 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:58,760 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:58,764 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,768 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,769 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:58,771 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:58,773 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:58,794 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:58,796 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:58,797 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:58,798 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,799 - INFO - [5/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:00:58,801 - INFO - ====================================================================================================
+2025-12-29 20:00:58,806 - INFO -   📊 Data: 11 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:58,808 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:58,810 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:58,811 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:58,814 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,816 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,817 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:58,818 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:58,821 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,827 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,828 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:58,829 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:58,832 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:58,852 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:58,853 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:58,854 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:58,855 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,857 - INFO - [6/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:00:58,858 - INFO - ====================================================================================================
+2025-12-29 20:00:58,865 - INFO -   📊 Data: 11 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:58,867 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:58,871 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:58,872 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:58,875 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,877 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,879 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:58,881 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:58,886 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,892 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,894 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:58,895 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:58,897 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:58,917 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:58,918 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:58,919 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:58,920 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,921 - INFO - [7/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:00:58,922 - INFO - ====================================================================================================
+2025-12-29 20:00:58,927 - INFO -   📊 Data: 11 weeks | Date range: 2024-01-29 to 2025-08-25
+2025-12-29 20:00:58,929 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:58,931 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:58,933 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:58,935 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,937 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:58,938 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:58,939 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:58,941 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,944 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:58,946 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:58,947 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:58,948 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:58,972 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:58,973 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:58,978 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:58,989 - INFO - 
+====================================================================================================
+2025-12-29 20:00:58,994 - INFO - [8/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:00:58,997 - INFO - ====================================================================================================
+2025-12-29 20:00:59,004 - INFO -   📊 Data: 11 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:59,006 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,008 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,011 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,016 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,020 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,022 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,023 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,026 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,030 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,031 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,032 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,034 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,060 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,061 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,063 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,064 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,065 - INFO - [9/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:00:59,066 - INFO - ====================================================================================================
+2025-12-29 20:00:59,071 - INFO -   📊 Data: 11 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:59,072 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,073 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,075 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,077 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,079 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,081 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,082 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,085 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,088 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,090 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,091 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,093 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,118 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,119 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,122 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,123 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,124 - INFO - [10/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Ampicillin  (AMP)
+2025-12-29 20:00:59,126 - INFO - ====================================================================================================
+2025-12-29 20:00:59,131 - INFO -   📊 Data: 10 weeks | Date range: 2024-01-01 to 2025-08-25
+2025-12-29 20:00:59,132 - INFO -   📈 S% range: 0.0% - 66.7%
+2025-12-29 20:00:59,133 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,134 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,136 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,137 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,138 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,140 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,142 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,146 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,148 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,149 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,151 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,175 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,176 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,178 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,180 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,181 - INFO - [11/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:00:59,182 - INFO - ====================================================================================================
+2025-12-29 20:00:59,187 - INFO -   📊 Data: 8 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:00:59,189 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,190 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,191 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,192 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,195 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,196 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,197 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,199 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,202 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,203 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,204 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,205 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,222 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,223 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,223 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,224 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,225 - INFO - [12/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:00:59,226 - INFO - ====================================================================================================
+2025-12-29 20:00:59,230 - INFO -   📊 Data: 8 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:00:59,232 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,232 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,233 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,235 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,236 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,237 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,238 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,240 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,242 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,243 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,245 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,246 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,259 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,260 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,261 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,262 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,263 - INFO - [13/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:00:59,264 - INFO - ====================================================================================================
+2025-12-29 20:00:59,267 - INFO -   📊 Data: 8 weeks | Date range: 2024-01-08 to 2025-08-25
+2025-12-29 20:00:59,268 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,269 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,270 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,272 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,273 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,274 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,274 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,277 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,279 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,280 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,281 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,283 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,294 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,296 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,297 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,298 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,299 - INFO - [14/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:00:59,300 - INFO - ====================================================================================================
+2025-12-29 20:00:59,303 - INFO -   📊 Data: 8 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:00:59,305 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,306 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,307 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,309 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,312 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,313 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,315 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,317 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,320 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,322 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,324 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,326 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,340 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,341 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,342 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,344 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,345 - INFO - [15/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:00:59,346 - INFO - ====================================================================================================
+2025-12-29 20:00:59,351 - INFO -   📊 Data: 8 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:00:59,352 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,353 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,354 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,356 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,357 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,358 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,360 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,363 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,367 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,368 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,370 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,371 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,394 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,395 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,396 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,397 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,398 - INFO - [16/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:00:59,399 - INFO - ====================================================================================================
+2025-12-29 20:00:59,403 - INFO -   📊 Data: 8 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:00:59,405 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,407 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,409 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,411 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,413 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,414 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,415 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,418 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,421 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,423 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,424 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,426 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,441 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,443 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,444 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,446 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,448 - INFO - [17/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:00:59,449 - INFO - ====================================================================================================
+2025-12-29 20:00:59,456 - INFO -   📊 Data: 8 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:00:59,458 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,460 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,461 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,463 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,465 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,467 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,468 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,473 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,476 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,478 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,479 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,482 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,497 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,498 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,499 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,500 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,501 - INFO - [18/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Ampicillin (AMP)
+2025-12-29 20:00:59,502 - INFO - ====================================================================================================
+2025-12-29 20:00:59,506 - INFO -   📊 Data: 7 weeks | Date range: 2024-07-29 to 2025-08-18
+2025-12-29 20:00:59,508 - INFO -   📈 S% range: 0.0% - 40.0%
+2025-12-29 20:00:59,509 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,510 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,512 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,514 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,514 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,515 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,518 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,522 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,523 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,524 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,527 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,545 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,546 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,547 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,547 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,548 - INFO - [19/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Vancomycin  (VA)
+2025-12-29 20:00:59,549 - INFO - ====================================================================================================
+2025-12-29 20:00:59,553 - INFO -   📊 Data: 7 weeks | Date range: 2024-01-08 to 2024-11-11
+2025-12-29 20:00:59,554 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,555 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,557 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,559 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,561 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,562 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,563 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,565 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,568 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,568 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,570 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,571 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,589 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,590 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,591 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,592 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,593 - INFO - [20/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Ampicillin  (AMP)
+2025-12-29 20:00:59,594 - INFO - ====================================================================================================
+2025-12-29 20:00:59,598 - INFO -   📊 Data: 6 weeks | Date range: 2024-01-08 to 2024-11-11
+2025-12-29 20:00:59,599 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,600 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,601 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,603 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,605 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,606 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,608 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,610 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,613 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,614 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,615 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,617 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,630 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,631 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,632 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,633 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,634 - INFO - [21/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Trimethoprim-Sulfamethoxazole (SXT)
+2025-12-29 20:00:59,635 - INFO - ====================================================================================================
+2025-12-29 20:00:59,638 - INFO -   📊 Data: 6 weeks | Date range: 2024-01-01 to 2025-08-11
+2025-12-29 20:00:59,640 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,641 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,641 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,643 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,644 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,645 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,646 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,647 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,650 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,651 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,652 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,654 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,669 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,670 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,672 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,674 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,675 - INFO - [22/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:00:59,676 - INFO - ====================================================================================================
+2025-12-29 20:00:59,680 - INFO -   📊 Data: 6 weeks | Date range: 2024-01-15 to 2025-08-25
+2025-12-29 20:00:59,681 - INFO -   📈 S% range: 0.0% - 50.0%
+2025-12-29 20:00:59,682 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,684 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,685 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,687 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,688 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,690 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,692 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,696 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,697 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,698 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,699 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,717 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,718 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,719 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,721 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,722 - INFO - [23/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:00:59,724 - INFO - ====================================================================================================
+2025-12-29 20:00:59,730 - INFO -   📊 Data: 6 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:00:59,732 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,733 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,733 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,736 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,739 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,740 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,742 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,746 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,750 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,751 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,752 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,754 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,775 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,776 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,777 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,778 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,779 - INFO - [24/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:00:59,780 - INFO - ====================================================================================================
+2025-12-29 20:00:59,783 - INFO -   📊 Data: 6 weeks | Date range: 2024-01-29 to 2025-08-18
+2025-12-29 20:00:59,784 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,785 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,786 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,788 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,790 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,791 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,792 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,794 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,797 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,798 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,799 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,800 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,815 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,816 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,817 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,818 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,819 - INFO - [25/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Penicillin
+2025-12-29 20:00:59,820 - INFO - ====================================================================================================
+2025-12-29 20:00:59,824 - INFO -   📊 Data: 5 weeks | Date range: 2024-01-08 to 2024-11-11
+2025-12-29 20:00:59,825 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:00:59,826 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,827 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,829 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,830 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,831 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,832 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,833 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,837 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,838 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,839 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,841 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,858 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,860 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,860 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,861 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,862 - INFO - [26/125] TRAINING: Ward=ORG-LEVEL, Organism=Acinetobacter spp., Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:00:59,863 - INFO - ====================================================================================================
+2025-12-29 20:00:59,866 - INFO -   📊 Data: 5 weeks | Date range: 2024-01-08 to 2024-12-16
+2025-12-29 20:00:59,868 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:00:59,869 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,870 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,871 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,873 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,874 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,874 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,877 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,879 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,880 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,881 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,882 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,895 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,897 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,897 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,898 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,899 - INFO - [27/125] TRAINING: Ward=ORG-LEVEL, Organism=Acinetobacter spp., Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:00:59,900 - INFO - ====================================================================================================
+2025-12-29 20:00:59,905 - INFO -   📊 Data: 5 weeks | Date range: 2024-01-08 to 2024-12-16
+2025-12-29 20:00:59,907 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:00:59,908 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,909 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,911 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,912 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,913 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,914 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,916 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,918 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,919 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,921 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,922 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,934 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,935 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,936 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,938 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,940 - INFO - [28/125] TRAINING: Ward=ORG-LEVEL, Organism=Acinetobacter spp., Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:00:59,941 - INFO - ====================================================================================================
+2025-12-29 20:00:59,946 - INFO -   📊 Data: 5 weeks | Date range: 2024-01-08 to 2024-12-16
+2025-12-29 20:00:59,947 - INFO -   📈 S% range: 0.0% - 33.3%
+2025-12-29 20:00:59,949 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:00:59,949 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:00:59,951 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,954 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:00:59,956 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:00:59,957 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:00:59,962 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,966 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:00:59,968 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:00:59,968 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:00:59,970 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:00:59,986 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:00:59,988 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:00:59,989 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:00:59,990 - INFO - 
+====================================================================================================
+2025-12-29 20:00:59,992 - INFO - [29/125] TRAINING: Ward=ORG-LEVEL, Organism=Acinetobacter spp., Antibiotic=Amikacin  ( AK )
+2025-12-29 20:00:59,993 - INFO - ====================================================================================================
+2025-12-29 20:00:59,997 - INFO -   📊 Data: 5 weeks | Date range: 2024-01-08 to 2024-12-16
+2025-12-29 20:00:59,999 - INFO -   📈 S% range: 0.0% - 33.3%
+2025-12-29 20:01:00,000 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,001 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,003 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,006 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,007 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,009 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,012 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,018 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,020 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,021 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,023 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,041 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,042 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,042 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,043 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,044 - INFO - [30/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:01:00,046 - INFO - ====================================================================================================
+2025-12-29 20:01:00,050 - INFO -   📊 Data: 5 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:01:00,051 - INFO -   📈 S% range: 0.0% - 66.7%
+2025-12-29 20:01:00,052 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,053 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,055 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,058 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,059 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,060 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,063 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,066 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,067 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,068 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,069 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,085 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,086 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,087 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,088 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,089 - INFO - [31/125] TRAINING: Ward=ORG-LEVEL, Organism=MRSA, Antibiotic=Cefoxitin  (FOX)
+2025-12-29 20:01:00,090 - INFO - ====================================================================================================
+2025-12-29 20:01:00,094 - INFO -   📊 Data: 5 weeks | Date range: 2024-08-05 to 2024-11-11
+2025-12-29 20:01:00,095 - INFO -   📈 S% range: 0.0% - 33.3%
+2025-12-29 20:01:00,096 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,096 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,098 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,099 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,100 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,101 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,103 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,108 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,109 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,109 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,111 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,127 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,128 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,129 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,130 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,131 - INFO - [32/125] TRAINING: Ward=ORG-LEVEL, Organism=MRSA, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:00,133 - INFO - ====================================================================================================
+2025-12-29 20:01:00,139 - INFO -   📊 Data: 5 weeks | Date range: 2024-08-05 to 2024-11-11
+2025-12-29 20:01:00,141 - INFO -   📈 S% range: 0.0% - 66.7%
+2025-12-29 20:01:00,145 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,146 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,149 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,151 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,153 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,155 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,158 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,165 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,166 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,168 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,171 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,192 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,193 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,194 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,195 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,195 - INFO - [33/125] TRAINING: Ward=ORG-LEVEL, Organism=MRSA, Antibiotic=Clindamycin  (DA)
+2025-12-29 20:01:00,196 - INFO - ====================================================================================================
+2025-12-29 20:01:00,199 - INFO -   📊 Data: 5 weeks | Date range: 2024-08-05 to 2024-11-11
+2025-12-29 20:01:00,200 - INFO -   📈 S% range: 0.0% - 33.3%
+2025-12-29 20:01:00,201 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,202 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,204 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,206 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,207 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,208 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,210 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,213 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,214 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,215 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,217 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,245 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,246 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,247 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,248 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,250 - INFO - [34/125] TRAINING: Ward=ORG-LEVEL, Organism=MRSA, Antibiotic=Erythromycin  (E)
+2025-12-29 20:01:00,252 - INFO - ====================================================================================================
+2025-12-29 20:01:00,260 - INFO -   📊 Data: 5 weeks | Date range: 2024-08-05 to 2024-11-11
+2025-12-29 20:01:00,262 - INFO -   📈 S% range: 0.0% - 33.3%
+2025-12-29 20:01:00,264 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,265 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,268 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,270 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,272 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,274 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,277 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,282 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,283 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,284 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,286 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,313 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,314 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,315 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,316 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,317 - INFO - [35/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:01:00,318 - INFO - ====================================================================================================
+2025-12-29 20:01:00,322 - INFO -   📊 Data: 5 weeks | Date range: 2024-01-15 to 2025-08-18
+2025-12-29 20:01:00,324 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,325 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,326 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,327 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,329 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,329 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,331 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,333 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,336 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,338 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,340 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,341 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,359 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,360 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,361 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,362 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,364 - INFO - [36/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:01:00,365 - INFO - ====================================================================================================
+2025-12-29 20:01:00,369 - INFO -   📊 Data: 5 weeks | Date range: 2024-09-30 to 2025-08-25
+2025-12-29 20:01:00,371 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,373 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,374 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,376 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,377 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,379 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,380 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,382 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,386 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,387 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,388 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,390 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,413 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,414 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,415 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,415 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,416 - INFO - [37/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:01:00,417 - INFO - ====================================================================================================
+2025-12-29 20:01:00,420 - INFO -   📊 Data: 5 weeks | Date range: 2024-09-30 to 2025-08-25
+2025-12-29 20:01:00,422 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,423 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,424 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,425 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,426 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,427 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,427 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,429 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,432 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,433 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,433 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,434 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,449 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,450 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,451 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,451 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,453 - INFO - [38/125] TRAINING: Ward=ORG-LEVEL, Organism=Staphylococci, Antibiotic=Cefoxitin  (FOX)
+2025-12-29 20:01:00,455 - INFO - ====================================================================================================
+2025-12-29 20:01:00,462 - INFO -   📊 Data: 5 weeks | Date range: 2024-02-05 to 2025-08-25
+2025-12-29 20:01:00,464 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,466 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,468 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,472 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,475 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,477 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,479 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,483 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,489 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,490 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,492 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,495 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,515 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,516 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,517 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,519 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,520 - INFO - [39/125] TRAINING: Ward=ORG-LEVEL, Organism=Staphylococci, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:00,522 - INFO - ====================================================================================================
+2025-12-29 20:01:00,527 - INFO -   📊 Data: 5 weeks | Date range: 2024-02-05 to 2025-08-25
+2025-12-29 20:01:00,528 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,530 - INFO -   🔄 Cross-validation: 2 splits
+2025-12-29 20:01:00,531 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,533 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,534 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,535 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,536 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,540 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,545 - WARNING -      Split 2: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,547 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,548 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,550 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,569 - WARNING -      Split 2: Failed - unsupported operand type(s) for *: 'float' and 'de
+2025-12-29 20:01:00,570 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,571 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,572 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,573 - INFO - [40/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:00,574 - INFO - ====================================================================================================
+2025-12-29 20:01:00,577 - INFO -   📊 Data: 4 weeks | Date range: 2024-09-30 to 2025-08-25
+2025-12-29 20:01:00,578 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,579 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,580 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,581 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,582 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,583 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,585 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,586 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,588 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,589 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,590 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,592 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,593 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,594 - INFO - [41/125] TRAINING: Ward=ORG-LEVEL, Organism=Acinetobacter spp., Antibiotic=Meropenem  (MEM)
+2025-12-29 20:01:00,595 - INFO - ====================================================================================================
+2025-12-29 20:01:00,599 - INFO -   📊 Data: 4 weeks | Date range: 2024-01-08 to 2024-11-11
+2025-12-29 20:01:00,600 - INFO -   📈 S% range: 0.0% - 25.0%
+2025-12-29 20:01:00,601 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,602 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,604 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,605 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,607 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,609 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,611 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,611 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,613 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,614 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,615 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,616 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,617 - INFO - [42/125] TRAINING: Ward=ORG-LEVEL, Organism=Acinetobacter spp., Antibiotic=Co_Trimoxazole  (TS/SXT)
+2025-12-29 20:01:00,618 - INFO - ====================================================================================================
+2025-12-29 20:01:00,622 - INFO -   📊 Data: 4 weeks | Date range: 2024-01-08 to 2024-12-16
+2025-12-29 20:01:00,624 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,626 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,627 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,628 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,629 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,630 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,632 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,633 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,634 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,637 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,638 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,640 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,641 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,642 - INFO - [43/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Co_Trimoxazole  (TS/SXT)
+2025-12-29 20:01:00,643 - INFO - ====================================================================================================
+2025-12-29 20:01:00,647 - INFO -   📊 Data: 4 weeks | Date range: 2024-01-22 to 2025-08-18
+2025-12-29 20:01:00,649 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,650 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,651 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,654 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,655 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,657 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,659 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,660 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,661 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,663 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,665 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,666 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,667 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,668 - INFO - [44/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Furazolidone
+2025-12-29 20:01:00,670 - INFO - ====================================================================================================
+2025-12-29 20:01:00,677 - INFO -   📊 Data: 4 weeks | Date range: 2024-01-01 to 2024-07-01
+2025-12-29 20:01:00,678 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,679 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,681 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,683 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,684 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,685 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,687 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,688 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,690 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,692 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,693 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,694 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,695 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,696 - INFO - [45/125] TRAINING: Ward=ORG-LEVEL, Organism=MRSA, Antibiotic=Co_Trimoxazole  (TS/SXT)
+2025-12-29 20:01:00,697 - INFO - ====================================================================================================
+2025-12-29 20:01:00,701 - INFO -   📊 Data: 4 weeks | Date range: 2024-08-05 to 2024-11-11
+2025-12-29 20:01:00,702 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,704 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,705 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,707 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,709 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,710 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,712 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,713 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,714 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,717 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,718 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,719 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,721 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,723 - INFO - [46/125] TRAINING: Ward=ORG-LEVEL, Organism=Staphylococci, Antibiotic=Erythromycin  (E)
+2025-12-29 20:01:00,724 - INFO - ====================================================================================================
+2025-12-29 20:01:00,729 - INFO -   📊 Data: 4 weeks | Date range: 2024-02-05 to 2025-08-25
+2025-12-29 20:01:00,730 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,731 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,732 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,733 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,735 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,736 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,740 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,741 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,743 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,746 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,747 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,748 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,750 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,751 - INFO - [47/125] TRAINING: Ward=ORG-LEVEL, Organism=MRSA, Antibiotic=Trimethoprim-Sulfamethoxazole (SXT)
+2025-12-29 20:01:00,752 - INFO - ====================================================================================================
+2025-12-29 20:01:00,758 - INFO -   📊 Data: 4 weeks | Date range: 2024-08-05 to 2024-11-11
+2025-12-29 20:01:00,759 - INFO -   📈 S% range: 50.0% - 100.0%
+2025-12-29 20:01:00,760 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,762 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,764 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,765 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,766 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,769 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,771 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,772 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,774 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,775 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,775 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,776 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,777 - INFO - [48/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:00,778 - INFO - ====================================================================================================
+2025-12-29 20:01:00,782 - INFO -   📊 Data: 4 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:00,783 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,784 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,786 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,788 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,789 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,791 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,793 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,794 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,796 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,797 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,798 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,799 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,801 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,802 - INFO - [49/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:01:00,803 - INFO - ====================================================================================================
+2025-12-29 20:01:00,808 - INFO -   📊 Data: 4 weeks | Date range: 2024-01-08 to 2025-08-25
+2025-12-29 20:01:00,809 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,810 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,811 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,812 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,814 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,815 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,818 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,819 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,821 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,823 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,825 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,826 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,828 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,829 - INFO - [50/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Vancomycin  (VA)
+2025-12-29 20:01:00,830 - INFO - ====================================================================================================
+2025-12-29 20:01:00,834 - INFO -   📊 Data: 4 weeks | Date range: 2024-01-08 to 2025-08-04
+2025-12-29 20:01:00,836 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,838 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,841 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,843 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,845 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,846 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,850 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,851 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,853 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,856 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,858 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,860 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,862 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,863 - INFO - [51/125] TRAINING: Ward=ORG-LEVEL, Organism=Staphylococci, Antibiotic=Clindamycin  (DA)
+2025-12-29 20:01:00,865 - INFO - ====================================================================================================
+2025-12-29 20:01:00,872 - INFO -   📊 Data: 4 weeks | Date range: 2024-02-05 to 2025-08-25
+2025-12-29 20:01:00,873 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,876 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,878 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,880 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,881 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,883 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,886 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,887 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,889 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,892 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,893 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,895 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,896 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,898 - INFO - [52/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:01:00,899 - INFO - ====================================================================================================
+2025-12-29 20:01:00,905 - INFO -   📊 Data: 4 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:00,906 - INFO -   📈 S% range: 0.0% - 75.0%
+2025-12-29 20:01:00,908 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,910 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,911 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,912 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,913 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,915 - WARNING -      Split 1: Failed - ufunc 'isnan' not supported for the input types, a
+2025-12-29 20:01:00,917 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,918 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,920 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,921 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,922 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,924 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,925 - INFO - [53/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Penicillin
+2025-12-29 20:01:00,925 - INFO - ====================================================================================================
+2025-12-29 20:01:00,930 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2025-08-04
+2025-12-29 20:01:00,932 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,932 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:00,933 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,934 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,936 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,937 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,938 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,940 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:00,941 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,942 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,943 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,945 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,946 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,947 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,948 - INFO - [54/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Carbapenem (IMI / MEM)
+2025-12-29 20:01:00,949 - INFO - ====================================================================================================
+2025-12-29 20:01:00,953 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-08 to 2025-08-04
+2025-12-29 20:01:00,954 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,956 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:00,957 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,958 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,960 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,961 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,962 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,964 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:00,965 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,966 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,968 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,969 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,970 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,972 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,973 - INFO - [55/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:01:00,974 - INFO - ====================================================================================================
+2025-12-29 20:01:00,978 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2025-08-25
+2025-12-29 20:01:00,980 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:00,981 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:00,983 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:00,984 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:00,985 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:00,987 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:00,989 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:00,990 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:00,992 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:00,993 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:00,994 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:00,995 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:00,996 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:00,997 - INFO - 
+====================================================================================================
+2025-12-29 20:01:00,999 - INFO - [56/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Erythromycin  (E)
+2025-12-29 20:01:01,000 - INFO - ====================================================================================================
+2025-12-29 20:01:01,004 - INFO -   📊 Data: 3 weeks | Date range: 2024-07-29 to 2024-11-11
+2025-12-29 20:01:01,005 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,007 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,009 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,010 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,012 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,013 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,013 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,016 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,017 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,018 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,020 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,022 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,023 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,025 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,026 - INFO - [57/125] TRAINING: Ward=ORG-LEVEL, Organism=Staphylococci, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:01,027 - INFO - ====================================================================================================
+2025-12-29 20:01:01,031 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-01 to 2024-11-11
+2025-12-29 20:01:01,032 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,034 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,035 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,036 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,039 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,040 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,042 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,044 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,045 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,046 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,049 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,050 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,051 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,053 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,055 - INFO - [58/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:01:01,057 - INFO - ====================================================================================================
+2025-12-29 20:01:01,062 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2025-01-13
+2025-12-29 20:01:01,063 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:01,064 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,066 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,067 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,069 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,070 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,072 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,074 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,076 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,078 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,081 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,082 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,083 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,085 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,087 - INFO - [59/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:01,089 - INFO - ====================================================================================================
+2025-12-29 20:01:01,094 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2025-08-25
+2025-12-29 20:01:01,095 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,097 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,098 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,100 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,101 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,103 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,105 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,106 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,107 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,108 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,110 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,111 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,112 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,113 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,114 - INFO - [60/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:01:01,116 - INFO - ====================================================================================================
+2025-12-29 20:01:01,121 - INFO -   📊 Data: 3 weeks | Date range: 2024-03-11 to 2025-08-25
+2025-12-29 20:01:01,123 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,124 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,125 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,126 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,127 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,128 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,129 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,130 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,131 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,132 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,133 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,134 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,135 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,136 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,137 - INFO - [61/125] TRAINING: Ward=ORG-LEVEL, Organism=Klebsiella pneumoniae, Antibiotic=Furazolidone
+2025-12-29 20:01:01,138 - INFO - ====================================================================================================
+2025-12-29 20:01:01,141 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-08 to 2024-07-01
+2025-12-29 20:01:01,142 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:01,143 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,144 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,145 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,146 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,147 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,149 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,150 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,152 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,153 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,155 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,156 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,158 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,159 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,160 - INFO - [62/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:01,160 - INFO - ====================================================================================================
+2025-12-29 20:01:01,164 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2025-08-25
+2025-12-29 20:01:01,166 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,167 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,168 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,170 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,172 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,173 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,175 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,176 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,177 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,178 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,179 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,180 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,181 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,182 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,183 - INFO - [63/125] TRAINING: Ward=ORG-LEVEL, Organism=Staphylococci, Antibiotic=Trimethoprim-Sulfamethoxazole (SXT)
+2025-12-29 20:01:01,183 - INFO - ====================================================================================================
+2025-12-29 20:01:01,188 - INFO -   📊 Data: 3 weeks | Date range: 2024-02-26 to 2024-11-11
+2025-12-29 20:01:01,189 - INFO -   📈 S% range: 100.0% - 100.0%
+2025-12-29 20:01:01,191 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,192 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,193 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,194 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,195 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,196 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,197 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,198 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,199 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,201 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,202 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,203 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,204 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,205 - INFO - [64/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Trimethoprim-Sulfamethoxazole (SXT)
+2025-12-29 20:01:01,206 - INFO - ====================================================================================================
+2025-12-29 20:01:01,210 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-15 to 2024-11-11
+2025-12-29 20:01:01,211 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,213 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,214 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,216 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,217 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,218 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,218 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,220 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,221 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,222 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,224 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,225 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,226 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,227 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,228 - INFO - [65/125] TRAINING: Ward=ORG-LEVEL, Organism=Enterococcus spp, Antibiotic=Clindamycin  (DA)
+2025-12-29 20:01:01,228 - INFO - ====================================================================================================
+2025-12-29 20:01:01,232 - INFO -   📊 Data: 3 weeks | Date range: 2024-07-29 to 2024-11-11
+2025-12-29 20:01:01,233 - INFO -   📈 S% range: 100.0% - 100.0%
+2025-12-29 20:01:01,234 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,235 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,237 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,238 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,239 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,241 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,242 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,243 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,244 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,245 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,246 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,247 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,248 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,249 - INFO - [66/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:01:01,250 - INFO - ====================================================================================================
+2025-12-29 20:01:01,255 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,256 - INFO -   📈 S% range: 0.0% - 66.7%
+2025-12-29 20:01:01,256 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,257 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,258 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,259 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,260 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,261 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,262 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,263 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,263 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,264 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,265 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,266 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,267 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,268 - INFO - [67/125] TRAINING: Ward=ORG-LEVEL, Organism=Pseudomonas aeruginosa, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:01:01,269 - INFO - ====================================================================================================
+2025-12-29 20:01:01,274 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,275 - INFO -   📈 S% range: 0.0% - 66.7%
+2025-12-29 20:01:01,276 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,277 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,278 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,279 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,280 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,281 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,282 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,284 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,285 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,286 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,287 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,288 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,290 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,291 - INFO - [68/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Clindamycin  (DA)
+2025-12-29 20:01:01,292 - INFO - ====================================================================================================
+2025-12-29 20:01:01,296 - INFO -   📊 Data: 3 weeks | Date range: 2024-07-29 to 2024-11-04
+2025-12-29 20:01:01,297 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,298 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,300 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,300 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,302 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,304 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,305 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,306 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,307 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,308 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,309 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,312 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,313 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,314 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,315 - INFO - [69/125] TRAINING: Ward=ORG-LEVEL, Organism=Escherichia coli, Antibiotic=Cefoxitin  (FOX)
+2025-12-29 20:01:01,316 - INFO - ====================================================================================================
+2025-12-29 20:01:01,320 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:01,322 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,324 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,325 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,326 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,327 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,328 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,329 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,330 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,331 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,332 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,333 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,334 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,335 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,335 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,336 - INFO - [70/125] TRAINING: Ward=01, Organism=Escherichia coli, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:01,338 - INFO - ====================================================================================================
+2025-12-29 20:01:01,342 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-08 to 2024-11-11
+2025-12-29 20:01:01,343 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,343 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,344 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,345 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,347 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,347 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,348 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,349 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,351 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,351 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,353 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,354 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,355 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,356 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,357 - INFO - [71/125] TRAINING: Ward=01, Organism=Staphylococci, Antibiotic=Clindamycin  (DA)
+2025-12-29 20:01:01,357 - INFO - ====================================================================================================
+2025-12-29 20:01:01,360 - INFO -   📊 Data: 3 weeks | Date range: 2024-02-05 to 2024-11-11
+2025-12-29 20:01:01,361 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,362 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,363 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,364 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,365 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,366 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,366 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,368 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,369 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,370 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,372 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,372 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,373 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,374 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,374 - INFO - [72/125] TRAINING: Ward=01, Organism=Staphylococci, Antibiotic=Erythromycin  (E)
+2025-12-29 20:01:01,375 - INFO - ====================================================================================================
+2025-12-29 20:01:01,378 - INFO -   📊 Data: 3 weeks | Date range: 2024-02-05 to 2024-11-11
+2025-12-29 20:01:01,379 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,380 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,381 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,382 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,383 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,384 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,385 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,386 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,387 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,388 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,389 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,390 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,391 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,392 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,393 - INFO - [73/125] TRAINING: Ward=02, Organism=Escherichia coli, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:01,394 - INFO - ====================================================================================================
+2025-12-29 20:01:01,396 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,398 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,398 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,399 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,400 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,402 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,403 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,404 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,406 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,407 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,408 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,409 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,410 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,412 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,413 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,414 - INFO - [74/125] TRAINING: Ward=02, Organism=Escherichia coli, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:01:01,415 - INFO - ====================================================================================================
+2025-12-29 20:01:01,418 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,420 - INFO -   📈 S% range: 0.0% - 50.0%
+2025-12-29 20:01:01,421 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,423 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,424 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,426 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,432 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,433 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,434 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,434 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,435 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,438 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,439 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,441 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,442 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,444 - INFO - [75/125] TRAINING: Ward=02, Organism=Escherichia coli, Antibiotic=Ampicillin  (AMP)
+2025-12-29 20:01:01,445 - INFO - ====================================================================================================
+2025-12-29 20:01:01,450 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,451 - INFO -   📈 S% range: 0.0% - 50.0%
+2025-12-29 20:01:01,452 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,453 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,455 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,457 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,459 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,459 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,461 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,462 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,462 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,464 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,466 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,467 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,469 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,472 - INFO - [76/125] TRAINING: Ward=02, Organism=Escherichia coli, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:01,473 - INFO - ====================================================================================================
+2025-12-29 20:01:01,479 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,480 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,481 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,482 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,483 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,485 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,486 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,488 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,490 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,491 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,493 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,495 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,497 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,498 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,500 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,501 - INFO - [77/125] TRAINING: Ward=02, Organism=Escherichia coli, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:01:01,503 - INFO - ====================================================================================================
+2025-12-29 20:01:01,508 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,509 - INFO -   📈 S% range: 0.0% - 75.0%
+2025-12-29 20:01:01,510 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,512 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,513 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,515 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,516 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,518 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,520 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,523 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,524 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,526 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,527 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,529 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,530 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,531 - INFO - [78/125] TRAINING: Ward=02, Organism=Escherichia coli, Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:01:01,533 - INFO - ====================================================================================================
+2025-12-29 20:01:01,538 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,540 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,541 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,542 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,544 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,546 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,547 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,549 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,550 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,551 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,553 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,555 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,556 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,558 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,559 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,561 - INFO - [79/125] TRAINING: Ward=02, Organism=Escherichia coli, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:01:01,562 - INFO - ====================================================================================================
+2025-12-29 20:01:01,566 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,567 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,569 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,572 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,574 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,576 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,578 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,579 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,580 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,581 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,582 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,584 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,585 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,587 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,589 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,590 - INFO - [80/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:01,592 - INFO - ====================================================================================================
+2025-12-29 20:01:01,597 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,598 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,599 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,601 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,603 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,606 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,607 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,609 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,611 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,613 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,614 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,616 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,617 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,619 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,621 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,623 - INFO - [81/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:01:01,624 - INFO - ====================================================================================================
+2025-12-29 20:01:01,629 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,630 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:01,631 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,632 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,634 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,636 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,638 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,640 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,641 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,643 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,644 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,646 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,647 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,648 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,649 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,650 - INFO - [82/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:01:01,652 - INFO - ====================================================================================================
+2025-12-29 20:01:01,657 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,659 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,659 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,661 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,662 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,664 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,665 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,666 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,670 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,672 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,673 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,676 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,677 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,678 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,679 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,680 - INFO - [83/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:01,681 - INFO - ====================================================================================================
+2025-12-29 20:01:01,685 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,686 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,688 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,690 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,692 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,694 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,695 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,696 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,698 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,699 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,700 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,703 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,704 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,706 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,707 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,709 - INFO - [84/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:01:01,711 - INFO - ====================================================================================================
+2025-12-29 20:01:01,715 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,716 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,716 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,717 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,720 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,722 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,724 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,726 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,728 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,730 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,732 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,733 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,735 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,737 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,739 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,740 - INFO - [85/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:01,742 - INFO - ====================================================================================================
+2025-12-29 20:01:01,746 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,747 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,748 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,749 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,750 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,752 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,753 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,755 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,757 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,759 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,760 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,762 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,764 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,765 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,766 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,768 - INFO - [86/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:01:01,769 - INFO - ====================================================================================================
+2025-12-29 20:01:01,775 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,777 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,778 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,780 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,782 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,784 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,786 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,789 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,791 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,793 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,794 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,796 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,797 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,799 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,800 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,802 - INFO - [87/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:01:01,804 - INFO - ====================================================================================================
+2025-12-29 20:01:01,810 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,811 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,812 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,814 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,815 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,816 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,818 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,819 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,821 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,823 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,824 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,826 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,828 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,829 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,831 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,832 - INFO - [88/125] TRAINING: Ward=02, Organism=Klebsiella pneumoniae, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:01:01,834 - INFO - ====================================================================================================
+2025-12-29 20:01:01,838 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,840 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,840 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,843 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,845 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,848 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,850 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,852 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,854 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,855 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,857 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,859 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,861 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,862 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,864 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,865 - INFO - [89/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:01,866 - INFO - ====================================================================================================
+2025-12-29 20:01:01,871 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,873 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,874 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,877 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,879 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,881 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,882 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,883 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,886 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,887 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,889 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,890 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,892 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,893 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,895 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,896 - INFO - [90/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:01:01,898 - INFO - ====================================================================================================
+2025-12-29 20:01:01,901 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,902 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,903 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,904 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,905 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,907 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,908 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,910 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,912 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,913 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,915 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,917 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,918 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,919 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,921 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,922 - INFO - [91/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:01,923 - INFO - ====================================================================================================
+2025-12-29 20:01:01,928 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,929 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,931 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,932 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,933 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,935 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,936 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,938 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,940 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,941 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,943 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,945 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,947 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,949 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,951 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,952 - INFO - [92/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:01:01,953 - INFO - ====================================================================================================
+2025-12-29 20:01:01,957 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,959 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,960 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,962 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,964 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,966 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,968 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,969 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:01,971 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:01,972 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:01,974 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:01,976 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:01,978 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:01,979 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:01,981 - INFO - 
+====================================================================================================
+2025-12-29 20:01:01,983 - INFO - [93/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:01,984 - INFO - ====================================================================================================
+2025-12-29 20:01:01,988 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:01,989 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:01,990 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:01,992 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:01,993 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:01,996 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:01,997 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:01,999 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,002 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,003 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,004 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,006 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,008 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,009 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,011 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,013 - INFO - [94/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:01:02,014 - INFO - ====================================================================================================
+2025-12-29 20:01:02,018 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:02,020 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,021 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,022 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,024 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,026 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,028 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,029 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,032 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,033 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,034 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,036 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,037 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,038 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,040 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,041 - INFO - [95/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:01:02,043 - INFO - ====================================================================================================
+2025-12-29 20:01:02,048 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:02,050 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,051 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,052 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,053 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,056 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,057 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,059 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,062 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,063 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,065 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,067 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,069 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,070 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,071 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,072 - INFO - [96/125] TRAINING: Ward=02, Organism=Pseudomonas aeruginosa, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:01:02,074 - INFO - ====================================================================================================
+2025-12-29 20:01:02,078 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-11-11
+2025-12-29 20:01:02,080 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,082 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,084 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,085 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,088 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,089 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,090 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,092 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,093 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,095 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,097 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,098 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,099 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,101 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,102 - INFO - [97/125] TRAINING: Ward=05, Organism=Escherichia coli, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:02,103 - INFO - ====================================================================================================
+2025-12-29 20:01:02,107 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-01 to 2025-08-18
+2025-12-29 20:01:02,108 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,109 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,111 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,112 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,114 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,115 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,116 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,118 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,120 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,121 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,122 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,124 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,125 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,127 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,128 - INFO - [98/125] TRAINING: Ward=05, Organism=Escherichia coli, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:02,130 - INFO - ====================================================================================================
+2025-12-29 20:01:02,134 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-08 to 2025-08-18
+2025-12-29 20:01:02,135 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,136 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,137 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,138 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,139 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,140 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,142 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,144 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,145 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,146 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,148 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,149 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,150 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,152 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,153 - INFO - [99/125] TRAINING: Ward=05, Organism=Escherichia coli, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:01:02,155 - INFO - ====================================================================================================
+2025-12-29 20:01:02,158 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-01 to 2025-08-18
+2025-12-29 20:01:02,160 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,161 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,163 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,165 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,166 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,167 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,168 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,170 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,171 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,172 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,174 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,175 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,177 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,178 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,180 - INFO - [100/125] TRAINING: Ward=23, Organism=Escherichia coli, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:02,182 - INFO - ====================================================================================================
+2025-12-29 20:01:02,185 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2024-11-11
+2025-12-29 20:01:02,186 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,187 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,188 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,189 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,191 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,192 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,194 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,198 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,199 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,201 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,203 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,204 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,205 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,207 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,208 - INFO - [101/125] TRAINING: Ward=23, Organism=Escherichia coli, Antibiotic=Ampicillin  (AMP)
+2025-12-29 20:01:02,210 - INFO - ====================================================================================================
+2025-12-29 20:01:02,215 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2024-11-11
+2025-12-29 20:01:02,217 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,218 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,219 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,220 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,222 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,223 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,225 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,227 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,228 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,230 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,232 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,233 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,234 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,235 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,236 - INFO - [102/125] TRAINING: Ward=23, Organism=Escherichia coli, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:02,237 - INFO - ====================================================================================================
+2025-12-29 20:01:02,242 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2024-11-11
+2025-12-29 20:01:02,244 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,245 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,247 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,249 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,251 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,252 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,254 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,256 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,258 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,260 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,262 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,264 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,265 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,266 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,268 - INFO - [103/125] TRAINING: Ward=23, Organism=Escherichia coli, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:01:02,270 - INFO - ====================================================================================================
+2025-12-29 20:01:02,276 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2024-11-11
+2025-12-29 20:01:02,277 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,279 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,280 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,281 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,283 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,283 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,284 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,286 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,287 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,288 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,289 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,290 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,291 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,293 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,294 - INFO - [104/125] TRAINING: Ward=23, Organism=Escherichia coli, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:02,295 - INFO - ====================================================================================================
+2025-12-29 20:01:02,299 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2024-11-11
+2025-12-29 20:01:02,300 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,301 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,302 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,303 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,305 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,307 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,309 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,311 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,313 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,315 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,317 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,318 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,320 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,321 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,323 - INFO - [105/125] TRAINING: Ward=23, Organism=Escherichia coli, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:01:02,324 - INFO - ====================================================================================================
+2025-12-29 20:01:02,329 - INFO -   📊 Data: 3 weeks | Date range: 2024-10-07 to 2024-11-11
+2025-12-29 20:01:02,330 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,331 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,333 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,334 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,335 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,337 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,338 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,340 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,341 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,343 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,344 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,346 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,348 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,350 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,351 - INFO - [106/125] TRAINING: Ward=A&E, Organism=Escherichia coli, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:01:02,353 - INFO - ====================================================================================================
+2025-12-29 20:01:02,358 - INFO -   📊 Data: 3 weeks | Date range: 2025-08-11 to 2025-08-25
+2025-12-29 20:01:02,359 - INFO -   📈 S% range: 100.0% - 100.0%
+2025-12-29 20:01:02,360 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,362 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,364 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,366 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,368 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,371 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,372 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,374 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,375 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,376 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,377 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,378 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,379 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,380 - INFO - [107/125] TRAINING: Ward=A&E, Organism=Escherichia coli, Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:02,382 - INFO - ====================================================================================================
+2025-12-29 20:01:02,386 - INFO -   📊 Data: 3 weeks | Date range: 2025-08-11 to 2025-08-25
+2025-12-29 20:01:02,388 - INFO -   📈 S% range: 100.0% - 100.0%
+2025-12-29 20:01:02,389 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,391 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,392 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,393 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,394 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,395 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,397 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,398 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,399 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,401 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,402 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,403 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,405 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,407 - INFO - [108/125] TRAINING: Ward=A&E, Organism=Escherichia coli, Antibiotic=Meropenem  (MEM)
+2025-12-29 20:01:02,408 - INFO - ====================================================================================================
+2025-12-29 20:01:02,412 - INFO -   📊 Data: 3 weeks | Date range: 2025-08-11 to 2025-08-25
+2025-12-29 20:01:02,413 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,414 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,416 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,417 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,419 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,421 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,423 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,425 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,427 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,428 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,430 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,431 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,432 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,433 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,434 - INFO - [109/125] TRAINING: Ward=A&E, Organism=Escherichia coli, Antibiotic=Piperacillin_Tazobactam  (TZP/PTZ)
+2025-12-29 20:01:02,436 - INFO - ====================================================================================================
+2025-12-29 20:01:02,440 - INFO -   📊 Data: 3 weeks | Date range: 2025-08-11 to 2025-08-25
+2025-12-29 20:01:02,441 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,442 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,443 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,445 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,446 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,447 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,448 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,449 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,450 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,451 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,453 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,454 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,456 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,457 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,458 - INFO - [110/125] TRAINING: Ward=ICU, Organism=Acinetobacter spp., Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:02,458 - INFO - ====================================================================================================
+2025-12-29 20:01:02,462 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-12-16
+2025-12-29 20:01:02,463 - INFO -   📈 S% range: 0.0% - 33.3%
+2025-12-29 20:01:02,464 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,465 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,466 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,468 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,469 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,470 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,472 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,473 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,474 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,476 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,477 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,478 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,479 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,481 - INFO - [111/125] TRAINING: Ward=ICU, Organism=Acinetobacter spp., Antibiotic=Ceftazidime (CAZ)
+2025-12-29 20:01:02,482 - INFO - ====================================================================================================
+2025-12-29 20:01:02,486 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-12-16
+2025-12-29 20:01:02,488 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,489 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,491 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,492 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,494 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,495 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,496 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,497 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,498 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,499 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,500 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,501 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,502 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,504 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,505 - INFO - [112/125] TRAINING: Ward=ICU, Organism=Acinetobacter spp., Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:02,507 - INFO - ====================================================================================================
+2025-12-29 20:01:02,510 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-12-16
+2025-12-29 20:01:02,512 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,512 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,514 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,516 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,517 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,519 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,520 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,522 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,524 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,525 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,527 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,528 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,530 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,531 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,532 - INFO - [113/125] TRAINING: Ward=ICU, Organism=Acinetobacter spp., Antibiotic=Co_Trimoxazole  (TS/SXT)
+2025-12-29 20:01:02,533 - INFO - ====================================================================================================
+2025-12-29 20:01:02,538 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-12-16
+2025-12-29 20:01:02,539 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,540 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,541 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,542 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,543 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,545 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,547 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,548 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,549 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,550 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,552 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,554 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,556 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,557 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,559 - INFO - [114/125] TRAINING: Ward=ICU, Organism=Acinetobacter spp., Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:01:02,561 - INFO - ====================================================================================================
+2025-12-29 20:01:02,565 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2024-12-16
+2025-12-29 20:01:02,566 - INFO -   📈 S% range: 0.0% - 33.3%
+2025-12-29 20:01:02,567 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,568 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,570 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,574 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,576 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,577 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,578 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,580 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,581 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,582 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,584 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,585 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,587 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,588 - INFO - [115/125] TRAINING: Ward=ICU, Organism=Enterococcus spp, Antibiotic=Ampicillin  (AMP)
+2025-12-29 20:01:02,590 - INFO - ====================================================================================================
+2025-12-29 20:01:02,594 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-08 to 2024-03-04
+2025-12-29 20:01:02,595 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,596 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,597 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,597 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,599 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,600 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,602 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,604 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,605 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,607 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,608 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,610 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,611 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,613 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,614 - INFO - [116/125] TRAINING: Ward=ICU, Organism=Enterococcus spp, Antibiotic=Vancomycin  (VA)
+2025-12-29 20:01:02,614 - INFO - ====================================================================================================
+2025-12-29 20:01:02,618 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-08 to 2024-03-04
+2025-12-29 20:01:02,619 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,621 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,623 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,624 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,626 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,627 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,629 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,631 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,632 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,633 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,634 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,636 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,638 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,640 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,642 - INFO - [117/125] TRAINING: Ward=ICU, Organism=Escherichia coli, Antibiotic=Amikacin  ( AK )
+2025-12-29 20:01:02,644 - INFO - ====================================================================================================
+2025-12-29 20:01:02,648 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:02,649 - INFO -   📈 S% range: 80.0% - 100.0%
+2025-12-29 20:01:02,649 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,650 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,652 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,654 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,656 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,657 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,659 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,660 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,662 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,663 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,665 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,666 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,667 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,669 - INFO - [118/125] TRAINING: Ward=ICU, Organism=Escherichia coli, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:01:02,671 - INFO - ====================================================================================================
+2025-12-29 20:01:02,675 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:02,676 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,677 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,678 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,680 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,682 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,683 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,684 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,686 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,687 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,689 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,691 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,692 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,693 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,694 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,696 - INFO - [119/125] TRAINING: Ward=ICU, Organism=Escherichia coli, Antibiotic=Cefotaxime (CTX)
+2025-12-29 20:01:02,697 - INFO - ====================================================================================================
+2025-12-29 20:01:02,701 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:02,702 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,704 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,705 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,707 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,708 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,709 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,711 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,712 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,713 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,715 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,716 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,717 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,720 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,722 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,723 - INFO - [120/125] TRAINING: Ward=ICU, Organism=Escherichia coli, Antibiotic=Cefuroxime (CXM)
+2025-12-29 20:01:02,724 - INFO - ====================================================================================================
+2025-12-29 20:01:02,729 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:02,730 - INFO -   📈 S% range: 0.0% - 40.0%
+2025-12-29 20:01:02,731 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,732 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,732 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,734 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,736 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,738 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,740 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,742 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,744 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,746 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,748 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,749 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,751 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,753 - INFO - [121/125] TRAINING: Ward=ICU, Organism=Escherichia coli, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:02,754 - INFO - ====================================================================================================
+2025-12-29 20:01:02,760 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:02,761 - INFO -   📈 S% range: 0.0% - 50.0%
+2025-12-29 20:01:02,762 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,763 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,764 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,765 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,766 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,767 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,771 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,772 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,774 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,777 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,778 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,779 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,780 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,781 - INFO - [122/125] TRAINING: Ward=ICU, Organism=Escherichia coli, Antibiotic=Gentamicin (CN/GN)
+2025-12-29 20:01:02,783 - INFO - ====================================================================================================
+2025-12-29 20:01:02,789 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:02,798 - INFO -   📈 S% range: 50.0% - 100.0%
+2025-12-29 20:01:02,799 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,800 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,802 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,806 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,809 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,810 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,813 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,815 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,817 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,821 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,823 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,825 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,827 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,829 - INFO - [123/125] TRAINING: Ward=ICU, Organism=Pseudomonas aeruginosa, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:02,831 - INFO - ====================================================================================================
+2025-12-29 20:01:02,836 - INFO -   📊 Data: 3 weeks | Date range: 2024-09-30 to 2025-08-18
+2025-12-29 20:01:02,839 - INFO -   📈 S% range: 0.0% - 0.0%
+2025-12-29 20:01:02,842 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,844 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,846 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,848 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,850 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,852 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,854 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,857 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,859 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,862 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,864 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,865 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,867 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,869 - INFO - [124/125] TRAINING: Ward=OPD, Organism=Escherichia coli, Antibiotic=Ciprofloxacin (CIP)
+2025-12-29 20:01:02,872 - INFO - ====================================================================================================
+2025-12-29 20:01:02,878 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-01 to 2024-01-22
+2025-12-29 20:01:02,879 - INFO -   📈 S% range: 100.0% - 100.0%
+2025-12-29 20:01:02,880 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,881 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,882 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,884 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,886 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,888 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,890 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,892 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,893 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,896 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,897 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,899 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,901 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,903 - INFO - [125/125] TRAINING: Ward=PCU, Organism=Escherichia coli, Antibiotic=Amoxicillin (AMC/AMX/AME)
+2025-12-29 20:01:02,905 - INFO - ====================================================================================================
+2025-12-29 20:01:02,910 - INFO -   📊 Data: 3 weeks | Date range: 2024-01-08 to 2024-07-29
+2025-12-29 20:01:02,913 - INFO -   📈 S% range: 0.0% - 100.0%
+2025-12-29 20:01:02,914 - WARNING -   Only 3 weeks - using simple split
+2025-12-29 20:01:02,916 - INFO -   🔄 Cross-validation: 1 splits
+2025-12-29 20:01:02,917 - INFO - 
+  🤖 Testing SMA...
+2025-12-29 20:01:02,920 - WARNING -      Split 1: Failed - unsupported operand type(s) for *: 'decimal.Decima
+2025-12-29 20:01:02,922 - WARNING -   ❌ SMA: All CV splits failed
+2025-12-29 20:01:02,923 - INFO - 
+  🤖 Testing ARIMA...
+2025-12-29 20:01:02,926 - WARNING -      Split 1: Failed - ARIMA requires at least 3 data points
+2025-12-29 20:01:02,928 - WARNING -   ❌ ARIMA: All CV splits failed
+2025-12-29 20:01:02,930 - INFO - 
+  🤖 Testing ETS...
+2025-12-29 20:01:02,932 - WARNING -      Split 1: Failed - ETS requires at least 4 data points
+2025-12-29 20:01:02,933 - WARNING -   ❌ ETS: All CV splits failed
+2025-12-29 20:01:02,935 - ERROR -   ❌ ALL MODELS FAILED
+2025-12-29 20:01:02,937 - INFO - 
+====================================================================================================
+2025-12-29 20:01:02,939 - INFO - ✨ TRAINING COMPLETE
+2025-12-29 20:01:02,941 - INFO - ====================================================================================================
+2025-12-29 20:01:02,942 - INFO - ✅ Successfully trained: 0/125 combinations
+2025-12-29 20:01:02,943 - INFO - ❌ Failed:              125/125 combinations
+2025-12-29 20:01:02,945 - INFO - 📁 Models saved to:     /app/models/best_models/
+2025-12-29 20:01:02,946 - INFO - 🗄️  Database records:    0 inserted
+2025-12-29 20:01:02,948 - INFO - 📅 End time:            2025-12-29 20:01:02
+2025-12-29 20:01:02,949 - INFO - ====================================================================================================
