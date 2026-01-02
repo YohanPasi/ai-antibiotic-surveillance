@@ -37,6 +37,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 import auth
 from auth import User, get_current_user
 
+# Auth Logic
+import auth
+from auth import User, get_current_user
+
+# Startup Logic
+from startup_manager import StartupManager
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
