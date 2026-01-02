@@ -67,9 +67,14 @@ dist-ssr/
 *.pkl
 *.joblib
 *.h5
+!api/models/best_models/
+!api/models/*.pth
+*.joblib
+*.h5
 
 # Data files
 *.xlsx
+!Raw/Version_1_9_Final_Clean_NoMissing.xlsx
 *.csv
 *.json
 !package.json

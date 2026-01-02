@@ -25,7 +25,7 @@ DB_PARAMS = {
 }
 
 # File path
-EXCEL_FILE_PATH = '/app/data/raw/Stage_D_Expanded_10000_Final_Schema_Aligned.xlsx'
+EXCEL_FILE_PATH = '/app/data/raw/Version_1_9_Final_Clean_NoMissing.xlsx'
 
 def standardize_sir_value(value):
     """Standardize S/I/R values."""
