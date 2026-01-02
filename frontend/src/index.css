@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  @apply bg-dark-bg text-gray-100 antialiased;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-card;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Glassmorphism Effect */
+.glass {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card Styles */
+.card {
+  @apply bg-dark-card border border-dark-border rounded-xl p-6 shadow-lg;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  @apply shadow-xl;
+  transform: translateY(-2px);
+}
+
+/* Gradient Text */
+.gradient-text {
+  @apply bg-gradient-to-r from-primary-400 via-accent-purple to-accent-pink bg-clip-text text-transparent;
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply bg-gradient-to-r from-primary-600 to-primary-500 text-white font-semibold py-3 px-6 rounded-lg;
+  @apply hover:from-primary-700 hover:to-primary-600 transition-all duration-300;
+  @apply shadow-lg hover:shadow-xl transform hover:-translate-y-0.5;
+}
+
+.btn-secondary {
+  @apply bg-dark-card border border-primary-500 text-primary-400 font-semibold py-3 px-6 rounded-lg;
+  @apply hover:bg-primary-500 hover:text-white transition-all duration-300;
+}
+
+/* Alert Colors */
+.alert-green {
+  @apply bg-accent-green/20 border-2 border-accent-green text-accent-green;
+}
+
+.alert-amber {
+  @apply bg-accent-amber/20 border-2 border-accent-amber text-accent-amber;
+}
+
+.alert-red {
+  @apply bg-accent-red/20 border-2 border-accent-red text-accent-red;
+}
+
+/* Loading Skeleton */
+.skeleton {
+  @apply bg-dark-border animate-pulse rounded;
+}
