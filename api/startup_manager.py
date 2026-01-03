@@ -13,13 +13,9 @@ from data_processor.aggregate_weekly import aggregate_weekly_data
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("startup_manager")
 
-DB_PARAMS = {
-    'host': os.getenv('DB_HOST', 'db'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'ast_db'),
-    'user': os.getenv('DB_USER', 'ast_user'),
-    'password': os.getenv('DB_PASSWORD', 'ast_password_2024')
-}
+# Database connection parameters
+DATABASE_URL = os.getenv('DATABASE_URL')
+
 
 class StartupManager:
     @staticmethod
@@ -27,7 +23,11 @@ class StartupManager:
         logger.info("🚀 Checking System Startup State...")
         
         try:
-            conn = psycopg2.connect(**DB_PARAMS)
+            if not DATABASE_URL:
+                logger.error("❌ DATABASE_URL environment variable is missing")
+                return
+
+            conn = psycopg2.connect(DATABASE_URL)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             cursor = conn.cursor()
             
@@ -53,12 +53,24 @@ class StartupManager:
                     """)
                     logger.info("✓ Admin user seeded.")
 
-            # 2. ENSURE DATA EXISTS
+            # 2. ENSURE CORE SCHEMA EXISTS
             cursor.execute("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'ast_raw_data');")
             data_table_exists = cursor.fetchone()[0]
 
+            if not data_table_exists:
+                logger.warning("📉 Core Schema missing. Initializing Database from schema.sql...")
+                StartupManager.run_local_sql_file(cursor, '/app/database_scripts/schema.sql')
+                # Also create other needed schemas if split (e.g. users is separate?)
+                # Actually users is checked separately above, but relying on correct order.
+                # Let's re-verify users table existence after schema run just in case.
+                conn.commit()
+                logger.info("✓ Core Schema Created.")
+                data_table_exists = True
+
+            # 3. ENSURE DATA EXISTS
             if data_table_exists:
                 cursor.execute("SELECT COUNT(*) FROM ast_raw_data")
+
                 count = cursor.fetchone()[0]
                 
                 if count == 0:
@@ -81,33 +93,41 @@ class StartupManager:
             logger.error(f"❌ Startup Check Failed: {e}")
 
     @staticmethod
-    def run_local_sql_file(cursor, relative_path):
-        """Reads a SQL file from /app/../Database location if possible or handles errors."""
-        # In docker, we are in /app. database folder is at ../database usually? 
-        # Check docker-compose: ./api:/app. Database is ./database. 
-        # But wait, api container might not have access to ../database unless we mount it?
-        # Checking docker-compose... 
-        # Only ./api is mounted to /app. The database folder is NOT mounted to /app.
-        # However, create_users_schema.sql is simple. I should probably just EMBED the SQL here 
-        # or ask to mount the folder. embedding is safer for now to avoid docker-compose restart/changes.
-        
-        logger.info(f"Executing embedded user schema creation...")
-        sql = """
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(50) UNIQUE NOT NULL,
-                email VARCHAR(100) UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                role VARCHAR(20) DEFAULT 'user',
-                is_active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            INSERT INTO users (username, email, password_hash, role)
-            SELECT 'admin', 'admin@hospital.lk', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxwKc.6q.1/6.1/6.1/6.1/6.1', 'admin'
-            WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
-        """
-        cursor.execute(sql)
-        logger.info("✓ Users table synced.")
+    def run_local_sql_file(cursor, file_path):
+        """Reads and executes a SQL file."""
+        try:
+            logger.info(f"Executing SQL file: {file_path}")
+            if not os.path.exists(file_path):
+                # Fallback for users if strictly needed and file missing (legacy logic)
+                 if "users" in file_path:
+                    logger.info("SQL File not found, using embedded fallback for users...")
+                    sql = """
+                        CREATE TABLE IF NOT EXISTS users (
+                            id SERIAL PRIMARY KEY,
+                            username VARCHAR(50) UNIQUE NOT NULL,
+                            email VARCHAR(100) UNIQUE,
+                            password_hash VARCHAR(255) NOT NULL,
+                            role VARCHAR(20) DEFAULT 'user',
+                            is_active BOOLEAN DEFAULT TRUE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        );
+                        INSERT INTO users (username, email, password_hash, role)
+                        SELECT 'admin', 'admin@hospital.lk', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxwKc.6q.1/6.1/6.1/6.1/6.1', 'admin'
+                        WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
+                    """
+                    cursor.execute(sql)
+                    return
+
+                 logger.error(f"❌ SQL File missing: {file_path}")
+                 return
+
+            with open(file_path, 'r') as f:
+                sql = f.read()
+                cursor.execute(sql)
+                logger.info("✓ SQL Execution Successful.")
+        except Exception as e:
+            logger.error(f"❌ Failed to execute SQL {file_path}: {e}")
+
 
 if __name__ == "__main__":
     StartupManager.ensure_startup_state()

@@ -1,0 +1,42 @@
+[
+    {
+        "model":"RandomForest",
+        "AUC":0.5353,
+        "Sensitivity":0.2904,
+        "Specificity":0.7438,
+        "TrainingTime":34.51,
+        "BestParams":"{'n_estimators': 100, 'min_samples_split': 5, 'max_depth': None}"
+    },
+    {
+        "model":"MLP_NeuralNet",
+        "AUC":0.5064,
+        "Sensitivity":0.0,
+        "Specificity":1.0,
+        "TrainingTime":275.24,
+        "BestParams":"{'hidden_layer_sizes': (100,), 'alpha': 0.001, 'activation': 'tanh'}"
+    },
+    {
+        "model":"LogisticRegression",
+        "AUC":0.5063,
+        "Sensitivity":0.0,
+        "Specificity":1.0,
+        "TrainingTime":0.97,
+        "BestParams":"{'penalty': 'l2', 'C': 10}"
+    },
+    {
+        "model":"XGBoost",
+        "AUC":0.5005,
+        "Sensitivity":0.2009,
+        "Specificity":0.8005,
+        "TrainingTime":260.21,
+        "BestParams":"{'subsample': 0.9, 'n_estimators': 300, 'max_depth': 7, 'learning_rate': 0.1}"
+    },
+    {
+        "model":"GradientBoosting",
+        "AUC":0.4786,
+        "Sensitivity":0.0078,
+        "Specificity":0.9914,
+        "TrainingTime":23.09,
+        "BestParams":"{'n_estimators': 100, 'max_depth': 5, 'learning_rate': 0.05}"
+    }
+]

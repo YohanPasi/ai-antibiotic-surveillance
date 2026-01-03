@@ -6,7 +6,7 @@ import os
 
 # Database Config (Internal Docker Network)
 # Using 'db' hostname as this runs inside the container network
-DATABASE_URL = "postgresql://ast_user:ast_password_2024@db:5432/ast_db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 API_URL = "http://localhost:8000/api/predict"
 
 def main():
@@ -57,7 +57,7 @@ def main():
                 if response.status == 200:
                     response_body = response.read().decode('utf-8')
                     data = json.loads(response_body)
-                    status = data.get("alert_status", "UNKNOWN")
+                    status = data.get("alert_level", "UNKNOWN")
                     print(f"[{i+1}/{len(targets)}] {ward} | {organism[:15]}... | {antibiotic} -> {status}")
                     success_count += 1
                 else:

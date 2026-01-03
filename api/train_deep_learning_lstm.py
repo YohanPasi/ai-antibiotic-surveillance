@@ -15,7 +15,7 @@ import time
 
 # Configuration
 DATA_FILE = "/app/training_data.csv"
-MODEL_SAVE_PATH = "/app/models/lstm_model.pth"
+MODEL_SAVE_PATH = "/app/models/best_models/lstm_model.pth"
 SEQUENCE_LENGTH = 4  # Past 4 weeks to predict next week
 BATCH_SIZE = 64
 EPOCHS = 5
