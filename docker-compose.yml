@@ -20,7 +20,7 @@ services:
       - "8000:8000"
     depends_on: []
     environment:
-      DATABASE_URL: postgresql://postgres:Yohan%26pasi80253327@db.zdhvyhijuriggezelyxq.supabase.co:6543/postgres?sslmode=require
+      DATABASE_URL: postgresql://postgres.zdhvyhijuriggezelyxq:Yohan%26pasi80253327@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require
       PYTHONUNBUFFERED: 1
     dns:
       - 8.8.8.8
@@ -28,6 +28,8 @@ services:
     dns_opt:
       - use-vc
       - ndots:1
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   # React Frontend Service
@@ -59,8 +61,7 @@ networks:
   default:
     name: ast_network
     driver: bridge
-    enable_ipv6: true
+
     ipam:
       config:
         - subnet: 172.18.0.0/16
-        - subnet: 2001:db8:1::/64
