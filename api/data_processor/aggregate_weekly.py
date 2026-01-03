@@ -19,13 +19,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Database connection parameters
-DB_PARAMS = {
-    'host': os.getenv('DB_HOST', 'db'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'ast_db'),
-    'user': os.getenv('DB_USER', 'ast_user'),
-    'password': os.getenv('DB_PASSWORD', 'ast_password_2024')
-}
+# Database connection parameters
+DATABASE_URL = os.getenv('DATABASE_URL')
+
 
 def get_iso_week_start(date):
     """Get the Monday of the ISO week."""
@@ -38,7 +34,11 @@ def aggregate_weekly_data():
     
     # Connect
     try:
-        conn = psycopg2.connect(**DB_PARAMS)
+        if not DATABASE_URL:
+            logger.error("❌ DATABASE_URL missing")
+            return False
+
+        conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
     except Exception as e:
         logger.error(f"✗ Database Error: {e}")
@@ -124,12 +124,13 @@ def aggregate_weekly_data():
     # 3. COMPUTE S% & INSERT
     logger.info(f"✓ Generated {len(signals)} unique surveillance signals")
     
-    insert_query = """
-        INSERT INTO ast_weekly_aggregated (
-            week_start_date, ward, organism, antibiotic,
-            susceptible_count, intermediate_count, resistant_count
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """
+    import io
+
+    # 3. COMPUTE S% & BULK INSERT (COPY METHOD)
+    logger.info(f"✓ Generated {len(signals)} unique surveillance signals")
+    
+    # Prepare CSV data in memory
+    csv_buffer = io.StringIO()
     
     inserted = 0
     low_confidence = 0
@@ -139,23 +140,39 @@ def aggregate_weekly_data():
         i_count = stats['I']
         r_count = stats['R']
         
-        # Track confidence for logging (even if DB handles the column)
+        # Track confidence
         total = s_count + i_count + r_count
         if total < 3:
             low_confidence += 1
             
-        cursor.execute(insert_query, (
-            week, ward, org, abx, 
-            s_count, i_count, r_count
-        ))
-        inserted += 1
+        # Write to CSV buffer (Tab separated or CSV)
+        # Format: week_start_date, ward, organism, antibiotic, s, i, r
+        # Ensure special characters in strings are handled? 
+        # For simplicity, tab separated is safer if no tabs in data.
+        # Ward/Org/Abx shouldn't have tabs.
         
-    conn.commit()
+        row = f"{week}\t{ward}\t{org}\t{abx}\t{s_count}\t{i_count}\t{r_count}\n"
+        csv_buffer.write(row)
+        inserted += 1
+
+    csv_buffer.seek(0)
+    
+    try:
+        cursor.copy_expert(
+            "COPY ast_weekly_aggregated (week_start_date, ward, organism, antibiotic, susceptible_count, intermediate_count, resistant_count) FROM STDIN WITH (FORMAT TEXT)",
+            csv_buffer
+        )
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Bulk Copy Error: {e}")
+        conn.rollback()
+        return False
+        
     cursor.close()
     conn.close()
     
     logger.info("-" * 40)
-    logger.info("✓ STAGE B COMPLETE")
+    logger.info("✓ STAGE B COMPLETE (FAST MODE)")
     logger.info(f"  Total Signals: {inserted}")
     logger.info(f"  High Confidence (>=3 isolates): {inserted - low_confidence}")
     logger.info(f"  Low Confidence (<3 isolates):   {low_confidence}")

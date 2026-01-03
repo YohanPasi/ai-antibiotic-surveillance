@@ -48,7 +48,8 @@ dist-ssr/
 *.local
 
 # IDEs
-.vscode/
+
+.idea/
 .idea/
 *.swp
 *.swo
@@ -63,20 +64,18 @@ dist-ssr/
 *.sqlite
 *.sqlite3
 
-# Model files (can be large)
-*.pkl
-*.joblib
-*.h5
-!api/models/best_models/
-!api/models/*.pth
-*.joblib
-*.h5
+# Model files - ALLOWED for portability
+# *.pkl
+# *.joblib
+# *.h5
+# !api/models/best_models/
+# !api/models/*.pth
 
-# Data files
-*.xlsx
-!Raw/Version_1_9_Final_Clean_NoMissing.xlsx
-*.csv
-*.json
+# Data files - ALLOWED for portability
+# *.xlsx
+# !Raw/Version_1_9_Final_Clean_NoMissing.xlsx
+# *.csv
+# *.json
 !package.json
 
 # OS

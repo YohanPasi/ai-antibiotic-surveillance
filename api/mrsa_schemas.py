@@ -2,10 +2,10 @@ from pydantic import BaseModel
 from typing import Optional
 
 class MRSAPredictionRequest(BaseModel):
-    age: Optional[int]
-    gender: str
+    age: Optional[int] = 0
+    gender: Optional[str] = "Unknown"
     ward: str
-    sample_type: str
+    sample_type: Optional[str] = "Unknown"
     pus_type: Optional[str] = "Unknown"
     cell_count: Optional[str] = "0"
     gram_positivity: Optional[str] = "Unknown"

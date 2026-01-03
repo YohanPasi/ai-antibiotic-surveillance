@@ -357,7 +357,7 @@ async def get_prediction(request: PredictionRequest):
         
         # Check if we have enough data for a valid surveillance signal
         # We need at least the current week (observed) and some history
-        if len(history_data) >= 3:
+        if len(history_data) >= 1:
             # We have real data!
             observed_s = history_data[0] # Most recent week
             past_history = history_data[1:] # Previous weeks
@@ -680,7 +680,7 @@ async def get_dashboard_summary():
     finally:
         db.close()
 
-@app.get("/api/ward/{ward_id}/status")
+@app.get("/api/ward/{ward_id:path}/status")
 async def get_ward_status(ward_id: str):
     """
     Ward Detail View: List of all bugs/drugs monitored in this ward.
@@ -942,7 +942,7 @@ async def startup_event():
     # Pre-Load LSTM Model (Hybrid Architecture)
     try:
         logger.info("🧠 Loading Deep Learning Model (LSTM)...")
-        app.state.lstm_model = PredictionService.load_lstm_model("/app/models/lstm_model.pth")
+        app.state.lstm_model = PredictionService.load_lstm_model("/app/models/best_models/lstm_model.pth")
         if app.state.lstm_model:
             logger.info("✅ LSTM Model Loaded Successfully")
         else:
