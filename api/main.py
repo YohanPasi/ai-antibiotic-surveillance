@@ -26,8 +26,10 @@ from schemas import (
     User,
     UserInDB
 )
-from mrsa_schemas import MRSAPredictionRequest, MRSAPredictionResponse
-from mrsa_service import predictor
+from mrsa_schemas import MRSAPredictionRequest, MRSAPredictionResponse, MRSAExplanationResponse
+from mrsa_schemas import MRSAPredictionRequest, MRSAPredictionResponse, MRSAExplanationResponse, MasterDefinitionCreate, MasterDefinitionResponse
+from mrsa_service import mrsa_service
+from master_data_service import MasterDataService
 from prediction_service import PredictionService
 import statistics
 import numpy as np
@@ -198,11 +200,13 @@ async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTas
             })
             
         # 3. TRIGGER MRSA VALIDATION (Stage D)
-        # Attempt to match this AST result with a prior prediction
-        try:
-            predictor.validate_prediction(db, entry)
-        except Exception as val_err:
-            logger.error(f"Validation Trigger Error: {val_err}")
+        # Hook: Validate prediction against Ground Truth if S. aureus
+        if entry.organism == "Staphylococcus aureus":
+            try:
+                from mrsa_validation_service import mrsa_validation_service
+                mrsa_validation_service.validate(db, entry)
+            except Exception as val_err:
+                logger.error(f"Validation Trigger Error: {val_err}")
 
         db.commit()
         
@@ -794,6 +798,41 @@ async def get_audit_logs(limit: int = 50):
     finally:
         db.close()
 
+@app.get("/api/mrsa/validation-logs")
+async def get_mrsa_validation_logs():
+    """
+    Fetch Stage D Validation Status.
+    """
+    db = SessionLocal()
+    try:
+        query = text("""
+            SELECT id, validation_date, ward, sample_type, 
+                   consensus_band, cefoxitin_result, actual_mrsa, consensus_correct
+            FROM mrsa_validation_log
+            ORDER BY validation_date DESC
+            LIMIT 50
+        """)
+        results = db.execute(query).fetchall()
+        
+        logs = []
+        for row in results:
+            logs.append({
+                "id": row[0],
+                "validation_date": row[1].isoformat(),
+                "ward": row[2],
+                "sample_type": row[3],
+                "consensus_band": row[4],
+                "cefoxitin_result": row[5],
+                "actual_mrsa": row[6],
+                "consensus_correct": row[7]
+            })
+        return logs
+    except Exception as e:
+        logger.error(f"Validation Log Fetch Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
 @app.get("/api/analysis/antibiogram")
 async def get_antibiogram(ward: Optional[str] = None):
     """
@@ -868,60 +907,78 @@ async def get_antibiogram(ward: Optional[str] = None):
     finally:
         db.close()
 
-@app.post("/api/mrsa/predict", response_model=MRSAPredictionResponse)
-async def predict_mrsa_risk(request: MRSAPredictionRequest, db: Session = Depends(get_db)):
-    """
-    Stage C: MRSA Risk Prediction Endpoint.
-    Propagates input to the XGBoost model and returns a risk band.
-    Logs the prediction to the database for audit.
-    """
-    # 1. Predict
-    result = predictor.predict(request.dict())
-    
-    if "error" in result:
-        raise HTTPException(status_code=500, detail=result["error"])
-        
-    # 2. Log to DB
-    try:
-        log_query = text("""
-            INSERT INTO mrsa_risk_assessments 
-            (ward, sample_type, predicted_probability, risk_band, model_version, clinical_features)
-            VALUES (:ward, :sample, :prob, :band, :ver, :feats)
-            RETURNING id
-        """)
-        inserted_id = db.execute(log_query, {
-            "ward": request.ward,
-            "sample": request.sample_type,
-            "prob": result["mrsa_probability"],
-            "band": result["risk_band"],
-            "ver": result.get("model_version", "unknown"),
-            "feats": json.dumps(request.dict())
-        }).scalar()
-        
-        db.commit()
-        result['assessment_id'] = inserted_id
-    except Exception as e:
-        print(f"⚠️ Failed to log MRSA prediction: {e}")
-        # We generally don't block the response if logging fails, but in a strict CDSS we might.
-        # For now, print error and proceed.
+# --- Stage E: Analytics & Governance Endpoints ---
+from mrsa_analytics_service import mrsa_analytics_service
+from mrsa_schemas import GovernanceDecisionCreate
 
-    return result
-
-@app.get("/api/mrsa/explain/{assessment_id}")
-async def explain_mrsa_risk(assessment_id: int, db: Session = Depends(get_db)):
-    """
-    Stage F: Explainability Endpoint (The 'Why?').
-    Returns the top factors driving the MRSA risk for a specific assessment.
-    Uses SHAP TreeExplainer.
-    """
+@app.get("/api/mrsa/analytics/summary")
+async def get_analytics_summary():
+    db = SessionLocal()
     try:
-        explanation = predictor.explain_prediction(db, assessment_id)
-        if "error" in explanation:
-            raise HTTPException(status_code=404, detail=explanation["error"])
-        return explanation
-    except Exception as e:
-        logger.error(f"Explanation Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return mrsa_analytics_service.get_summary(db)
+    finally:
+        db.close()
+
+@app.get("/api/mrsa/analytics/heatmap")
+async def get_ward_risk_heatmap():
+    db = SessionLocal()
+    try:
+        return mrsa_analytics_service.get_ward_risk_heatmap(db)
+    finally:
+        db.close()
+
+@app.post("/api/mrsa/governance/decision")
+async def log_governance_decision(decision: GovernanceDecisionCreate):
+    # Todo: Add User Auth Context (RBAC) here.
+    # For now, using mock 'Admin' user.
+    admin_user = "admin_user" 
+    db = SessionLocal()
+    try:
+        mrsa_analytics_service.log_decision(db, decision, admin_user)
+        return {"status": "Logged"}
+    finally:
+        db.close()
+
+@app.post("/api/mrsa/predict", response_model=MRSAPredictionResponse, tags=["MRSA"])
+async def predict_mrsa_risk(
+    request: MRSAPredictionRequest, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate MRSA Risk Assessment (Pre-AST).
+    Strictly restricted to Staphylococcus aureus inputs.
+    """
+    return mrsa_service.predict(db, request)
+
+@app.get("/api/mrsa/explain/{assessment_id}", response_model=MRSAExplanationResponse, tags=["MRSA"])
+async def explain_mrsa_risk(
+    assessment_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Explain a specific risk assessment using stored snapshot.
+    """
+    return mrsa_service.explain(db, assessment_id)
+
+# ============================================
+# Master Data Routes
+# ============================================
+@app.get("/api/master/definitions/{category}", response_model=List[MasterDefinitionResponse], tags=["Configuration"])
+def get_master_definitions(category: str, db: Session = Depends(get_db)):
+    """Fetch active options for a category (WARD, SAMPLE_TYPE)"""
+    return MasterDataService.get_definitions_by_category(db, category)
+
+@app.post("/api/master/definitions", response_model=MasterDefinitionResponse, tags=["Configuration"])
+def create_master_definition(def_in: MasterDefinitionCreate, db: Session = Depends(get_db)):
+    """Add a new option to master data"""
+    return MasterDataService.create_definition(db, def_in)
+
+@app.delete("/api/master/definitions/{id}", tags=["Configuration"])
+def delete_master_definition(id: int, db: Session = Depends(get_db)):
+    """Soft delete a master data definition"""
+    return MasterDataService.delete_definition(db, id)
 
 # ============================================
 # Startup/Shutdown Events

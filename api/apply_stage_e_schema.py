@@ -1,3 +1,19 @@
+import os
+from sqlalchemy import create_engine, text
+
+# Get DB URL from env
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+def apply_schema():
+    if not DATABASE_URL:
+        print("ERROR: DATABASE_URL not set.")
+        return
+
+    print("🔌 Connecting to Database...")
+    engine = create_engine(DATABASE_URL)
+    
+    # Embedded SQL for Stage E Schema
+    sql_content = """
 -- Stage E: Performance & Governance Schema
 
 -- 1. Performance Snapshots (Aggregated Metrics)
@@ -41,3 +57,15 @@ CREATE TABLE IF NOT EXISTS mrsa_governance_decisions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_gov_date ON mrsa_governance_decisions(decision_date);
+    """
+    
+    with engine.connect() as conn:
+        print("⚡ Applying Stage E Schema...")
+        # Split by ; for safety if simple execute doesn't handle multiple
+        # But SQLAlchemy usually handles block if passed properly. Text() is safer for scripts.
+        conn.execute(text(sql_content))
+        conn.commit()
+        print("✅ Stage E Schema Applied Successfully.")
+
+if __name__ == "__main__":
+    apply_schema()

@@ -1,27 +1,6 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database Service
-  db:
-    image: postgres:16-alpine
-    container_name: ast_postgres
-    restart: always
-    environment:
-      POSTGRES_USER: ast_user
-      POSTGRES_PASSWORD: ast_password_2024
-      POSTGRES_DB: ast_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/02_init.sql
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ast_user -d ast_db" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # FastAPI Backend Service
   api:
     build:
@@ -32,16 +11,17 @@ services:
     volumes:
       - ./api:/app
       - model_data:/app/models/best_models
+      - ./api/models/mrsa_artifacts:/app/models/mrsa_artifacts
       - ./Raw:/app/data/raw
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://ast_user:ast_password_2024@db:5432/ast_db
+      DATABASE_URL: postgresql://postgres.zdhvyhijuriggezelyxq:Yohan%26pasi80253327@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require
       PYTHONUNBUFFERED: 1
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   # React Frontend Service
   frontend:
@@ -63,8 +43,6 @@ services:
     tty: true
 
 volumes:
-  postgres_data:
-    driver: local
   model_data:
     driver: local
 
