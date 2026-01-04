@@ -1,350 +1,276 @@
-import joblib
 import pandas as pd
 import numpy as np
-import os
+import joblib
 import json
+import shap
+import os
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from fastapi import HTTPException
+from mrsa_schemas import MRSAPredictionRequest, MRSAPredictionResponse, MRSAExplanationResponse
 from datetime import datetime
 
-class MRSAPredictor:
-    def __init__(self, artifact_dir="/app/models/mrsa_artifacts"):
-        self.artifact_dir = artifact_dir
-        self.model = None
-        self.scaler = None
-        self.model_version = "XGB_v1"
-        self.loaded = False
-        
-    def load_artifacts(self):
-        """Loads model and scaler from disk."""
+ARTIFACT_DIR = r'/app/models/mrsa_artifacts' if os.path.exists('/app/models/mrsa_artifacts') else r'd:\Yohan\Project\api\models\mrsa_artifacts'
+
+class MRSAService:
+    def __init__(self):
+        self.pipeline = None
+        self.feature_columns = None
+        self.model_version = "RF_v1"
+        self._load_artifacts()
+
+    def _load_artifacts(self):
+        print(f"Loading MRSA Artifacts from {ARTIFACT_DIR}...")
         try:
-            print(f"🔄 Loading MRSA artifacts from {self.artifact_dir}...")
-            self.model = joblib.load(os.path.join(self.artifact_dir, "mrsa_xgb_model.pkl"))
-            self.scaler = joblib.load(os.path.join(self.artifact_dir, "scaler.pkl"))
-            # We also might need feature columns if we want to be strict, but for now we'll reconstruct in order
-            self.loaded = True
-            print("✅ MRSA Model loaded successfully.")
+            self.pipeline = joblib.load(os.path.join(ARTIFACT_DIR, 'mrsa_rf_pipeline.pkl'))
+            with open(os.path.join(ARTIFACT_DIR, 'feature_columns.json'), 'r') as f:
+                self.feature_columns = json.load(f)
+            
+            # Pre-compute SHAP explainer (Background dataset for expected value)
+            # Using specific tree explainer on the classifier part
+            # Note: For strict exactness we iterate, but for speed we cache
+            self.classifier = self.pipeline.named_steps['classifier']
+            self.preprocessor = self.pipeline.named_steps['preprocessor']
+            
+            print("✅ MRSA Service Ready.")
         except Exception as e:
-            print(f"❌ Failed to load MRSA model: {e}")
-            self.loaded = False
+            print(f"❌ Failed to load MRSA artifacts: {e}")
+            self.pipeline = None
 
-    def predict(self, features: dict):
-        """
-        Predicts MRSA risk based on input features.
-        Returns dict with probability, risk_band, and message.
-        """
-        if not self.loaded:
-            self.load_artifacts()
-            if not self.loaded:
-                return {"error": "Model not loaded"}
+    def predict(self, db: Session, request: MRSAPredictionRequest) -> MRSAPredictionResponse:
+        # 1. Runtime Isolation Guard
+        forbidden = ["forecast", "antibiotic", "week", "future"]
+        req_dict = request.dict()
+        if any(k in req_dict for k in forbidden):
+             raise HTTPException(status_code=400, detail="Security Rejection: Forbidden forecasting fields detected.")
 
-        # 1. Preprocess Input
-        # Create DataFrame from input dict (single row)
-        input_df = pd.DataFrame([features])
+        # 2. DataFrame Construction
+        input_data = pd.DataFrame([req_dict])
         
-        # A. Handle Categoricals & Missing (Simple imputation or defaults)
-        # Assuming input is validated by Pydantic before this, but let's be safe
-        
-        # B. Encoding
-        # Cell Count Ordinal Map
-        cell_count_raw = str(features.get('cell_count', '0')).lower().strip()
-        cell_map = {
-            'none': 0, 'no wc': 0, 'not seen': 0, '0': 0,
-            'rare': 1, '+': 1, 'scanty': 1,
-            'few': 2, '++': 2,
-            'moderate': 3, '+++': 3,
-            'many': 4, 'plenty': 4, '++++': 4,
-            'unknown': 0
-        }
-        cell_count_encoded = cell_map.get(cell_count_raw, 0)
-        
-        # One-Hot Encoding (Manual reconstruction to match training columns)
-        # The model expects specific columns. We need to recreate the exact feature vector.
-        # This is tricky without the saved feature list.
-        # Let's load the feature list.
+        # 3. Consensus Prediction (Delegated)
         try:
-            with open(os.path.join(self.artifact_dir, "feature_columns.json"), "r") as f:
-                model_columns = json.load(f)
-        except Exception as e:
-            return {"error": "Feature columns definition missing"}
-
-        # Prepare a base dict with 0s for all model columns
-        processed_data = {col: 0 for col in model_columns}
-        
-        # Fill Numeric
-        processed_data['age'] = float(features.get('age', 0))
-        processed_data['growth_time'] = float(features.get('growth_time', 0))
-        processed_data['cell_count_encoded'] = float(cell_count_encoded)
-        
-        # Fill Categorical (One-Hot)
-        # e.g. 'ward_ICU' -> 1
-        ward = features.get('ward', 'Unknown')
-        gender = features.get('gender', 'Unknown')
-        sample = features.get('sample_type', 'Unknown')
-        pus = features.get('pus_type', 'Unknown')
-        gram = features.get('gram_positivity', 'Unknown')
-        
-        # Helper to set bit
-        def set_bit(prefix, value):
-             col_name = f"{prefix}_{value}"
-             if col_name in processed_data:
-                 processed_data[col_name] = 1
-        
-        set_bit('ward', ward)
-        set_bit('gender', gender)
-        set_bit('sample_type', sample)
-        set_bit('pus_type', pus)
-        set_bit('gram_positivity', gram)
-        
-        # Convert to DataFrame in correct order
-        X_final = pd.DataFrame([processed_data], columns=model_columns)
-        
-        # C. Scaling (Numeric only)
-        num_cols = ['age', 'growth_time', 'cell_count_encoded']
-        X_final[num_cols] = self.scaler.transform(X_final[num_cols])
-        
-        # 2. Predict
-        prob = float(self.model.predict_proba(X_final)[0][1])
-        
-        # 3. Threshold Logic
-        if prob >= 0.60:
-            risk = "RED"
-            msg = "High MRSA risk. Initiate MRSA-active therapy."
-        elif prob >= 0.30:
-            risk = "AMBER"
-            msg = "Intermediate MRSA risk. Review empirical choice."
-        else:
-            risk = "GREEN"
-            msg = "Low MRSA risk. Standard therapy acceptable."
+            from mrsa_consensus_service import consensus_service
+            # This handles prediction, logic, and auditing
+            result = consensus_service.predict_consensus(input_data)
             
-        return {
-            "mrsa_probability": round(prob, 4),
-            "risk_band": risk,
-            "message": msg,
-            "model_version": self.model_version,
-            "timestamp": datetime.now().isoformat()
-        }
-
-    def validate_prediction(self, db_session, entry_data):
-        """
-        Stage D: Post-AST Validation.
-        Triggered when AST results are saved.
-        Checks for Staph Aureus + Cefoxitin (FOX) and validates against previous prediction.
-        """
-        # 1. Filter Scope (Staphylococcus aureus only)
-        # Handle case-insensitive check
-        org = str(entry_data.organism).lower()
-        if "staph" not in org or "aureus" not in org:
-            return # Not in scope
+            # Extract Core Values for compatibility
+            # We use RF probability as the "Primary Probability" for continuity
+            prob = result['models']['rf']['prob']
             
-        # 2. Check for Cefoxitin (FOX) Result
-        fox_result = None
-        for res in entry_data.results:
-            if "cefoxitin" in str(res.antibiotic).lower() or "fox" in str(res.antibiotic).lower():
-                fox_result = res.result # 'S', 'I', 'R'
-                break
-        
-        if not fox_result:
-            return # No ground truth
+            # But the RISK BAND is the CONSENSUS BAND
+            band = result['consensus_band']
             
-        # 3. Define Ground Truth
-        # simple rule: R -> MRSA (True), S -> MSSA (False) (Ignoring I for now or treating as R)
-        actual_mrsa = (fox_result.upper() == 'R')
-        
-        # 4. Find Matching Prediction
-        # Heuristic: Find most recent prediction for this Ward + Same Sample Type
-        # In a real system, we'd use Patient ID / Visit ID.
-        from sqlalchemy import text
-        try:
-            query = text("""
-                SELECT id, predicted_probability, risk_band, model_version
-                FROM mrsa_risk_assessments
-                WHERE ward = :ward AND sample_type = :sample
-                ORDER BY timestamp DESC
-                LIMIT 1
-            """)
+            # Message logic based on Consensus Band & Confidence
+            confidence = result['confidence_level']
             
-            # Map simplified sample types if needed (e.g. "Blood Culture" -> "Blood")
-            # For now usage exact match or simple mapping
-            sample_type = entry_data.specimen_type
-            
-            pred_row = db_session.execute(query, {
-                "ward": entry_data.ward, 
-                "sample": sample_type
-            }).fetchone()
-            
-            if not pred_row:
-                print(f"⚠️ Validation Skipped: No prior prediction found for {entry_data.ward}/{sample_type}")
-                return
-
-            pred_id = pred_row[0]
-            prob = pred_row[1]
-            risk_band = pred_row[2]
-            version = pred_row[3]
-            
-            # 5. Determine Prediction (RED = MRSA)
-            predicted_mrsa = (prob >= 0.60)
-            
-            # 6. Compare
-            is_correct = (actual_mrsa == predicted_mrsa)
-            
-            # 7. Log Validation
-            log_query = text("""
-                INSERT INTO mrsa_validation_log
-                (prediction_id, ward, predicted_probability, predicted_risk_band, 
-                 actual_mrsa, prediction_correct, model_version)
-                VALUES (:pid, :ward, :prob, :band, :actual, :correct, :ver)
-            """)
-            
-            db_session.execute(log_query, {
-                "pid": pred_id,
-                "ward": entry_data.ward,
-                "prob": prob,
-                "band": risk_band,
-                "actual": actual_mrsa,
-                "correct": is_correct,
-                "ver": version
-            })
-            db_session.commit()
-            print(f"✅ MRSA Validation Logged: Actual={actual_mrsa}, Pred={predicted_mrsa}, Correct={is_correct}")
-            
-        except Exception as e:
-            print(f"❌ Validation Error: {e}")
-
-    def explain_prediction(self, db_session, assessment_id: int):
-        """
-        Stage F: Explainability Layer (The 'Why').
-        Generates feature attribution using SHAP TreeExplainer for the given assessment.
-        """
-        import shap
-        import pandas as pd
-        import json
-        import json
-        from sqlalchemy import text
-        
-        # Ensure model is checked/loaded
-        if not self.loaded:
-            self.load_artifacts()
-            if not self.loaded:
-                return {"error": "Model not loaded"}
-        
-        # 1. Fetch Assessment Data
-        query = text("SELECT clinical_features, model_version FROM mrsa_risk_assessments WHERE id = :id")
-        row = db_session.execute(query, {"id": assessment_id}).fetchone()
-        
-        if not row:
-            return {"error": "Assessment not found"}
-            
-        features_json = row[0]
-        model_version = row[1]
-        
-        # Check if already a dict (SQLAlchemy JSON/JSONB auto-conversion)
-        if isinstance(features_json, dict):
-            input_data = features_json
-        else:
-            input_data = json.loads(features_json)
-        
-        # 2. Preprocess Input (Recreate X vector)
-        # Note: We must replicate the EXACT dataframe structure used in training
-        # For efficiency, we reuse the internal helper if possible, or reconstruct manually
-        # Here we reconstruct manually carefully mapping to what 'predict' does
-        
-        # ... (Reusing logic from predict to build dataframe)
-        # Ideally refactor 'predict' to return processed X, but for now we rebuild:
-        df = pd.DataFrame([input_data])
-        
-        # Fill NA (same as training)
-        df['age'] = pd.to_numeric(df['age'], errors='coerce').fillna(50) # median approx
-        df['growth_time'] = pd.to_numeric(df['growth_time'], errors='coerce').fillna(24) # median
-        
-        # Encoding
-        if 'cell_count' in df.columns:
-            cell_map = {'none':0, 'no wc':0, 'not seen':0, '0':0, 'rare':1, '+':1, 'scanty':1, 'few':2, '++':2, 'moderate':3, '+++':3, 'many':4, 'plenty':4, '++++':4, 'unknown':0}
-            df['cell_count_encoded'] = df['cell_count'].astype(str).str.lower().str.strip().map(cell_map).fillna(0)
-            df = df.drop(columns=['cell_count'])
-        else:
-            df['cell_count_encoded'] = 0
-            
-        # One Hot (Need to match training columns exactly)
-        # Load feature columns from artifact
-        try:
-            with open(os.path.join(self.artifact_dir, "feature_columns.json"), "r") as f:
-                model_cols = json.load(f)
-        except:
-            return {"error": "Feature definition not found"}
-            
-        # Create dummies
-        cat_cols = ['ward', 'gender', 'sample_type', 'pus_type', 'gram_positivity']
-        for c in cat_cols:
-            if c not in df.columns: df[c] = 'Unknown'
-            
-        df_encoded = pd.get_dummies(df, columns=[c for c in cat_cols if c in df.columns], drop_first=True)
-        
-        # Align columns
-        for col in model_cols:
-            if col not in df_encoded.columns:
-                df_encoded[col] = 0
-        df_final = df_encoded[model_cols]
-        
-        # Scale (using loaded scaler)
-        num_cols = ['age', 'growth_time', 'cell_count_encoded']
-        df_final[num_cols] = self.scaler.transform(df_final[num_cols])
-        
-        # 3. Calculate SHAP Values
-        # TreeExplainer is efficient for RF/XGB
-        explainer = shap.TreeExplainer(self.model)
-        shap_values = explainer.shap_values(df_final)
-        
-        # For Classification, shap_values is list [class0, class1]. We want class1 (MRSA=True)
-        # Random Forest shap_values might be array (n_samples, n_features, n_classes) or list
-        if isinstance(shap_values, list):
-            # Class 1 is usually index 1
-            vals = shap_values[1][0] 
-        else:
-            # If standard array (binary)
-            if len(shap_values.shape) == 3:
-                vals = shap_values[0, :, 1]
+            if band == "GREEN":
+                msg = "MRSA unlikely. Standard empiric therapy."
+            elif band == "AMBER":
+                msg = "Intermediate Risk. Review risk factors."
             else:
-                 vals = shap_values[0] # Fallback
-                 
-        # 4. Rank Features
-        explanation_list = []
-        feature_names = df_final.columns
-        
-        for i, val in enumerate(vals):
-            if abs(val) > 0.001: # Filter tiny contributions
-                direction = "increase" if val > 0 else "decrease"
-                explanation_list.append({
-                    "feature": feature_names[i],
-                    "contribution": float(val),
-                    "direction": direction,
-                    "impact_score": abs(float(val))
-                })
-        
-        # Sort by impact
-        explanation_list.sort(key=lambda x: x['impact_score'], reverse=True)
-        top_features = explanation_list[:5] # Top 5
-        
-        # 5. Persist to DB
-        # Check if already exists? (Optional, but good explanation is unchanging)
-        # For now, we insert.
-        ins_query = text("""
-            INSERT INTO mrsa_explanations (assessment_id, feature, contribution, direction, model_version)
-            VALUES (:aid, :feat, :cont, :dir, :ver)
-        """)
-        
-        for item in top_features:
-            db_session.execute(ins_query, {
-                "aid": assessment_id,
-                "feat": item["feature"],
-                "cont": item["contribution"],
-                "dir": item["direction"],
-                "ver": model_version
-            })
-        db_session.commit()
-        
-        return {
-            "assessment_id": assessment_id,
-            "explanations": top_features
-        }
+                msg = "High Risk. Consider anti-MRSA coverage."
+                
+            if confidence != "HIGH":
+                msg += f" (Note: Confidence is {confidence} due to model disagreement)"
 
-# Global Instance
-predictor = MRSAPredictor()
+            # We need the ID from the DB. Consensus service did the inert, but we need to fetch the ID?
+            # Actually consensus_service.predict_consensus accepts an ID if we want to update.
+            # But we need to CREATE the record first or let consensus service create it?
+            # The previous logic created it.
+            # Let's let consensus service CREATE it.
+            # Wait, my previous implementation of predict_consensus UPDATEs if ID provided.
+            # I need to Create first.
+            
+            # Creating Audit Record Initial Placeholder
+            sql = text("""
+                INSERT INTO mrsa_risk_assessments 
+                (ward, sample_type, mrsa_probability, risk_band, model_version, input_snapshot)
+                VALUES (:ward, :sample, :prob, :band, :ver, :snap)
+                RETURNING id
+            """)
+            audit_res = db.execute(sql, {
+                "ward": request.ward,
+                "sample": request.sample_type,
+                "prob": prob,
+                "band": band,
+                "ver": "C5_Consensus",
+                "snap": json.dumps(req_dict)
+            })
+            db.commit()
+            assessment_id = audit_res.fetchone()[0]
+            
+            # Now Update with Full Consensus Details
+            consensus_service.predict_consensus(input_data, assessment_id=assessment_id)
+            
+        except Exception as e:
+            db.rollback()
+            # Fallback to simple RF if consensus fails? No, fail hard for safety.
+            print(f"Prediction/Consensus Failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+        return MRSAPredictionResponse(
+            assessment_id=assessment_id,
+            mrsa_probability=prob,
+            risk_band=band,
+            stewardship_message=msg,
+            model_version=result['consensus_version'],
+            input_snapshot=req_dict,
+            consensus_details=result
+        )
+
+    def explain(self, db: Session, assessment_id: int) -> MRSAExplanationResponse:
+        # 1. Fetch Snapshot (Guaranteed consistency)
+        sql = text("SELECT input_snapshot, risk_band FROM mrsa_risk_assessments WHERE id = :id")
+        result = db.execute(sql, {"id": assessment_id}).fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Assessment not found.")
+            
+        snapshot = result[0]
+        risk_band = result[1]
+        
+        # 2. Transform Input using Preprocessor
+        input_df = pd.DataFrame([snapshot])
+        try:
+            X_transformed = self.preprocessor.transform(input_df)
+            
+            # 3. Calculate SHAP
+            # For RF, TreeExplainer is best. 
+            explainer = shap.TreeExplainer(self.classifier)
+            # check_additivity=False because of approximate float precision in sklearn pipeline
+            shap_values = explainer.shap_values(X_transformed, check_additivity=False)
+            
+            # Debug Log
+            print(f"DEBUG: SHAP type={type(shap_values)}")
+            if isinstance(shap_values, list):
+                 print(f"DEBUG: SHAP list len={len(shap_values)} shape0={shap_values[0].shape}")
+            elif hasattr(shap_values, 'shape'):
+                 print(f"DEBUG: SHAP array shape={shap_values.shape}")
+
+            # 4. Handle SHAP return structure
+            # Logic: We want a 1D array of feature contributions for the SINGLE sample we predicted
+            if isinstance(shap_values, list):
+                if len(shap_values) >= 2:
+                     # List of arrays? 
+                     # If shap_values[1] is (1, N), we want index 0
+                     temp = shap_values[1]
+                else:
+                     temp = shap_values[0]
+            else:
+                temp = shap_values
+
+            # Handle Dimensions
+            # Target: (N_features,) 1D array
+            if len(temp.shape) == 3: 
+                # (Samples, Features, Classes) e.g. (1, 20, 2)
+                # We want Sample 0, All Features, Class 1
+                vals = temp[0, :, 1]
+            elif len(temp.shape) == 2:
+                # (Samples, Features) e.g. (1, 20) OR (Features, Classes)? Usually (1, 20)
+                # If N_feat=20
+                if temp.shape[0] == 1:
+                    vals = temp[0] 
+                else: 
+                     # Suspicious but maybe it is (20, 2)? No, shap usually (Samples, Feats)
+                     vals = temp[0] 
+            else:
+                 vals = temp
+
+            print(f"DEBUG: Final vals shape={vals.shape}")
+
+        except Exception as e:
+            print(f"SHAP Calculation Error: {e}") 
+            raise HTTPException(status_code=500, detail=f"Explanation computation failed: {str(e)}")
+
+        # 4. Map back to feature names
+        try:
+            # Restore Missing Code
+            ohe_cats = self.preprocessor.named_transformers_['cat'].get_feature_names_out()
+            nums = ['age', 'growth_time'] 
+            all_feats = list(nums) + list(ohe_cats) + ['cell_count']
+            
+            print(f"DEBUG: all_feats ({len(all_feats)}): {all_feats}", flush=True)
+            print(f"DEBUG: vals ({len(vals)})", flush=True)
+
+            explanations = []
+            # Ensure proper iteration
+            if len(vals) != len(all_feats):
+                print(f"WARNING: Feature count mismatch! Feats={len(all_feats)}, SHAP={len(vals)}")
+            
+            for name, impact in zip(all_feats, vals):
+                if isinstance(impact, (list, np.ndarray)):
+                     try:
+                        impact = float(impact) 
+                     except:
+                        impact = float(impact[0]) 
+
+                # FILTERING LOGIC: Only show relevant/active features
+                # 1. Minimum Impact Filter
+                if abs(impact) < 0.015: 
+                    continue
+
+                # 2. Domain Specific: Hide Pus Type if Sample is NOT Pus/Wound
+                # "Pus Type" is only relevant for Pus samples. "Unknown" appears otherwise, which is confusing.
+                if "pus_type" in name.lower():
+                     sample_val = str(input_df.iloc[0].get("sample_type", "")).lower()
+                     if "pus" not in sample_val and "wound" not in sample_val:
+                         continue
+
+                # 3. Inactive Category Filter
+                # Note: Feature names are like 'ward_ICU', 'sample_type_Blood' (No cat__ prefix)
+                found_col = None
+                known_cols = ['ward', 'sample_type', 'pus_type', 'gram_positivity', 'gender']
+                
+                for col in known_cols:
+                        # Check strictly for "colname_" to avoid partial matches
+                        # e.g. "ward_" matches "ward_ICU"
+                        prefix = f"{col}_"
+                        if name.startswith(prefix):
+                            found_col = col
+                            break
+                
+                if found_col:
+                    # Extract the value part from the feature name
+                    # e.g. ward_ICU -> ICU
+                    feature_val_suffix = name.replace(f"{found_col}_", "")
+                    
+                    # Get actual input value
+                    actual_val = str(input_df.iloc[0].get(found_col, ""))
+                    
+                    # Normalizing comparison (Case insensitive stripping)
+                    if actual_val.lower().strip() != feature_val_suffix.lower().strip():
+                        # Double check for spaces/underscores (e.g. "Ward 01" vs "Ward_01")
+                        suffix_clean = feature_val_suffix.replace("_", " ").lower().strip()
+                        actual_clean = actual_val.replace("_", " ").lower().strip()
+                        
+                        if actual_clean != suffix_clean:
+                            continue
+
+                clean_name = name.replace("cat__", "").replace("remainder__", "").replace("_", " ").title()
+                # Safe get for display value
+                display_val = ""
+                # Try to find which original column this feature belongs to for display
+                for col in ['age', 'growth_time', 'cell_count', 'ward', 'sample_type', 'pus_type', 'gram_positivity', 'gender']:
+                    if col in name.lower():
+                        display_val = str(input_df.iloc[0].get(col, ""))
+                        break
+                
+                explanations.append({
+                    "feature": clean_name,
+                    "impact": float(impact),
+                    "value": display_val
+                })
+            
+            explanations.sort(key=lambda x: abs(x['impact']), reverse=True)
+            
+            return MRSAExplanationResponse(
+                assessment_id=assessment_id,
+                risk_band=risk_band,
+                explanations=explanations[:10] # Top 10
+            )
+            
+        except Exception as e:
+            print(f"Feature mapping failed: {e}")
+            raise HTTPException(status_code=500, detail="Could not map explanations.")
+
+mrsa_service = MRSAService()

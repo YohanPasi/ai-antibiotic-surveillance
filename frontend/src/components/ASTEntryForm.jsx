@@ -6,7 +6,8 @@ const DRUG_PANELS = {
     'Pseudomonas aeruginosa': ['Meropenem (MEM)', 'Ceftazidime (CAZ)', 'Ciprofloxacin (CIP)', 'Amikacin (AK)', 'Piperacillin-Tazobactam (TZP)'],
     'Acinetobacter spp.': ['Meropenem (MEM)', 'Imipenem (IPM)', 'Ampicillin-Sulbactam (SAM)', 'Ciprofloxacin (CIP)', 'Gentamicin (CN)'],
     'Escherichia coli': ['Ampicillin (AMP)', 'Cefuroxime (CXM)', 'Ceftriaxone (CRO)', 'Gentamicin (CN)', 'Imipenem (IPM)'],
-    'Klebsiella pneumoniae': ['Amoxicillin-Clavulanate (AMC)', 'Ceftazidime (CAZ)', 'Ciprofloxacin (CIP)', 'Meropenem (MEM)']
+    'Klebsiella pneumoniae': ['Amoxicillin-Clavulanate (AMC)', 'Ceftazidime (CAZ)', 'Ciprofloxacin (CIP)', 'Meropenem (MEM)'],
+    'Staphylococcus aureus': ['Cefoxitin (FOX)', 'Vancomycin (VA)', 'Clindamycin (DA)', 'Erythromycin (E)', 'Linezolid (LZD)']
 };
 
 const ASTEntryForm = ({ isOpen, onClose, onEntrySaved }) => {
@@ -27,11 +28,45 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved }) => {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
+    // Master Data State
+    const [wardOptions, setWardOptions] = useState([]);
+    const [specimenOptions, setSpecimenOptions] = useState([]);
+
     // Auto-Populate Panel on Organism Change
     useEffect(() => {
         const defaults = DRUG_PANELS[metadata.organism] || [];
         setPanel(defaults.map((drug, idx) => ({ id: idx, antibiotic: drug, result: '' })));
     }, [metadata.organism]);
+
+    // Fetch Master Data on Mount
+    useEffect(() => {
+        const fetchMasterData = async () => {
+            try {
+                const [wardsRes, specimenRes] = await Promise.all([
+                    fetch(`${import.meta.env.VITE_API_URL}/api/master/definitions/WARD`),
+                    fetch(`${import.meta.env.VITE_API_URL}/api/master/definitions/SAMPLE_TYPE`)
+                ]);
+
+                if (wardsRes.ok) {
+                    const wards = await wardsRes.json();
+                    setWardOptions(wards);
+                    // Set default to first ward if not set or if current default "ICU" is invalid? 
+                    // Keeping "ICU" as safe default for now, or use first fetched val.
+                    if (wards.length > 0) setMetadata(prev => ({ ...prev, ward: wards[0].value }));
+                }
+
+                if (specimenRes.ok) {
+                    const specs = await specimenRes.json();
+                    setSpecimenOptions(specs);
+                    if (specs.length > 0) setMetadata(prev => ({ ...prev, specimen_type: specs[0].value }));
+                }
+
+            } catch (err) {
+                console.error("Failed to fetch master data", err);
+            }
+        };
+        fetchMasterData();
+    }, []);
 
     if (!isOpen) return null;
 
@@ -122,13 +157,19 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved }) => {
                         <div>
                             <label className="block text-xs text-gray-400 mb-1">Ward</label>
                             <select name="ward" value={metadata.ward} onChange={handleMetaChange} className="w-full form-select bg-gray-800 border-gray-700 rounded text-sm text-gray-200">
-                                <option>ICU</option><option>Ward 02</option><option>Ward 05</option><option>A&E</option>
+                                {wardOptions.map(wd => (
+                                    <option key={wd.id} value={wd.value}>{wd.label}</option>
+                                ))}
+                                {wardOptions.length === 0 && <option value="ICU">ICU (Default)</option>}
                             </select>
                         </div>
                         <div>
                             <label className="block text-xs text-gray-400 mb-1">Specimen</label>
                             <select name="specimen_type" value={metadata.specimen_type} onChange={handleMetaChange} className="w-full form-select bg-gray-800 border-gray-700 rounded text-sm text-gray-200">
-                                <option>Urine</option><option>Blood</option><option>Pus</option><option>ET Tube</option>
+                                {specimenOptions.map(sp => (
+                                    <option key={sp.id} value={sp.value}>{sp.label}</option>
+                                ))}
+                                {specimenOptions.length === 0 && <option value="Urine">Urine (Default)</option>}
                             </select>
                         </div>
                         <div>
@@ -138,6 +179,7 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved }) => {
                                 <option>Acinetobacter spp.</option>
                                 <option>Escherichia coli</option>
                                 <option>Klebsiella pneumoniae</option>
+                                <option>Staphylococcus aureus</option>
                             </select>
                         </div>
                         <input type="text" name="lab_no" placeholder="Lab No" onChange={handleMetaChange} className="bg-gray-800 border-gray-700 rounded p-2 text-sm text-gray-300" />
@@ -189,8 +231,8 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved }) => {
                                                         type="button"
                                                         onClick={() => handleResultChange(row.id, opt)}
                                                         className={`w-8 h-8 rounded-full font-bold text-xs transition-colors border ${row.result === opt
-                                                                ? (opt === 'S' ? 'bg-green-600 border-green-400 text-white' : opt === 'R' ? 'bg-red-600 border-red-400 text-white' : 'bg-yellow-600 border-yellow-400 text-white')
-                                                                : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'
+                                                            ? (opt === 'S' ? 'bg-green-600 border-green-400 text-white' : opt === 'R' ? 'bg-red-600 border-red-400 text-white' : 'bg-yellow-600 border-yellow-400 text-white')
+                                                            : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'
                                                             }`}
                                                     >
                                                         {opt}
