@@ -2,17 +2,12 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
 class MRSAPredictionRequest(BaseModel):
-<<<<<<< HEAD
     """
     Contract for Pre-AST MRSA Risk Assessment.
     Strictly forbids forecasting or antibiotic fields.
     """
     age: int = Field(..., ge=0, le=120)
     gender: str = Field(..., pattern="^(Male|Female|Unknown)$")
-=======
-    age: Optional[int] = 0
-    gender: Optional[str] = "Unknown"
->>>>>>> c8d68085e364370dce8a93220bcba430401fba25
     ward: str
     sample_type: Optional[str] = "Unknown"
     pus_type: Optional[str] = "Unknown"
