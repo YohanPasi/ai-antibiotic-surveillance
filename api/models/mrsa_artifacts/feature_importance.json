@@ -1,0 +1,82 @@
+[
+  {
+    "feature": "age",
+    "importance": 0.6624608825411192
+  },
+  {
+    "feature": "growth_time",
+    "importance": 0.11562803362087201
+  },
+  {
+    "feature": "pus_type_Blood-stained",
+    "importance": 0.01535762665389725
+  },
+  {
+    "feature": "pus_type_Thin",
+    "importance": 0.015109458121773254
+  },
+  {
+    "feature": "ward_Icu",
+    "importance": 0.014885921087266283
+  },
+  {
+    "feature": "pus_type_Thick",
+    "importance": 0.014848900067931624
+  },
+  {
+    "feature": "pus_type_Unknown",
+    "importance": 0.014380632195664097
+  },
+  {
+    "feature": "ward_Ward 01",
+    "importance": 0.014343382492747156
+  },
+  {
+    "feature": "ward_Ward 02",
+    "importance": 0.014309768164527004
+  },
+  {
+    "feature": "sample_type_Pus/Wound",
+    "importance": 0.013868425015848002
+  },
+  {
+    "feature": "gram_positivity_GPC",
+    "importance": 0.012407373599314752
+  },
+  {
+    "feature": "gender_Male",
+    "importance": 0.01227770889490624
+  },
+  {
+    "feature": "gram_positivity_Unknown",
+    "importance": 0.012203695404630462
+  },
+  {
+    "feature": "sample_type_Urine",
+    "importance": 0.012179231643305906
+  },
+  {
+    "feature": "sample_type_Blood",
+    "importance": 0.012177850794237962
+  },
+  {
+    "feature": "gender_Female",
+    "importance": 0.012036508926085017
+  },
+  {
+    "feature": "ward_A&E",
+    "importance": 0.011825540928033345
+  },
+  {
+    "feature": "ward_Opd",
+    "importance": 0.011474895706944136
+  },
+  {
+    "feature": "ward_O/C",
+    "importance": 0.008224164140896242
+  },
+  {
+    "feature": "cell_count",
+    "importance": 0.0
+  }
+]

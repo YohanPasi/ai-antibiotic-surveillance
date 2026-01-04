@@ -1,0 +1,8 @@
+{
+    "AUC": 0.516,
+    "Accuracy": 0.6272,
+    "Sensitivity": 0.0283,
+    "Specificity": 0.9553,
+    "NPV": 0.6422,
+    "PPV": 0.2571
+}

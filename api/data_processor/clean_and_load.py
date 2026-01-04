@@ -16,16 +16,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Database connection parameters
-DB_PARAMS = {
-    'host': os.getenv('DB_HOST', 'db'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'ast_db'),
-    'user': os.getenv('DB_USER', 'ast_user'),
-    'password': os.getenv('DB_PASSWORD', 'ast_password_2024')
-}
+# Database connection parameters
+DATABASE_URL = os.getenv('DATABASE_URL')
+
 
 # File path
-EXCEL_FILE_PATH = '/app/data/raw/Stage_D_Expanded_10000_Final_Schema_Aligned.xlsx'
+EXCEL_FILE_PATH = '/app/data/raw/Stage_D_Expanded_10000_Final_Schema_Aligned.xlsx.xlsx'
 
 def standardize_sir_value(value):
     """Standardize S/I/R values."""
@@ -97,7 +93,11 @@ def clean_and_load_data():
     
     # Connect
     try:
-        conn = psycopg2.connect(**DB_PARAMS)
+        if not DATABASE_URL:
+            logger.error("❌ DATABASE_URL missing")
+            return False
+            
+        conn = psycopg2.connect(DATABASE_URL)
         cursor = conn.cursor()
     except Exception as e:
         logger.error(f"✗ Database Error: {e}")
@@ -109,6 +109,7 @@ def clean_and_load_data():
     
     accepted_count = 0
     rejected_count = 0
+    batch_data = []
     
     for idx, row in df.iterrows():
         try:
@@ -150,8 +151,6 @@ def clean_and_load_data():
             insert_query = """
                 INSERT INTO ast_raw_data (
                     date, ward, sub_organism, organism_group, antibiotic_results,
-                    
-                    -- Explicitly NULL out restricted PII columns even if DB has them
                     lab_no, age, gender, bht_no
                 ) VALUES (
                     %s, %s, %s, 'NonFermenters', %s,
@@ -159,17 +158,27 @@ def clean_and_load_data():
                 )
             """
             
-            cursor.execute(insert_query, (
+            # Batch Collection
+            batch_data.append((
                 date_val, ward_val, final_organism, Json(antibiotic_results)
             ))
             
             accepted_count += 1
-            if accepted_count % 100 == 0:
-                logger.info(f"  Ingested {accepted_count} valid Non-Fermenters...")
-                
+            if len(batch_data) >= 100:
+                 cursor.executemany(insert_query, batch_data)
+                 conn.commit()
+                 batch_data = []
+                 logger.info(f"  Ingested {accepted_count} valid Non-Fermenters...")
+
         except Exception as e:
             logger.error(f"Error row {idx}: {e}")
             continue
+
+    # Insert remaining
+    if batch_data:
+        cursor.executemany(insert_query, batch_data)
+        conn.commit()
+
 
     conn.commit()
     cursor.close()

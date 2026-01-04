@@ -57,34 +57,7 @@ class ASTPanelEntry(BaseModel):
 # Response Schemas
 # ============================================
 
-class PredictionResponse(BaseModel):
-    """Response schema for prediction endpoint"""
-    target_week_start: date = Field(..., description="Target week start date for prediction")
-    predicted_s_percent: float = Field(..., description="Predicted susceptibility percentage")
-    confidence_interval_lower: Optional[float] = Field(None, description="Lower bound of 95% confidence interval")
-    confidence_interval_upper: Optional[float] = Field(None, description="Upper bound of 95% confidence interval")
-    alert_level: str = Field(..., description="Traffic light alert: Green, Amber, or Red")
-    model_used: str = Field(..., description="Model that generated the prediction (SMA, Prophet, ARIMA)")
-    mae_score: float = Field(..., description="Mean Absolute Error of the model")
-    is_ward_level: bool = Field(..., description="Whether prediction is ward-level or organism-level")
-    sample_size: int = Field(..., description="Number of historical data points used")
-    message: Optional[str] = Field(None, description="Additional information or warnings")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "target_week_start": "2025-09-01",
-                "predicted_s_percent": 75.5,
-                "confidence_interval_lower": 68.2,
-                "confidence_interval_upper": 82.8,
-                "alert_level": "Amber",
-                "model_used": "Prophet",
-                "mae_score": 8.3,
-                "is_ward_level": True,
-                "sample_size": 15,
-                "message": None
-            }
-        }
+
 
 class HistoricalDataPoint(BaseModel):
     """Single historical data point"""
@@ -145,6 +118,7 @@ class AvailableOptionsResponse(BaseModel):
         }
 
 class ModelPerformanceMetric(BaseModel):
+    model_config = {"protected_namespaces": ()}
     """Model performance metrics"""
     ward: Optional[str]
     organism: str
@@ -188,6 +162,7 @@ class OptionsResponse(BaseModel):
     antibiotics: List[str]
 
 class ModelPerformance(BaseModel):
+    model_config = {"protected_namespaces": ()}
     """Simple model performance schema"""
     model_name: str
     organism: str
@@ -199,6 +174,7 @@ class ModelPerformance(BaseModel):
 # Redefine PredictionResponse for simpler frontend use
 class PredictionResponse(BaseModel):
     """Simplified prediction response"""
+    model_config = {"extra": "ignore"}
     prediction: float
     lower_bound: Optional[float] = None
     upper_bound: Optional[float] = None
@@ -206,11 +182,11 @@ class PredictionResponse(BaseModel):
     model_used: str
     mae_score: Optional[float] = None
     confidence: str
+    message: Optional[str] = None
+    is_ward_level: Optional[bool] = False
+    sample_size: Optional[int] = 0
 
-# Redefine HistoricalDataPoint for simpler use
-    week_start_date: str
-    susceptibility_percent: float
-    samples: int
+
 
 # ============================================
 # AUTH SCHEMAS

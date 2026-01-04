@@ -36,7 +36,7 @@ DB_PARAMS = {
     'password': os.getenv('DB_PASSWORD', 'ast_password_2024')
 }
 
-MODEL_PATH = "/app/models/lstm_model.pth"
+MODEL_PATH = "/app/models/best_models/lstm_model.pth"
 
 def get_recent_history(cursor, ward, organism, antibiotic, current_week, limit=4):
     """Get the S% history from the previous weeks for LSTM input."""

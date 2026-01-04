@@ -10,6 +10,7 @@ services:
     restart: always
     volumes:
       - ./api:/app
+      - ./database:/app/database_scripts
       - model_data:/app/models/best_models
       - ./api/models/mrsa_artifacts:/app/models/mrsa_artifacts
       - ./Raw:/app/data/raw
@@ -18,10 +19,16 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres.zdhvyhijuriggezelyxq:Yohan%26pasi80253327@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require
       PYTHONUNBUFFERED: 1
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     dns:
       - 8.8.8.8
-      - 8.8.4.4
+      - 1.1.1.1
+    dns_opt:
+      - use-vc
+      - ndots:1
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   
 
   # React Frontend Service
   frontend:
@@ -50,3 +57,7 @@ networks:
   default:
     name: ast_network
     driver: bridge
+
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
