@@ -10,6 +10,7 @@ class MRSAPredictionRequest(BaseModel):
     gender: str = Field(..., pattern="^(Male|Female|Unknown)$")
     ward: str
     sample_type: Optional[str] = "Unknown"
+    sample_type: Optional[str] = "Unknown"
     pus_type: Optional[str] = "Unknown"
     cell_count: int = Field(..., ge=0, le=4, description="Ordinal 0-4")
     gram_positivity: str = Field(..., pattern="^(GPC|Unknown)$")
