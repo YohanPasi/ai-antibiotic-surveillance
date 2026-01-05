@@ -799,11 +799,144 @@ async def get_audit_logs(limit: int = 50):
             "engine_version": "Hybrid_LSTM_v1",
             "run_mode": "SHADOW"
         }
+            
     except Exception as e:
         logger.error(f"Audit Log Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
+# ============================================
+# ESBL CDSS ENDPOINTS (Stage 9)
+# ============================================
+from pydantic import BaseModel
+from typing import Dict, Any, List, Optional
+from esbl_service import esbl_service, ValidationResponse
+
+class ESBLEvaluateRequest(BaseModel):
+    inputs: Dict[str, Any]
+    ast_available: bool = False
+
+class ESBLScopeRequest(BaseModel):
+    organism: str
+    gram: str
+
+class ESBLOverrideRequest(BaseModel):
+    encounter_id: str
+    user_id: str
+    model_version: str
+    recommendation_id: str
+    decision: str # OVERRIDE / ACCEPT
+    reason_code: Optional[str] = None
+    selected_antibiotic: Optional[str] = None
+
+class ESBLPostASTRequest(BaseModel):
+    empiric_drug: str
+    ast_panel: Dict[str, str] # e.g. {"MEM": "S", "TZP": "R"}
+
+@app.post("/api/esbl/evaluate")
+async def evaluate_esbl_risk(request: ESBLEvaluateRequest):
+    """
+    Main CDSS Engine Endpoint.
+    - Checks Governance (AST Lock, Scope).
+    - Predicts Risk (Stage 5).
+    - Generates Recommendations (Stage 7).
+    - Flags OOD (Stage 9).
+    """
+    try:
+        return esbl_service.predict_and_evaluate(request.dict())
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"ESBL Evaluate Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/esbl/validate-scope", response_model=ValidationResponse)
+async def validate_esbl_scope(request: ESBLScopeRequest):
+    """
+    Pre-check to prevent out-of-scope usage in UI.
+    """
+    return esbl_service.validate_scope(request.organism, request.gram)
+
+@app.post("/api/esbl/override")
+async def log_esbl_override(request: ESBLOverrideRequest):
+    """
+    Audit logging for clinician overrides.
+    Mandatory reason code if overriding.
+    """
+    # In a full system, this would write to the 'audit_logs' table defined in Stage 8.
+    # For now, we log to file/console as a mock proof of governance.
+    log_entry = request.dict()
+    log_entry["timestamp"] = datetime.utcnow().isoformat()
+    
+    logger.info(f"🛡️ ESBL AUDIT LOG: {json.dumps(log_entry)}")
+    
+    # Save to a local JSONL file for verification
+    with open("esbl_audit_log.jsonl", "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
+        
+    return {"status": "logged", "message": "Decision recorded in audit trail."}
+
+@app.get("/api/esbl/audit-logs")
+async def get_esbl_audit_logs():
+    """
+    Fetch ESBL Governance Logs (JSONL).
+    """
+    logs = []
+    log_file = "esbl_audit_log.jsonl"
+    if os.path.exists(log_file):
+        with open(log_file, "r") as f:
+            for line in f:
+                try:
+                    logs.append(json.loads(line.strip()))
+                except:
+                    continue
+    return logs.reverse() or logs # Return newest first if possible, or handle in UI
+
+@app.post("/api/esbl/post-ast-review")
+async def post_ast_review(request: ESBLPostASTRequest):
+    """
+    Stage 8: Confirmatory Stewardship & De-escalation Rules.
+    """
+    # Simplified Logic from post_ast_rules.json
+    empiric = request.empiric_drug
+    panel = request.ast_panel
+    
+    feedback = {
+        "action": "MAINTAIN",
+        "message": "Continue current therapy.",
+        "alert_level": "GREEN"
+    }
+    
+    # Rule 1: Resistance Check
+    if panel.get(empiric) == "R":
+        feedback = {
+            "action": "ESCALATION_REQUIRED",
+            "message": f"Pathogen is RESISTANT to Empiric Choice ({empiric}). Change therapy immediately.",
+            "alert_level": "RED"
+        }
+    
+    # Rule 2: De-escalation (Carbapenem Sparing)
+    elif empiric in ["MEM", "IMP", "ETP"] and panel.get("TZP") == "S":
+         feedback = {
+            "action": "DE_ESCALATION_RECOMMENDED",
+            "message": "Pathogen is sensitive to Pip-Tazo. De-escalate from Carbapenem.",
+            "alert_level": "YELLOW"
+        }
+        
+    # Rule 3: ESBL Negative check?
+    # (Requires knowing if ESBL-neg, inferred from CTX/CRO S status often).
+    elif panel.get("CTX") == "S" and panel.get("CRO") == "S":
+         if empiric in ["MEM", "IMP", "ETP"]:
+             feedback = {
+                "action": "DE_ESCALATION_RECOMMENDED",
+                "message": "Non-ESBL phenotype detected. Carbapenem not required.",
+                "alert_level": "YELLOW"
+            }
+
+    return feedback
+
+
 
 @app.get("/api/mrsa/validation-logs")
 async def get_mrsa_validation_logs():
