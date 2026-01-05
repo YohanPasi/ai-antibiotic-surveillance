@@ -20,6 +20,13 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
             ]
         },
         {
+            title: "Clinical Decision Support",
+            items: [
+                { id: 'esbl_cdss', label: 'ESBL Risk Engine', icon: Shield },
+                { id: 'esbl_audit', label: 'Stewardship Logs', icon: FileText },
+            ]
+        },
+        {
             title: "Lab & Configuration",
             items: [
                 { id: 'ast_entry', label: 'Lab Entry', icon: Beaker },
@@ -31,6 +38,7 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
     const [expandedGroups, setExpandedGroups] = useState({
         "Non-Fermenter Surveillance": false,
         "MRSA Control (AI)": false,
+        "Clinical Decision Support": true, // Auto-expand for visibility
         "Lab & Configuration": false
     });
 

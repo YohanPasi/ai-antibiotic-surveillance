@@ -1,0 +1,92 @@
+{
+    "AMP": {
+        "ESBL": {
+            "success": 10511,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 1489,
+            "total": 1489
+        }
+    },
+    "CXM": {
+        "ESBL": {
+            "success": 5356,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 752,
+            "total": 1489
+        }
+    },
+    "CTX": {
+        "ESBL": {
+            "success": 6027,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 0,
+            "total": 1489
+        }
+    },
+    "CAZ": {
+        "ESBL": {
+            "success": 6033,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 0,
+            "total": 1489
+        }
+    },
+    "CRO": {
+        "ESBL": {
+            "success": 6023,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 0,
+            "total": 1489
+        }
+    },
+    "CIP": {
+        "ESBL": {
+            "success": 5243,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 729,
+            "total": 1489
+        }
+    },
+    "CN": {
+        "ESBL": {
+            "success": 5189,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 735,
+            "total": 1489
+        }
+    },
+    "AMC": {
+        "ESBL": {
+            "success": 5298,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 767,
+            "total": 1489
+        }
+    },
+    "TZP": {
+        "ESBL": {
+            "success": 5204,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 792,
+            "total": 1489
+        }
+    }
+}

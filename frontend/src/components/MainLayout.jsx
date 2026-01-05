@@ -9,6 +9,8 @@ import Sidebar from './Sidebar';
 import MRSAPerformanceDashboard from './MRSAPerformanceDashboard';
 import Header from './Header';
 import { useAuth } from '../context/AuthContext';
+import { ESBLModule } from './esbl/ESBLModule'; // Stage 9 Import
+import { AuditLogView } from './esbl/screens/AuditLogView';
 
 function MainLayout() {
     const [activeView, setActiveView] = useState('dashboard');
@@ -52,6 +54,10 @@ function MainLayout() {
                 );
             case 'mrsa_prediction':
                 return <MRSAPage />;
+            case 'esbl_cdss': // Stage 9: New Module
+                return <ESBLModule />;
+            case 'esbl_audit':
+                return <AuditLogView />; // Renders as full page card
             case 'master_data':
                 return <MasterDataManager />;
             case 'audit_log':
