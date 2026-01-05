@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # 🧬 AI-Driven Prediction and Surveillance of Antibiotic Resistance and Ward-Level Outbreaks  
 
 ### 🎓 A Final-Year Research Project | Sri Lanka Institute of Information Technology (SLIIT)  
