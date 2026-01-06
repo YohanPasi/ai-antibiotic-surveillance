@@ -14,6 +14,10 @@ services:
       - model_data:/app/models/best_models
       - ./api/models/mrsa_artifacts:/app/models/mrsa_artifacts
       - ./Raw:/app/data/raw
+      # ESBL Artifact Mounts
+      - ./Models:/app/Models
+      - ./Config:/app/Config
+      - ./Processed:/app/Processed
     ports:
       - "8000:8000"
     environment:
@@ -28,7 +32,6 @@ services:
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   
 
   # React Frontend Service
   frontend:

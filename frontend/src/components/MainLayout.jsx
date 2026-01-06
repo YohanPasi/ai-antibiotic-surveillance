@@ -9,10 +9,15 @@ import Sidebar from './Sidebar';
 import MRSAPerformanceDashboard from './MRSAPerformanceDashboard';
 import Header from './Header';
 import { useAuth } from '../context/AuthContext';
+import { ESBLModule } from './esbl/ESBLModule'; // Stage 9 Import
+import { AuditLogView } from './esbl/screens/AuditLogView';
+import { PostASTReview } from './esbl/screens/PostASTReview';
+import { LabEntryForm } from './esbl/screens/LabEntryForm';
 
 function MainLayout() {
     const [activeView, setActiveView] = useState('dashboard');
     const [selectedWard, setSelectedWard] = useState(null);
+    const [currentEncounterId, setCurrentEncounterId] = useState(null);
     const { logout } = useAuth(); // Sidebar handles logout button
 
     // Helper to handle navigation from Sidebar
@@ -52,6 +57,33 @@ function MainLayout() {
                 );
             case 'mrsa_prediction':
                 return <MRSAPage />;
+            case 'esbl_cdss': // Stage 9: New Module
+                return <ESBLModule />;
+            case 'esbl_audit':
+                return <AuditLogView />; // Renders as full page card
+            case 'esbl_lab_entry':
+                return <LabEntryForm onSubmit={async (id, data, context) => {
+                    try {
+                        // 1. Save to Supabase (Permanent Record)
+                        // context is passed from the LabEntryForm (foundCase.inputs)
+                        await import('../services/esblService').then(m =>
+                            m.esblService.persistASTResults(id, data, context)
+                        );
+
+                        // 2. Store encounter ID for PostASTReview
+                        setCurrentEncounterId(id);
+
+                        // 3. Navigate to Review
+                        setActiveView('esbl_post_ast');
+                    } catch (err) {
+                        alert("Failed to save to database: " + err.message);
+                    }
+                }} />;
+            case 'esbl_post_ast':
+                return <PostASTReview encounterId={currentEncounterId} onReset={() => {
+                    setCurrentEncounterId(null);
+                    setActiveView('dashboard');
+                }} />;
             case 'master_data':
                 return <MasterDataManager />;
             case 'audit_log':

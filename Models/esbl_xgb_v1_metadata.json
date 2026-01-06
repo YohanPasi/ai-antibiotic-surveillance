@@ -1,0 +1,22 @@
+{
+    "timestamp": "2026-01-06T01:18:52.341044",
+    "config_hash": "1ecb3e1659095fef8685dbbf4cc4caa474778de1c6884dbed5c2c2e6dd644a5f",
+    "dataset_info": {
+        "train_samples": 9600,
+        "val_samples": 2400,
+        "feature_count": 37
+    },
+    "metrics": {
+        "auroc": 1.0,
+        "logloss": 0.0015942357228795668,
+        "ref_sensitivity_0.5": 1.0,
+        "ref_npv_0.5": 1.0,
+        "final_train_loss": 0.00155415164049676,
+        "final_val_loss": 0.0015942357228414
+    },
+    "model_config": {
+        "booster": "gbtree",
+        "tree_method": "hist",
+        "random_state": 42
+    }
+}

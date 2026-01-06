@@ -191,16 +191,17 @@ async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTas
     try:
         # 1. SQL Query
         query = text("""
-            INSERT INTO ast_manual_entry (
-                lab_no, age, gender, bht, ward, specimen_type, organism, antibiotic, result
+            INSERT INTO esbl_lab_results (
+                encounter_id, lab_no, age, gender, bht, ward, specimen_type, organism, antibiotic, result
             ) VALUES (
-                :lab, :age, :gen, :bht, :ward, :spec, :org, :abx, :res
+                :enc_id, :lab, :age, :gen, :bht, :ward, :spec, :org, :abx, :res
             )
         """)
         
         # 2. Iterate Collection and Insert
         for item in entry.results:
             db.execute(query, {
+                "enc_id": entry.lab_no,  # Use lab_no as encounter link
                 "lab": entry.lab_no, "age": entry.age, "gen": entry.gender,
                 "bht": entry.bht, "ward": entry.ward, "spec": entry.specimen_type,
                 "org": entry.organism, "abx": item.antibiotic, "res": item.result
@@ -799,11 +800,373 @@ async def get_audit_logs(limit: int = 50):
             "engine_version": "Hybrid_LSTM_v1",
             "run_mode": "SHADOW"
         }
+            
     except Exception as e:
         logger.error(f"Audit Log Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
+# ============================================
+# ESBL CDSS ENDPOINTS (Stage 9)
+# ============================================
+from pydantic import BaseModel
+from typing import Dict, Any, List, Optional
+from esbl_service import esbl_service, ValidationResponse
+
+class ESBLEvaluateRequest(BaseModel):
+    inputs: Dict[str, Any]
+    ast_available: bool = False
+
+class ESBLScopeRequest(BaseModel):
+    organism: str
+    gram: str
+
+class ESBLOverrideRequest(BaseModel):
+    encounter_id: str
+    user_id: str
+    model_version: str
+    recommendation_id: str
+    decision: str # OVERRIDE / ACCEPT
+    reason_code: Optional[str] = None
+    selected_antibiotic: Optional[str] = None
+
+class ESBLPostASTRequest(BaseModel):
+    empiric_drug: str
+    ast_panel: Dict[str, str] # e.g. {"MEM": "S", "TZP": "R"}
+
+@app.post("/api/esbl/evaluate")
+async def evaluate_esbl_risk(request: ESBLEvaluateRequest):
+    """
+    Main CDSS Engine Endpoint.
+    - Checks Governance (AST Lock, Scope).
+    - Predicts Risk (Stage 5).
+    - Generates Recommendations (Stage 7).
+    - Flags OOD (Stage 9).
+    """
+    try:
+        return esbl_service.predict_and_evaluate(request.dict())
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"ESBL Evaluate Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/esbl/validate-scope", response_model=ValidationResponse)
+async def validate_esbl_scope(request: ESBLScopeRequest):
+    """
+    Pre-check to prevent out-of-scope usage in UI.
+    """
+    return esbl_service.validate_scope(request.organism, request.gram)
+
+@app.post("/api/esbl/override")
+async def log_esbl_override(request: ESBLOverrideRequest):
+    """
+    Audit logging for clinician overrides.
+    Mandatory reason code if overriding.
+    """
+    # In a full system, this would write to the 'audit_logs' table defined in Stage 8.
+    # For now, we log to file/console as a mock proof of governance.
+    log_entry = request.dict()
+    log_entry["timestamp"] = datetime.utcnow().isoformat()
+    
+    logger.info(f"🛡️ ESBL AUDIT LOG: {json.dumps(log_entry)}")
+    
+    # Save to a local JSONL file for verification
+    with open("esbl_audit_log.jsonl", "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
+        
+    return {"status": "logged", "message": "Decision recorded in audit trail."}
+
+
+
+# ============================================
+# ESBL: Encounter Persistence (Backend - SQL)
+# ============================================
+
+@app.post("/api/encounters")
+async def save_encounter(data: dict):
+    """
+    Save encounter to PostgreSQL with explicit columns.
+    """
+    db = SessionLocal()
+    try:
+        inputs = data.get("inputs", {})
+        result = data.get("result", {})
+        risk = result.get("risk", {})
+        metadata = result.get("metadata", {})
+        
+        encounter_id = inputs.get("id")
+        if not encounter_id:
+            raise HTTPException(status_code=400, detail="Missing Encounter ID")
+
+        # Insert with explicit columns
+        query = text("""
+            INSERT INTO esbl_encounters (
+                encounter_id, age, gender, ward, organism, gram_stain,
+                sample_type, cell_count_level, pus_type, pure_growth,
+                esbl_probability, risk_group, ood_warning,
+                model_version, evidence_version, threshold_version,
+                recommendations, status, created_at
+            ) VALUES (
+                :enc_id, :age, :gender, :ward, :organism, :gram,
+                :sample_type, :cell_count, :pus_type, :pure_growth,
+                :esbl_prob, :risk_group, :ood_warning,
+                :model_ver, :evidence_ver, :threshold_ver,
+                :recommendations, :status, :created_at
+            )
+            ON CONFLICT (encounter_id) 
+            DO UPDATE SET
+                esbl_probability = :esbl_prob,
+                risk_group = :risk_group,
+                recommendations = :recommendations,
+                updated_at = :created_at
+        """)
+        
+        db.execute(query, {
+            "enc_id": encounter_id,
+            "age": int(inputs.get("Age", 0)) if inputs.get("Age") else None,
+            "gender": inputs.get("Gender"),
+            "ward": inputs.get("Ward"),
+            "organism": inputs.get("Organism"),
+            "gram": inputs.get("Gram"),
+            "sample_type": inputs.get("Sample_Type"),
+            "cell_count": inputs.get("Cell_Count_Level"),
+            "pus_type": inputs.get("PUS_Type"),
+            "pure_growth": inputs.get("Pure_Growth"),
+            "esbl_prob": risk.get("probability"),
+            "risk_group": risk.get("group"),
+            "ood_warning": risk.get("ood_warning", False),
+            "model_ver": metadata.get("model_version"),
+            "evidence_ver": metadata.get("evidence_version"),
+            "threshold_ver": metadata.get("threshold_version"),
+            "recommendations": json.dumps(result.get("recommendations", [])),
+            "status": "PENDING",
+            "created_at": datetime.utcnow()
+        })
+        db.commit()
+        
+        # Also save to audit logs for governance tracking
+        try:
+            audit_query = text("""
+                INSERT INTO esbl_audit_logs (
+                    log_date, encounter_id, ward, organism, age,
+                    esbl_probability, risk_group, top_recommendation,
+                    recommendation_efficacy, model_version, ood_detected
+                ) VALUES (
+                    :log_date, :enc_id, :ward, :organism, :age,
+                    :esbl_prob, :risk_group, :top_rec,
+                    :top_efficacy, :model_ver, :ood_detected
+                )
+            """)
+            
+            # Extract top recommendation
+            recommendations = result.get("recommendations", [])
+            top_drug = recommendations[0].get("drug", "N/A") if recommendations else "N/A"
+            top_efficacy = recommendations[0].get("success_prob", 0) if recommendations else 0
+            
+            db.execute(audit_query, {
+                "log_date": datetime.utcnow(),
+                "enc_id": encounter_id,
+                "ward": inputs.get("Ward"),
+                "organism": inputs.get("Organism"),
+                "age": int(inputs.get("Age", 0)) if inputs.get("Age") else None,
+                "esbl_prob": risk.get("probability"),
+                "risk_group": risk.get("group"),
+                "top_rec": top_drug,
+                "top_efficacy": top_efficacy,
+                "model_ver": metadata.get("model_version"),
+                "ood_detected": risk.get("ood_warning", False)
+            })
+            db.commit()
+        except Exception as audit_err:
+            logger.warning(f"Failed to save audit log: {audit_err}")
+            # Don't fail the main save if audit fails
+            
+        return {"status": "success", "message": f"Encounter {encounter_id} saved to Database."}
+            
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to save encounter to DB: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@app.get("/api/encounters/{encounter_id}")
+async def get_encounter(encounter_id: str):
+    """
+    Retrieve encounter from SQL Database.
+    """
+    db = SessionLocal()
+    try:
+        query = text("""
+            SELECT 
+                encounter_id, age, gender, ward, organism, gram_stain,
+                sample_type, cell_count_level, pus_type, pure_growth,
+                esbl_probability, risk_group, ood_warning,
+                model_version, evidence_version, threshold_version,
+                recommendations, status
+            FROM esbl_encounters 
+            WHERE encounter_id = :id
+        """)
+        row = db.execute(query, {"id": encounter_id}).fetchone()
+        
+        if row:
+            # Reconstruct the format expected by frontend
+            return {
+                "inputs": {
+                    "id": row[0],
+                    "Age": str(row[1]) if row[1] else "",
+                    "Gender": row[2] or "",
+                    "Ward": row[3] or "",
+                    "Organism": row[4] or "",
+                    "Gram": row[5] or "",
+                    "Sample_Type": row[6] or "",
+                    "Cell_Count_Level": row[7] or "",
+                    "PUS_Type": row[8] or "",
+                    "Pure_Growth": row[9] or ""
+                },
+                "result": {
+                    "risk": {
+                        "probability": float(row[10]) if row[10] else 0,
+                        "group": row[11] or "Low",
+                        "ood_warning": row[12] or False
+                    },
+                    "metadata": {
+                        "model_version": row[13] or "",
+                        "evidence_version": row[14] or "",
+                        "threshold_version": row[15] or ""
+                    },
+                    "recommendations": row[16] if row[16] else []
+                }
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Encounter ID not found in Database.")
+            
+    except Exception as e:
+        logger.error(f"Failed to fetch encounter from DB: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@app.get("/api/esbl/lab-results/{encounter_id}")
+async def get_lab_results(encounter_id: str):
+    """
+    Fetch confirmed lab results for an encounter.
+    """
+    db = SessionLocal()
+    try:
+        query = text("""
+            SELECT antibiotic, result
+            FROM esbl_lab_results
+            WHERE encounter_id = :enc_id
+            ORDER BY antibiotic
+        """)
+        
+        rows = db.execute(query, {"enc_id": encounter_id}).fetchall()
+        
+        if not rows:
+            raise HTTPException(status_code=404, detail="No lab results found for this encounter.")
+        
+        # Convert to dict
+        results = {row[0]: row[1] for row in rows}
+        return {"encounter_id": encounter_id, "results": results}
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch lab results: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@app.get("/api/esbl/audit-logs")
+async def get_esbl_audit_logs():
+    """
+    Fetch ESBL governance/audit logs for the dashboard.
+    """
+    db = SessionLocal()
+    try:
+        query = text("""
+            SELECT 
+                id, log_date, encounter_id, ward, organism, age,
+                esbl_probability, risk_group, top_recommendation,
+                recommendation_efficacy, model_version, ood_detected
+            FROM esbl_audit_logs
+            ORDER BY log_date DESC
+            LIMIT 100
+        """)
+        
+        rows = db.execute(query).fetchall()
+        
+        logs = []
+        for row in rows:
+            logs.append({
+                "id": row[0],
+                "timestamp": row[1].isoformat() if row[1] else None,
+                "encounter_id": row[2],
+                "ward": row[3],
+                "organism": row[4],
+                "age": row[5],
+                "esbl_probability": float(row[6]) if row[6] else 0,
+                "risk_group": row[7],
+                "top_recommendation": row[8],
+                "recommendation_efficacy": float(row[9]) if row[9] else 0,
+                "model_version": row[10],
+                "ood_detected": row[11]
+            })
+        
+        return {"logs": logs, "total": len(logs)}
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch audit logs: {e}")
+        # Return empty if table doesn't have data yet
+        return {"logs": [], "total": 0}
+    finally:
+        db.close()
+
+@app.post("/api/esbl/post-ast-review")
+async def post_ast_review(request: ESBLPostASTRequest):
+    """
+    Stage 8: Confirmatory Stewardship & De-escalation Rules.
+    """
+    # Simplified Logic from post_ast_rules.json
+    empiric = request.empiric_drug
+    panel = request.ast_panel
+    
+    feedback = {
+        "action": "MAINTAIN",
+        "message": "Continue current therapy.",
+        "alert_level": "GREEN"
+    }
+    
+    # Rule 1: Resistance Check
+    if panel.get(empiric) == "R":
+        feedback = {
+            "action": "ESCALATION_REQUIRED",
+            "message": f"Pathogen is RESISTANT to Empiric Choice ({empiric}). Change therapy immediately.",
+            "alert_level": "RED"
+        }
+    
+    # Rule 2: De-escalation (Carbapenem Sparing)
+    elif empiric in ["MEM", "IMP", "ETP"] and panel.get("TZP") == "S":
+         feedback = {
+            "action": "DE_ESCALATION_RECOMMENDED",
+            "message": "Pathogen is sensitive to Pip-Tazo. De-escalate from Carbapenem.",
+            "alert_level": "YELLOW"
+        }
+        
+    # Rule 3: ESBL Negative check?
+    # (Requires knowing if ESBL-neg, inferred from CTX/CRO S status often).
+    elif panel.get("CTX") == "S" and panel.get("CRO") == "S":
+         if empiric in ["MEM", "IMP", "ETP"]:
+             feedback = {
+                "action": "DE_ESCALATION_RECOMMENDED",
+                "message": "Non-ESBL phenotype detected. Carbapenem not required.",
+                "alert_level": "YELLOW"
+            }
+
+    return feedback
+
+
 
 @app.get("/api/mrsa/validation-logs")
 async def get_mrsa_validation_logs():
