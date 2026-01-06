@@ -216,8 +216,16 @@ class ESBLService:
         """Helper to generate ranked list based on Bayesian Success + Stewardship."""
         # Config weights (reused from Stage 7 script)
         # In a real app, load from JSON.
-        STEWARDSHIP_WEIGHTS = {"MEM": 0.6, "IMP": 0.6, "ETP": 0.6, "TZP": 0.9, "AMK": 1.0} 
-        HIGH_RISK_OVERRIDES = ["MEM", "IMP", "ETP", "AMK"]
+        STEWARDSHIP_WEIGHTS = {
+            "MEM": 0.6, "IMP": 0.6, "ETP": 0.6,   # Carbapenems (Reserve)
+            "TZP": 0.9,                           # Pip-Tazo (Slight penalty)
+            "CIP": 0.8, "LVX": 0.8,               # Fluoroquinolones
+            "GEN": 1.0, "AMK": 1.0, "NIT": 1.0,   # Aminoglycosides/Nitro (Neutral)
+            "SXT": 0.9, "AMC": 0.9, "CXM": 0.8,   # Beta-lactams
+            "CTX": 0.1, "CAZ": 0.1, "CRO": 0.1,   # Cephalosporins (BAD for ESBL)
+            "AMP": 0.5                            # Penicillins (High Resistance)
+        }
+        HIGH_RISK_OVERRIDES = ["MEM", "IMP", "ETP", "TZP", "AMK"]
         
         recs = []
         for drug, data in self.evidence.items():

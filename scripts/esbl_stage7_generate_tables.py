@@ -63,17 +63,18 @@ def generate_outcome_tables():
         
         # Calculate for ESBL Group
         esbl_subset = df[df['ESBL_Label'] == 1][ab]
-        esbl_total = len(esbl_subset) # Total samples for this AB in ESBL group
-        # Wait, if AB column was missing for some rows (if logic allowed), we should count only non-NaNs?
-        # Stage 1 dropna logic was "missing critical values". Assuming ABs are fully populated or at least we treat specific AB existing.
-        # Let's count valid entries.
+        esbl_total = len(esbl_subset) 
         esbl_valid = esbl_subset.count()
-        esbl_success = esbl_subset.sum() 
+        # 1 = Resistant, 0 = Susceptible (Based on Stage 1 Logic)
+        # So Success (Susceptible) = Total - Count of 1s
+        esbl_resistance_count = esbl_subset.sum()
+        esbl_success = esbl_valid - esbl_resistance_count
         
         # Calculate for Non-ESBL Group
         non_esbl_subset = df[df['ESBL_Label'] == 0][ab]
         non_esbl_valid = non_esbl_subset.count()
-        non_esbl_success = non_esbl_subset.sum()
+        non_esbl_resistance_count = non_esbl_subset.sum()
+        non_esbl_success = non_esbl_valid - non_esbl_resistance_count
         
         # Store
         if esbl_valid > 0 or non_esbl_valid > 0:

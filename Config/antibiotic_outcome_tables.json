@@ -1,7 +1,27 @@
 {
     "AMP": {
         "ESBL": {
-            "success": 10511,
+            "success": 0,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 0,
+            "total": 1489
+        }
+    },
+    "CXM": {
+        "ESBL": {
+            "success": 5155,
+            "total": 10511
+        },
+        "non_ESBL": {
+            "success": 737,
+            "total": 1489
+        }
+    },
+    "CTX": {
+        "ESBL": {
+            "success": 4484,
             "total": 10511
         },
         "non_ESBL": {
@@ -9,83 +29,63 @@
             "total": 1489
         }
     },
-    "CXM": {
-        "ESBL": {
-            "success": 5356,
-            "total": 10511
-        },
-        "non_ESBL": {
-            "success": 752,
-            "total": 1489
-        }
-    },
-    "CTX": {
-        "ESBL": {
-            "success": 6027,
-            "total": 10511
-        },
-        "non_ESBL": {
-            "success": 0,
-            "total": 1489
-        }
-    },
     "CAZ": {
         "ESBL": {
-            "success": 6033,
+            "success": 4478,
             "total": 10511
         },
         "non_ESBL": {
-            "success": 0,
+            "success": 1489,
             "total": 1489
         }
     },
     "CRO": {
         "ESBL": {
-            "success": 6023,
+            "success": 4488,
             "total": 10511
         },
         "non_ESBL": {
-            "success": 0,
+            "success": 1489,
             "total": 1489
         }
     },
     "CIP": {
         "ESBL": {
-            "success": 5243,
+            "success": 5268,
             "total": 10511
         },
         "non_ESBL": {
-            "success": 729,
+            "success": 760,
             "total": 1489
         }
     },
     "CN": {
         "ESBL": {
-            "success": 5189,
+            "success": 5322,
             "total": 10511
         },
         "non_ESBL": {
-            "success": 735,
+            "success": 754,
             "total": 1489
         }
     },
     "AMC": {
         "ESBL": {
-            "success": 5298,
+            "success": 5213,
             "total": 10511
         },
         "non_ESBL": {
-            "success": 767,
+            "success": 722,
             "total": 1489
         }
     },
     "TZP": {
         "ESBL": {
-            "success": 5204,
+            "success": 5307,
             "total": 10511
         },
         "non_ESBL": {
-            "success": 792,
+            "success": 697,
             "total": 1489
         }
     }
