@@ -1,0 +1,39 @@
+{
+    "audit_schema_version": "1.0",
+    "log_entry_fields": {
+        "timestamp": "ISO8601_UTC",
+        "encounter_id": "String",
+        "user_id": "String",
+        "model_version_hash": "String",
+        "threshold_version_hash": "String",
+        "evidence_table_version_hash": "String",
+        "recommendation_id": "UUID",
+        "clinician_action": {
+            "type": "Enum",
+            "values": [
+                "ACCEPT",
+                "OVERRIDE",
+                "REJECT"
+            ]
+        },
+        "override_reason_code": {
+            "type": "Enum",
+            "required_if_action": "OVERRIDE",
+            "values": [
+                "CLINICAL_INSTABILITY",
+                "PATIENT_ALLERGY",
+                "COMORBIDITY_CONTRAINDICATION",
+                "DRUG_INTERACTION",
+                "PREVIOUS_FAILURE",
+                "COST/AVAILABILITY",
+                "OTHER_CLINICAL_JUDGEMENT"
+            ]
+        },
+        "selected_antibiotic": "String"
+    },
+    "policy": {
+        "allow_override": true,
+        "retrain_on_override": false,
+        "mandatory_reason": true
+    }
+}

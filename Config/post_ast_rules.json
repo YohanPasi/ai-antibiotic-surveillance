@@ -1,0 +1,43 @@
+{
+    "post_ast_workflow": {
+        "trigger": "AST_RESULT_UPLOAD",
+        "action": "DISABLE_PROBABILISTIC_MODE"
+    },
+    "conflict_resolution": {
+        "scenario_1": {
+            "condition": "Empiric_Choice == Resistant",
+            "action": "FLAG_CRITICAL_CHANGE",
+            "message": "Current therapy ineffective. ESCALATION REQUIRED based on AST."
+        },
+        "scenario_2": {
+            "condition": "Empiric_Choice == Susceptible AND Narrower_Agent == Susceptible",
+            "action": "RECOMMEND_DEESCALATION",
+            "message": "Current therapy effective but broad. Consider de-escalation."
+        },
+        "scenario_3": {
+            "condition": "Empiric_Choice == Susceptible AND No_Narrower_Available",
+            "action": "CONFIRM_THERAPY",
+            "message": "Current therapy appropriate."
+        }
+    },
+    "de_escalation_rules": [
+        {
+            "current_class": "Carbapenem",
+            "narrower_alternatives": [
+                "Pip-Tazo",
+                "Cefepime",
+                "Ciprofloxacin"
+            ],
+            "condition": "Organism_ESBL_Negative",
+            "message": "ESBL Negative. De-escalate from Carbapenem."
+        },
+        {
+            "current_class": "Combination_Therapy",
+            "narrower_alternatives": [
+                "Monotherapy"
+            ],
+            "condition": "Susceptible_To_Monotherapy",
+            "message": "De-escalate to monotherapy."
+        }
+    ]
+}

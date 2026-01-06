@@ -1,0 +1,31 @@
+{
+    "timestamp": "2026-01-06T01:41:55.421022",
+    "config_hash": "1ecb3e1659095fef8685dbbf4cc4caa474778de1c6884dbed5c2c2e6dd644a5f",
+    "model_variant": "EARLY_ESBL_RISK",
+    "label_definition": "Phenotypic ESBL (CTX/CAZ/CRO) \u2013 unchanged",
+    "clinical_note": "Risk prediction only; not a diagnostic confirmation",
+    "excluded_features": [
+        "CTX",
+        "CAZ",
+        "CRO"
+    ],
+    "dataset_info": {
+        "train_samples": 9600,
+        "val_samples": 2400,
+        "feature_count_original": 37,
+        "feature_count_used": 34
+    },
+    "metrics": {
+        "auroc": 0.511472242510503,
+        "logloss": 0.5489247990403785,
+        "ref_sensitivity_0.5": 0.8113658070678128,
+        "ref_npv_0.5": 0.13755458515283842,
+        "final_train_loss": 0.34660966483250377,
+        "final_val_loss": 0.5489247992797754
+    },
+    "model_config": {
+        "booster": "gbtree",
+        "tree_method": "hist",
+        "random_state": 42
+    }
+}
