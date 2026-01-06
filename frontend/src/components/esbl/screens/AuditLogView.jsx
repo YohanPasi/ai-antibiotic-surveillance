@@ -12,9 +12,10 @@ export const AuditLogView = ({ onClose }) => {
     const loadLogs = async () => {
         try {
             const data = await esblService.getAuditLogs();
-            setLogs(data || []);
+            setLogs(data.logs || []);
         } catch (e) {
             console.error(e);
+            setLogs([]);
         } finally {
             setLoading(false);
         }
@@ -22,8 +23,8 @@ export const AuditLogView = ({ onClose }) => {
 
     // Derived Stats
     const totalCases = logs.length;
-    const overrides = logs.filter(l => l.decision === 'OVERRIDE').length;
-    const complianceRate = totalCases > 0 ? ((1 - (overrides / totalCases)) * 100).toFixed(1) : 100;
+    const highRiskCases = logs.filter(l => l.risk_group === 'High').length;
+    const highRiskRate = totalCases > 0 ? ((highRiskCases / totalCases) * 100).toFixed(1) : 0;
 
     return (
         <div className="bg-white rounded-2xl w-full h-full flex flex-col shadow-sm border border-slate-200 animate-fadeIn">
@@ -34,8 +35,7 @@ export const AuditLogView = ({ onClose }) => {
                     <h2 className="text-xl font-bold text-slate-900">Governance Audit Trail</h2>
                     <div className="flex gap-4 mt-2 text-sm">
                         <span className="text-slate-500">Total Records: <strong className="text-slate-800">{totalCases}</strong></span>
-                        <span className="text-slate-500">Override Rate: <strong className="text-slate-800">{overrides > 0 ? (overrides / totalCases * 100).toFixed(1) : 0}%</strong></span>
-                        <span className="text-slate-500">Compliance: <strong className="text-green-700">{complianceRate}%</strong></span>
+                        <span className="text-slate-500">High Risk Rate: <strong className="text-red-600">{highRiskRate}%</strong></span>
                     </div>
                 </div>
                 {onClose && (
@@ -52,31 +52,35 @@ export const AuditLogView = ({ onClose }) => {
                         <tr>
                             <th className="p-4 bg-slate-50">Timestamp</th>
                             <th className="p-4 bg-slate-50">Encounter ID</th>
-                            <th className="p-4 bg-slate-50">Decision</th>
-                            <th className="p-4 bg-slate-50">Reason Code</th>
-                            <th className="p-4 bg-slate-50">Model Ver</th>
+                            <th className="p-4 bg-slate-50">Ward</th>
+                            <th className="p-4 bg-slate-50">Organism</th>
+                            <th className="p-4 bg-slate-50">Risk Group</th>
+                            <th className="p-4 bg-slate-50">ESBL Prob</th>
+                            <th className="p-4 bg-slate-50">Top Rec</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {loading ? (
-                            <tr><td colSpan="5" className="p-8 text-center text-slate-400">Loading audit trail...</td></tr>
+                            <tr><td colSpan="7" className="p-8 text-center text-slate-400">Loading audit trail...</td></tr>
                         ) : logs.length === 0 ? (
-                            <tr><td colSpan="5" className="p-8 text-center text-slate-400">No audit records found.</td></tr>
+                            <tr><td colSpan="7" className="p-8 text-center text-slate-400">No audit records found.</td></tr>
                         ) : (
                             logs.map((log, i) => (
                                 <tr key={i} className="hover:bg-slate-50 transition-colors">
                                     <td className="p-4 text-slate-500 font-mono text-xs">{new Date(log.timestamp).toLocaleString()}</td>
-                                    <td className="p-4 font-mono text-xs text-slate-400">{log.encounter_id?.substring(0, 8)}</td>
+                                    <td className="p-4 font-mono text-xs text-slate-400">{log.encounter_id}</td>
+                                    <td className="p-4 text-slate-700">{log.ward}</td>
+                                    <td className="p-4 text-slate-700 italic">{log.organism}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${log.decision === 'OVERRIDE'
-                                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                                : 'bg-green-100 text-green-800 border border-green-200'
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${log.risk_group === 'High' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                                log.risk_group === 'Moderate' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                                                    'bg-green-100 text-green-800 border border-green-200'
                                             }`}>
-                                            {log.decision}
+                                            {log.risk_group}
                                         </span>
                                     </td>
-                                    <td className="p-4 font-medium text-slate-700">{log.reason_code || "-"}</td>
-                                    <td className="p-4 text-xs text-slate-400 font-mono">{log.model_version}</td>
+                                    <td className="p-4 text-slate-600 font-mono">{log.esbl_probability}</td>
+                                    <td className="p-4 font-bold text-slate-700">{log.top_recommendation}</td>
                                 </tr>
                             ))
                         )}

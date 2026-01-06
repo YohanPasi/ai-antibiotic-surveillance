@@ -24,6 +24,7 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
             items: [
                 { id: 'esbl_cdss', label: 'ESBL Risk Engine', icon: Shield },
                 { id: 'esbl_audit', label: 'Stewardship Logs', icon: FileText },
+                { id: 'esbl_lab_entry', label: 'Lab Results Entry', icon: Activity },
             ]
         },
         {

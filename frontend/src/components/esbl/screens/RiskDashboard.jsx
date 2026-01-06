@@ -59,6 +59,24 @@ export const RiskDashboard = ({ inputs, riskData, warnings, onNext, onBack }) =>
                 </div>
             )}
 
+            {/* ENCOUNTER ID BANNER */}
+            {inputs.id && (
+                <div className="bg-slate-900 text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-slate-800 rounded-lg">
+                            <span className="text-xl">🆔</span>
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Encounter ID</p>
+                            <p className="text-xl font-mono font-bold tracking-widest">{inputs.id}</p>
+                        </div>
+                    </div>
+                    <div className="text-xs text-slate-500 bg-slate-800 px-3 py-1 rounded border border-slate-700">
+                        Copy for Lab Entry
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* LEFT: RISK SCORE CARD */}
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 flex flex-col items-center justify-center relative overflow-hidden">

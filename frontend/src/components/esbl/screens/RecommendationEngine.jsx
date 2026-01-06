@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 
-export const RecommendationEngine = ({ recommendations, riskGroup, onOverride, astLocked }) => {
+export const RecommendationEngine = ({ recommendations, riskGroup, onOverride, astLocked, encounterId }) => {
     const [selectedDrug, setSelectedDrug] = useState(null);
     const [showOverrideModal, setShowOverrideModal] = useState(false);
 
@@ -39,6 +39,21 @@ export const RecommendationEngine = ({ recommendations, riskGroup, onOverride, a
                     <span className="text-sm font-semibold text-blue-900 uppercase tracking-wider">Action</span>
                 </div>
             </div>
+
+            {/* ENCOUNTER ID BANNER */}
+            {encounterId && (
+                <div className="bg-slate-900 text-white p-4 rounded-xl flex justify-between items-center shadow-lg mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-slate-800 rounded-lg">
+                            <span className="text-xl">🆔</span>
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Encounter ID</p>
+                            <p className="text-xl font-mono font-bold tracking-widest">{encounterId}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="flex items-center justify-between mb-8">
                 <div>

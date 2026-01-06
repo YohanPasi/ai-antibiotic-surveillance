@@ -33,7 +33,17 @@ export const ESBLModule = () => {
             // 1. Call Main Engine
             const result = await esblService.evaluateCase(inputs, false);
 
-            setCaseContext(inputs);
+            // Generate Encounter ID
+            const encounterId = "ENC-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+            const inputsWithId = { ...inputs, id: encounterId };
+
+            // Save to Mock DB for retrieval in Lab Entry
+            esblService.saveEncounter(encounterId, {
+                inputs: inputsWithId,
+                result: result
+            });
+
+            setCaseContext(inputsWithId);
             setEvaluationResult(result);
             setCurrentStep(STEPS.RISK_DASHBOARD);
 
@@ -101,6 +111,7 @@ export const ESBLModule = () => {
                             inputs={caseContext}
                             riskData={evaluationResult?.risk}
                             warnings={evaluationResult?.warnings}
+                            encounterId={caseContext.id}
                             onNext={() => setCurrentStep(STEPS.RECOMMENDATION)}
                             onBack={() => setCurrentStep(STEPS.REGISTRATION)}
                         />
@@ -110,6 +121,7 @@ export const ESBLModule = () => {
                         <RecommendationEngine
                             recommendations={evaluationResult?.recommendations}
                             riskGroup={evaluationResult?.risk?.group}
+                            encounterId={caseContext.id}
                             onOverride={(decision) => console.log("Decision Logged", decision)}
                             astLocked={astAvailable}
                         />

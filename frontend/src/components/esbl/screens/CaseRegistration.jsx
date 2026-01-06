@@ -1,207 +1,263 @@
-
 import React, { useState } from 'react';
 import { esblService } from '../../../services/esblService';
 
 export const CaseRegistration = ({ onNext, isLoading }) => {
-    const [form, setForm] = useState({
+    const [formData, setFormData] = useState({
         Age: '',
-        Ward: 'ICU',
-        Sample_Type: 'Urine',
-        Organism: 'E_coli',
-        Gram: 'GNB'
+        Gender: '',
+        Ward: 'Medical',
+        SpecimenSource: '', // Sample_Type
+        CellCount: '',      // Cell_Count_Level
+        PureGrowth: 'Pure',
+        PusType: 'NA',
+        Organism: '',
+        Gram: 'GNB'         // Default to GNB per scope
     });
 
     const [scopeError, setScopeError] = useState(null);
+    const [wardOptions, setWardOptions] = useState([]);
+    const [sampleOptions, setSampleOptions] = useState([]);
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    // Load Master Data on Mount
+    React.useEffect(() => {
+        const loadMasterData = async () => {
+            const wards = await esblService.getMasterDefinitions('WARD');
+            const samples = await esblService.getMasterDefinitions('SAMPLE_TYPE');
+
+            setWardOptions(wards || []);
+            setSampleOptions(samples || []);
+        };
+        loadMasterData();
+    }, []);
+
+    const checkScope = async () => {
         setScopeError(null);
+        try {
+            const result = await esblService.validateScope(formData.Organism, formData.Gram);
+            if (!result.allowed) {
+                setScopeError(result.reason);
+                return false;
+            }
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
     };
 
-    const validateAndProceed = async () => {
-        if (!form.Age || !form.Organism) {
-            setScopeError("Please fill all fields.");
+    const handleNext = async () => {
+        if (!formData.Age || !formData.Organism || !formData.SpecimenSource || !formData.CellCount) {
+            alert("Please complete all required fields.");
             return;
         }
 
-        // Stage 8 PRO-ACTIVE CHECK
-        try {
-            const validation = await esblService.validateScope(form.Organism, form.Gram);
-            if (!validation.allowed) {
-                setScopeError(`SCOPE VIOLATION: ${validation.reason}`);
-                return;
-            }
-
-            // If valid, proceed to Engine
-            onNext(form);
-
-        } catch (e) {
-            setScopeError("Validation Service Unavailable.");
+        const isSafe = await checkScope();
+        if (isSafe) {
+            // Map UI keys to Backend Features
+            const apiPayload = {
+                Age: formData.Age,
+                Gender: formData.Gender,
+                Ward: formData.Ward,
+                Sample_Type: formData.SpecimenSource,
+                Cell_Count_Level: formData.CellCount,
+                Pure_Growth: formData.PureGrowth,
+                PUS_Type: formData.PusType,
+                Organism: formData.Organism,
+                Gram: formData.Gram
+            };
+            onNext(apiPayload);
         }
     };
 
     return (
-        <div className="max-w-3xl mx-auto">
-            {/* Progress / Step Header */}
-            <div className="mb-8 flex items-center justify-center">
-                <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm ring-4 ring-blue-100">1</span>
-                    <span className="text-sm font-semibold text-blue-900 uppercase tracking-wider">Case Registration</span>
+        <div className="max-w-4xl mx-auto animate-fadeIn">
+            {/* Steps Indicator */}
+            <div className="flex items-center justify-between mb-8 px-8">
+                <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/30">1</div>
+                    <span className="text-xs font-bold text-slate-700 mt-2">Case Registration</span>
                 </div>
-                <div className="w-16 h-0.5 bg-slate-200 mx-4"></div>
-                <div className="flex items-center gap-3 opacity-50">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 text-slate-600 font-bold text-sm">2</span>
-                    <span className="text-sm font-medium text-slate-500 uppercase tracking-wider">Analysis</span>
+                <div className="flex-1 h-0.5 bg-slate-200 mx-4"></div>
+                <div className="flex flex-col items-center opacity-50">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm">2</div>
+                    <span className="text-xs font-bold text-slate-400 mt-2">Analysis</span>
                 </div>
-                <div className="w-16 h-0.5 bg-slate-200 mx-4"></div>
-                <div className="flex items-center gap-3 opacity-50">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 text-slate-600 font-bold text-sm">3</span>
-                    <span className="text-sm font-medium text-slate-500 uppercase tracking-wider">Action</span>
+                <div className="flex-1 h-0.5 bg-slate-200 mx-4"></div>
+                <div className="flex flex-col items-center opacity-50">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm">3</div>
+                    <span className="text-xs font-bold text-slate-400 mt-2">Action</span>
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="bg-slate-50 border-b border-slate-200 px-8 py-4 flex justify-between items-center">
-                    <h2 className="font-semibold text-slate-800">New Patient Encounter</h2>
-                    <span className="text-xs font-mono text-slate-400 bg-white px-2 py-1 rounded border border-slate-200">ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
-                </div>
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+                <div className="p-8">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <span>📋</span> Case Registration
+                    </h2>
 
-                <div className="p-8 space-y-8">
-                    {/* Section 1: Demographics */}
-                    <div>
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                            Patient Demographics
-                        </h3>
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="group">
-                                <label className="block text-sm font-medium text-slate-700 mb-2 transition-colors group-focus-within:text-blue-600">Patient Age (Years)</label>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        name="Age"
-                                        value={form.Age}
-                                        onChange={handleChange}
-                                        className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium placeholder:text-slate-300"
-                                        placeholder="e.g. 55"
-                                    />
-                                    <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400 pointer-events-none">YRS</span>
-                                </div>
-                            </div>
-                            <div className="group">
-                                <label className="block text-sm font-medium text-slate-700 mb-2 transition-colors group-focus-within:text-blue-600">Clinical Ward</label>
-                                <div className="relative">
-                                    <select
-                                        name="Ward"
-                                        value={form.Ward}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none text-slate-900 font-medium appearance-none bg-white"
-                                    >
-                                        <option value="ICU">ICU (Intensive Care)</option>
-                                        <option value="Medical">General Medical</option>
-                                        <option value="Surgical">Surgical Unit</option>
-                                    </select>
-                                    <div className="absolute right-4 top-4 pointer-events-none text-slate-400">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Section 1: Patient Demographics */}
+                        <div className="space-y-6">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Patient Demographics</h3>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Age</label>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-mono"
+                                            placeholder="--"
+                                            value={formData.Age}
+                                            onChange={(e) => setFormData({ ...formData, Age: e.target.value })}
+                                        />
+                                        <span className="absolute right-3 top-3 text-xs text-slate-400 font-bold">YRS</span>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="h-px bg-slate-100 w-full"></div>
-
-                    {/* Section 2: Microbiology */}
-                    <div>
-                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-                            Microbiology Data
-                        </h3>
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="group">
-                                <label className="block text-sm font-medium text-slate-700 mb-2 transition-colors group-focus-within:text-purple-600">Identified Organism</label>
-                                <div className="relative">
-                                    <select
-                                        name="Organism"
-                                        value={form.Organism}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-yellow-200 bg-yellow-50/50 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none text-slate-900 font-medium appearance-none"
-                                    >
-                                        <option value="E_coli">Escherichia coli</option>
-                                        <option value="Klebsiella_pneumoniae">Klebsiella pneumoniae</option>
-                                        <option value="Staphylococcus_aureus">⚠️ Staphylococcus aureus (Control)</option>
-                                        <option value="Pseudomonas_aeruginosa">⚠️ Pseudomonas aeruginosa (OOD)</option>
-                                    </select>
-                                    <div className="absolute right-4 top-4 pointer-events-none text-yellow-600/50">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="group">
-                                <label className="block text-sm font-medium text-slate-700 mb-2 transition-colors group-focus-within:text-purple-600">Gram Stain</label>
-                                <div className="relative">
-                                    <select
-                                        name="Gram"
-                                        value={form.Gram}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-yellow-200 bg-yellow-50/50 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all outline-none text-slate-900 font-medium appearance-none"
-                                    >
-                                        <option value="GNB">Gram Negative Bacilli (GNB)</option>
-                                        <option value="GPC">Gram Positive Cocci (GPC)</option>
-                                    </select>
-                                    <div className="absolute right-4 top-4 pointer-events-none text-yellow-600/50">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Alerts Area */}
-                    <div className="space-y-3">
-                        {scopeError ? (
-                            <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-shake">
-                                <div className="bg-red-100 p-2 rounded-full shrink-0 mt-0.5">
-                                    <span className="text-xl">⛔</span>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-bold text-red-800">Scope Violation</h4>
-                                    <p className="text-sm text-red-600 mt-1">{scopeError}</p>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Gender</label>
+                                    <select
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                                        value={formData.Gender}
+                                        onChange={(e) => setFormData({ ...formData, Gender: e.target.value })}
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="flex gap-3 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
-                                <div className="shrink-0 mt-0.5 text-blue-500">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </div>
-                                <p className="text-sm text-blue-700/80 leading-relaxed">
-                                    <strong>Clinical Note:</strong> This module is calibrated exclusively for <em>Enterobacterales</em>. Ensure input data reflects the latest lab report.
-                                </p>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Medical Unit / Ward</label>
+                                <select
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                                    value={formData.Ward}
+                                    onChange={(e) => setFormData({ ...formData, Ward: e.target.value })}
+                                >
+                                    <option value="">Select Ward...</option>
+                                    {wardOptions.length > 0 ? wardOptions.map(opt => (
+                                        <option key={opt.id} value={opt.label}>{opt.label}</option>
+                                    )) : (
+                                        <>
+                                            <option value="Medical">General Medical</option>
+                                            <option value="Surgical">Surgical</option>
+                                            <option value="ICU">ICU</option>
+                                            <option value="Pediatric">Pediatric</option>
+                                            <option value="Gyne">Gynecology/Obs</option>
+                                            <option value="OPD">Outpatient (OPD)</option>
+                                        </>
+                                    )}
+                                </select>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Section 2: Microbiology Data */}
+                        <div className="space-y-6">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Specimen & Culture</h3>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Specimen (Sample)</label>
+                                    <select
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                                        value={formData.SpecimenSource}
+                                        onChange={(e) => setFormData({ ...formData, SpecimenSource: e.target.value })}
+                                    >
+                                        <option value="">Select type...</option>
+                                        {sampleOptions.length > 0 ? sampleOptions.map(opt => (
+                                            <option key={opt.id} value={opt.label}>{opt.label}</option>
+                                        )) : (
+                                            <>
+                                                <option value="Urine">Urine</option>
+                                                <option value="Blood">Blood</option>
+                                                <option value="Pus">Pus / Abscess</option>
+                                                <option value="Wound">Wound Swab</option>
+                                                <option value="BAL">BAL (Resp)</option>
+                                                <option value="ET">ET Secretion</option>
+                                            </>
+                                        )}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Cell Count</label>
+                                    <select
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                                        value={formData.CellCount}
+                                        onChange={(e) => setFormData({ ...formData, CellCount: e.target.value })}
+                                    >
+                                        <option value="">Microscopy...</option>
+                                        <option value="Low">Low (&lt;5/hpf)</option>
+                                        <option value="Moderate">Moderate</option>
+                                        <option value="High">High (&gt;25/hpf)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {(formData.SpecimenSource === 'Pus' || formData.SpecimenSource === 'Wound') && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Pus / Wound Type</label>
+                                    <select
+                                        className="w-full p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg focus:border-yellow-500 outline-none"
+                                        value={formData.PusType}
+                                        onChange={(e) => setFormData({ ...formData, PusType: e.target.value })}
+                                    >
+                                        <option value="NA">-- Not Applicable --</option>
+                                        <option value="Abscess">Deep Abscess</option>
+                                        <option value="Wound_Pus">Superficial Wound</option>
+                                        <option value="ET_Secretion">ET Secretion (Map only if valid)</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Isolated Organism</label>
+                                <select
+                                    className={`w-full p-3 border rounded-lg outline-none font-medium ${scopeError ? 'bg-red-50 border-red-300 text-red-700 animate-shake' : 'bg-slate-50 border-slate-200'
+                                        }`}
+                                    value={formData.Organism}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, Organism: e.target.value });
+                                        if (scopeError) setScopeError(null);
+                                    }}
+                                >
+                                    <option value="">Select Organism...</option>
+                                    <option disabled className="bg-slate-100 italic">-- Enterobacterales (Supported) --</option>
+                                    <option value="E_coli">Escherichia coli</option>
+                                    <option value="Klebsiella_pneumoniae">Klebsiella pneumoniae</option>
+                                    <option value="Enterobacter_spp">Enterobacter spp</option>
+                                    {/* <option disabled className="bg-slate-100 italic">-- Out of Scope (Blocked) --</option>
+                                    <option value="S_aureus">Staphylococcus aureus (MRSA)</option>
+                                    <option value="P_aeruginosa">Pseudomonas aeruginosa</option>
+                                    <option value="Acinetobacter">Acinetobacter baumannii</option> */}
+                                </select>
+                                {scopeError && (
+                                    <div className="mt-2 text-xs font-bold text-red-600 flex items-center gap-1">
+                                        <span>⛔</span> {scopeError}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Action Bar */}
-                    <div className="pt-4 flex justify-end items-center gap-4">
-                        <button className="text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors">Clear Form</button>
+                    <div className="mt-8 flex justify-end">
                         <button
-                            onClick={validateAndProceed}
+                            onClick={handleNext}
                             disabled={isLoading}
-                            className={`
-                                relative overflow-hidden bg-slate-900 text-white px-8 py-3.5 rounded-xl font-medium shadow-lg shadow-slate-900/20 
-                                transition-all duration-200 hover:bg-slate-800 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-95 disabled:opacity-50 disabled:pointer-events-none
-                                flex items-center gap-2
-                            `}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2"
                         >
                             {isLoading ? (
                                 <>
-                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    Validating Metadata...
+                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Analyzing...
                                 </>
                             ) : (
                                 <>
                                     Run Risk Assessment
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                 </>
                             )}
                         </button>
