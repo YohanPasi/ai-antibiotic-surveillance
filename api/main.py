@@ -46,6 +46,9 @@ from auth import User, get_current_user
 # Startup Logic
 from startup_manager import StartupManager
 
+# Stage 2 Router
+from api.routers import stp_stage_2
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,6 +61,9 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc"
 )
+
+# Register Stage 2 Router (Read-Only)
+app.include_router(stp_stage_2.router)
 
 # Dependency
 def get_db():
