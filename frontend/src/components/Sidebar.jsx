@@ -33,7 +33,7 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
                 { id: 'stp_dashboard', label: 'Overview', icon: Activity },
                 { id: 'stp_ward_trends', label: 'Ward Trends', icon: Database },
                 { id: 'stp_predictions', label: 'Early Warning (AI)', icon: Brain },
-                { id: 'stp_evaluation', label: 'Model Evaluation', icon: Shield },
+                // { id: 'stp_evaluation', label: 'Model Evaluation', icon: Shield },
                 { id: 'stp_alerts', label: 'Alerts & Review', icon: FileText },
             ]
         },

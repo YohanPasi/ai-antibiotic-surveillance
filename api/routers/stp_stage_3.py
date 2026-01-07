@@ -204,3 +204,77 @@ def get_explanations(
         "prediction_id": prediction_id,
         "top_features": top_features
     }
+
+@router.get("/alerts", response_model=dict)
+def get_alerts(
+    status: str = "new",
+    db: Session = Depends(get_db)
+):
+    """
+    Get alerts filtered by status.
+    """
+    # 1. Get Total Count for this status
+    count_query = text("SELECT COUNT(*) FROM stp_early_warnings WHERE status = :status")
+    total_count = db.execute(count_query, {"status": status}).scalar()
+    
+    # 2. Get Paginated Alerts
+    query = """
+    SELECT 
+        warning_id, ward, organism, antibiotic, detected_at_week, 
+        signal_strength, method, severity, status
+    FROM stp_early_warnings
+    WHERE status = :status
+    ORDER BY detected_at_week DESC, signal_strength DESC
+    LIMIT 50
+    """
+    
+    result = db.execute(text(query), {"status": status}).fetchall()
+    
+    alerts = []
+    for row in result:
+        alerts.append({
+            "id": str(row.warning_id),
+            "severity": (row.severity or "medium").lower(),
+            "description": f"Resistance Spike: {row.organism} in {row.ward}",
+            "details": f"{row.antibiotic} resistance rising (Signal: {round(row.signal_strength or 0, 2)})",
+            "timestamp": row.detected_at_week.isoformat(),
+            "status": row.status
+        })
+        
+    return {
+        "total": total_count,
+        "count": len(alerts),
+        "alerts": alerts
+    }
+
+@router.patch("/alerts/{warning_id}/status")
+def update_alert_status(
+    warning_id: str,
+    action: str, # 'dismiss' or 'acknowledge'
+    db: Session = Depends(get_db)
+):
+    """
+    Review alerts (Human-in-the-loop M37).
+    """
+    status_map = {
+        "dismiss": "dismissed",
+        "acknowledge": "confirmed"
+    }
+    
+    new_status = status_map.get(action)
+    if not new_status:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    query = text("""
+        UPDATE stp_early_warnings
+        SET status = :status, reviewed_at = NOW()
+        WHERE warning_id = :wid
+    """)
+    
+    result = db.execute(query, {"status": new_status, "wid": warning_id})
+    db.commit()
+    
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Alert not found")
+        
+    return {"message": f"Alert {action}ed successfully"}
