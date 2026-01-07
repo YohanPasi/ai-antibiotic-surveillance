@@ -29,6 +29,21 @@ These signals represent descriptive epidemiological associations and temporal pa
 No causal inference regarding antibiotic use, resistance emergence, or transmission dynamics is implied.
 """
 
+@router.get("/wards", response_model=List[str])
+def get_active_wards(db: Session = Depends(get_db)):
+    """
+    Fetch all wards that have resistance data computed in Stage 2.
+    """
+    try:
+        # Query distinct wards from weekly rates table
+        query = text("SELECT DISTINCT ward FROM stp_resistance_rates_weekly ORDER BY ward")
+        result = db.execute(query).fetchall()
+        wards = [row[0] for row in result]
+        return wards
+    except Exception as e:
+        print(f"Error fetching wards: {e}")
+        return []
+
 @router.get("/weekly-rates", summary="Weekly Resistance Rates", description=M20_WARNING)
 def get_weekly_rates(
     organism: Optional[str] = None,

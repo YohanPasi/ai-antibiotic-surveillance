@@ -5,27 +5,32 @@ import SHAPSummary from '../../components/stp/SHAPSummary';
 import { Shield } from 'lucide-react';
 
 const STPEarlyWarning = () => {
-    // Mock Data
-    const predictions = [
-        {
-            ward: 'ICU', organism: 'E. coli', antibiotic: 'Meropenem',
-            prediction: { probability: 0.85, risk: 'high', uncertainty: 0.05, horizon: 'T+1' },
-            features: [
-                { name: 'Prev Ward Prevalence', value: 0.23 },
-                { name: 'Days since admission', value: 0.12 },
-                { name: 'Recent Cephalosporin', value: 0.08 },
-                { name: 'Age < 50', value: -0.05 }
-            ]
-        },
-        {
-            ward: 'General Ward A', organism: 'K. pneumoniae', antibiotic: 'Ciprofloxacin',
-            prediction: { probability: 0.45, risk: 'medium', uncertainty: 0.12, horizon: 'T+2' },
-            features: [
-                { name: 'Prev Colonization', value: 0.15 },
-                { name: 'Transfer from ICU', value: 0.09 },
-            ]
-        }
-    ];
+    const [predictions, setPredictions] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState(null);
+
+    React.useEffect(() => {
+        const fetchPredictions = async () => {
+            try {
+                // Fetch early warnings directly from DB-backed API
+                const response = await fetch('http://localhost:8000/api/stp/stage3/early-warning-cards');
+                if (!response.ok) throw new Error('Failed to fetch early warnings');
+
+                const data = await response.json();
+                setPredictions(data.data || []);
+            } catch (err) {
+                console.error("Error fetching predictions:", err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPredictions();
+    }, []);
+
+    if (loading) return <div className="p-8 text-center text-gray-500">Loading AI Predictions...</div>;
+    if (error) return <div className="p-8 text-center text-red-500">Error loading data: {error}</div>;
 
     return (
         <div className="space-y-6">
