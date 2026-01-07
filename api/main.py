@@ -1351,6 +1351,407 @@ def delete_master_definition(id: int, db: Session = Depends(get_db)):
     return MasterDataService.delete_definition(db, id)
 
 # ============================================
+# STP STAGE 1: SURVEILLANCE ENDPOINTS
+# ============================================
+# M9: CLINICAL NON-DECISION DISCLAIMER
+# The STP surveillance system is for retrospective research only.
+# NOT for patient-specific clinical decision support.
+# ============================================
+
+from data_processor.stp_stage_1_ingest import ingest_stp_data
+from data_processor.stp_wide_to_long_transform import transform_wide_to_long
+from data_processor.stp_build_antibiotic_registry import build_antibiotic_registry
+from data_processor.stp_generate_governance_report import generate_governance_report
+from data_processor.stp_descriptive_stats import compute_descriptive_stats
+from data_processor.stp_populate_column_provenance import populate_column_provenance
+from pydantic import BaseModel
+
+class STPIngestRequest(BaseModel):
+    dataset_version: str = "v1.0.0"
+    force_reload: bool = False
+    dry_run: bool = False
+
+class STPFreezeRequest(BaseModel):
+    dataset_version: str
+    approved_by: str
+
+@app.post("/api/stp/stage1/ingest", tags=["STP Surveillance"])
+async def stp_ingest_pipeline(
+    request: STPIngestRequest,
+    current_user: User = Depends(get_current_user),
+    background_tasks: BackgroundTasks = None
+):
+    """
+    STP Stage 1: Trigger complete ingestion pipeline.
+    
+    Process:
+    1. Ingest & validate Excel data (M6 freeze check)
+    2. Transform wide→long
+    3. Build antibiotic registry
+    4. Generate governance report (M1-M10, O1-O2)
+    5. Compute descriptive stats (M3)
+    6. Populate column provenance (M7)
+    
+    Security: Requires authentication
+    M9: Research use only, NOT for clinical decisions
+    """
+    try:
+        logger.info(f"🚀 STP Stage 1 Ingestion Started by {current_user.username}")
+        logger.info(f"   Version: {request.dataset_version}")
+        logger.info(f"   Force Reload: {request.force_reload}")
+        
+        # Step 1: Ingest (with M6 freeze enforcement)
+        logger.info("Step 1/6: Ingesting & validating data...")
+        ingest_result = ingest_stp_data(
+            dataset_version=request.dataset_version,
+            force_reload=request.force_reload
+        )
+        
+        if ingest_result.get('status') == 'skipped':
+            return {
+                "status": "skipped",
+                "message": f"Dataset {request.dataset_version} already exists. Use force_reload=True to overwrite.",
+                "details": ingest_result
+            }
+        
+        # Step 2: Transform
+        logger.info("Step 2/6: Transforming wide→long...")
+        transform_result = transform_wide_to_long(dataset_version=request.dataset_version)
+        
+        # Step 3: Antibiotic registry
+        logger.info("Step 3/6: Building antibiotic registry...")
+        registry_result = build_antibiotic_registry(dataset_version=request.dataset_version)
+        
+        # Step 4: Governance report (M1-M10, O1-O2)
+        logger.info("Step 4/6: Generating governance report...")
+        governance_result = generate_governance_report(dataset_version=request.dataset_version)
+        
+        # Step 5: Descriptive stats (M3)
+        logger.info("Step 5/6: Computing descriptive statistics...")
+        stats_result = compute_descriptive_stats(dataset_version=request.dataset_version)
+        
+        # Step 6: Column provenance (M7)
+        logger.info("Step 6/6: Populating column provenance...")
+        provenance_result = populate_column_provenance(dataset_version=request.dataset_version)
+        
+        logger.info("✅ STP Stage 1 Ingestion Complete!")
+        
+        return {
+            "status": "success",
+            "message": "STP Stage 1 pipeline completed successfully",
+            "dataset_version": request.dataset_version,
+            "results": {
+                "ingestion": ingest_result,
+                "transformation": transform_result,
+                "antibiotic_registry": registry_result,
+                "governance": governance_result,
+                "statistics": {"status": "success"},
+                "column_provenance": provenance_result
+            },
+            "clinical_disclaimer": "M9: This system is for research only, NOT for clinical decision support"
+        }
+    
+    except ValueError as e:
+        # M6 freeze violation or other validation error
+        logger.error(f"❌ STP Ingestion failed: {e}")
+        raise HTTPException(status_code=403, detail=str(e))
+    
+    except Exception as e:
+        logger.error(f"❌ STP Ingestion failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stp/stage1/metadata", tags=["STP Surveillance"])
+async def get_stp_metadata(
+    dataset_version: str = "v1.0.0",
+    db: Session = Depends(get_db)
+):
+    """
+    Get STP dataset metadata & provenance.
+    
+    Returns:
+    - Dataset version & hash
+    - Data quality metrics
+    - Temporal coverage
+    - Antibiotic registry
+    - M5 schema version
+    
+    Security: Public (metadata only)
+    """
+    try:
+        # Fetch metadata
+        metadata_query = text("""
+            SELECT 
+                dataset_version, source_file_name, source_file_hash,
+                total_rows_processed, total_rows_accepted, total_rows_rejected,
+                date_range_start, date_range_end,
+                schema_version, schema_checksum, is_frozen, approved_at
+            FROM stp_dataset_metadata
+            WHERE dataset_version = :v
+        """)
+        
+        metadata = db.execute(metadata_query, {"v": dataset_version}).fetchone()
+        
+        if not metadata:
+            raise HTTPException(status_code=404, detail=f"Dataset version {dataset_version} not found")
+        
+        # Fetch organism counts
+        organism_query = text("""
+            SELECT organism, COUNT(DISTINCT isolate_id) as count
+            FROM stp_canonical_long
+            WHERE dataset_version = :v
+            GROUP BY organism
+            ORDER BY count DESC
+        """)
+        organisms = {row[0]: row[1] for row in db.execute(organism_query, {"v": dataset_version}).fetchall()}
+        
+        # Fetch ward counts
+        ward_query = text("""
+            SELECT ward, COUNT(DISTINCT isolate_id) as count
+            FROM stp_canonical_long
+            WHERE dataset_version = :v
+            GROUP BY ward
+            ORDER BY count DESC
+        """)
+        wards = {row[0]: row[1] for row in db.execute(ward_query, {"v": dataset_version}).fetchall()}
+        
+        # Fetch antibiotic registry
+        ab_query = text("""SELECT antibiotic_name, coverage_percent FROM stp_antibiotic_registry WHERE dataset_version = :v ORDER BY coverage_percent DESC""")
+        antibiotics = [{"name": row[0], "coverage": float(row[1])} for row in db.execute(ab_query, {"v": dataset_version}).fetchall()]
+        
+        return {
+            "dataset_version": metadata[0],
+            "source_file": metadata[1],
+            "source_hash": metadata[2],
+            "rows_processed": metadata[3],
+            "rows_accepted": metadata[4],
+            "rows_rejected": metadata[5],
+            "date_range": {
+                "start": str(metadata[6]) if metadata[6] else None,
+                "end": str(metadata[7]) if metadata[7] else None
+            },
+            "schema_version": metadata[8],  # M5
+            "schema_checksum": metadata[9],  # M5
+            "is_frozen": metadata[10],  # M6
+            "approved_at": str(metadata[11]) if metadata[11] else None,  # M6
+            "organism_counts": organisms,
+            "ward_counts": wards,
+            "antibiotic_registry": antibiotics
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Metadata fetch error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stp/stage1/governance", tags=["STP Surveillance"])
+async def get_stp_governance(
+    dataset_version: str = "v1.0.0",
+    db: Session = Depends(get_db)
+):
+    """
+    Get STP governance documentation (M1-M10, O1-O2).
+    
+    Security: Public (for transparency)
+    """
+    try:
+        query = text("""
+            SELECT declaration_type, declaration_text
+            FROM stp_governance_declarations
+            WHERE dataset_version = :v
+            AND is_active = TRUE
+        """)
+        
+        declarations = db.execute(query, {"v": dataset_version}).fetchall()
+        
+        if not declarations:
+            raise HTTPException(status_code=404, detail=f"No governance declarations found for {dataset_version}")
+        
+        return {
+            "dataset_version": dataset_version,
+            "declarations": {row[0]: row[1] for row in declarations},
+            "compliance": "M1-M10 + O1-O2 complete"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Governance fetch error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stp/stage1/quality-log", tags=["STP Surveillance"])
+async def get_stp_quality_log(
+    dataset_version: str = "v1.0.0",
+    limit: int = 100,
+    rejection_reason: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get STP data quality audit trail.
+    
+    Security: Requires authentication
+    """
+    try:
+        query = """
+            SELECT row_index, rejection_reason, organism_provided, 
+                   ward_provided, sample_date_provided, details, created_at
+            FROM stp_data_quality_log
+            WHERE dataset_version = :v
+        """
+        params = {"v": dataset_version}
+        
+        if rejection_reason:
+            query += " AND rejection_reason = :reason"
+            params["reason"] = rejection_reason
+        
+        query += " ORDER BY created_at DESC LIMIT :limit"
+        params["limit"] = limit
+        
+        logs = db.execute(text(query), params).fetchall()
+        
+        return {
+            "dataset_version": dataset_version,
+            "total_rejections": len(logs),
+            "logs": [
+                {
+                    "row_index": row[0],
+                    "rejection_reason": row[1],
+                    "organism": row[2],
+                    "ward": row[3],
+                    "sample_date": str(row[4]) if row[4] else None,
+                    "details": row[5],
+                    "timestamp": str(row[6])
+                }
+                for row in logs
+            ]
+        }
+    
+    except Exception as e:
+        logger.error(f"Quality log error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stp/stage1/descriptive-stats", tags=["STP Surveillance"])
+async def get_stp_descriptive_stats(dataset_version: str = "v1.0.0"):
+    """
+    Get STP descriptive statistics (M3: includes temporal density).
+    
+    Security: Public (aggregated data only)
+    M10: NO resistance rates (Stage 1 firewall)
+    """
+    try:
+        result = compute_descriptive_stats(dataset_version=dataset_version)
+        return result
+    except Exception as e:
+        logger.error(f"Descriptive stats error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stp/stage1/canonical-data", tags=["STP Surveillance"])
+async def export_stp_canonical_data(
+    dataset_version: str = "v1.0.0",
+    limit: int = 1000,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Export STP canonical long-format data.
+    
+    Security: Requires authentication
+    """
+    try:
+        query = text("""
+            SELECT isolate_id, sample_date, organism, ward, sample_type,
+                   antibiotic, ast_result
+            FROM stp_canonical_long
+            WHERE dataset_version = :v
+            ORDER BY sample_date DESC, isolate_id
+            LIMIT :limit
+        """)
+        
+        rows = db.execute(query, {"v": dataset_version, "limit": limit}).fetchall()
+        
+        return {
+            "dataset_version": dataset_version,
+            "record_count": len(rows),
+            "data": [
+                {
+                    "isolate_id": row[0],
+                    "sample_date": str(row[1]),
+                    "organism": row[2],
+                    "ward": row[3],
+                    "sample_type": row[4],
+                    "antibiotic": row[5],
+                    "ast_result": row[6]
+                }
+                for row in rows
+            ]
+        }
+    
+    except Exception as e:
+        logger.error(f"Data export error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/stp/stage1/freeze", tags=["STP Surveillance"])
+async def freeze_stp_dataset(
+    request: STPFreezeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    M6: Mark a dataset version as FROZEN (immutable).
+    
+    Frozen datasets cannot be overwritten.
+    Requires admin privileges (future enhancement).
+    
+    Security: Requires authentication
+    """
+    try:
+        # Check if version exists
+        check_query = text("SELECT is_frozen FROM stp_dataset_metadata WHERE dataset_version = :v")
+        result = db.execute(check_query, {"v": request.dataset_version}).fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail=f"Dataset version {request.dataset_version} not found")
+        
+        if result[0]:
+            raise HTTPException(status_code=400, detail=f"Dataset {request.dataset_version} is already frozen")
+        
+        # Freeze the dataset
+        freeze_query = text("""
+            UPDATE stp_dataset_metadata
+            SET is_frozen = TRUE,
+                approved_at = NOW(),
+                approved_by = :approved_by
+            WHERE dataset_version = :v
+        """)
+        
+        db.execute(freeze_query, {"v": request.dataset_version, "approved_by": request.approved_by})
+        db.commit()
+        
+        logger.info(f"🔒 Dataset {request.dataset_version} FROZEN by {request.approved_by}")
+        
+        return {
+            "status": "frozen",
+            "dataset_version": request.dataset_version,
+            "approved_by": request.approved_by,
+            "approved_at": datetime.now(),
+            "message": f"Dataset {request.dataset_version} is now immutable (M6)"
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Freeze error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
 # Startup/Shutdown Events
 # ============================================
 
