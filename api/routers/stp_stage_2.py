@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
 
-from api.database import get_db
+from database import get_db
 
 router = APIRouter(
     prefix="/api/stp/stage2",

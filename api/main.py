@@ -47,7 +47,7 @@ from auth import User, get_current_user
 from startup_manager import StartupManager
 
 # Stage 2 Router
-from api.routers import stp_stage_2, stp_stage_3, stp_stage_4, stp_stage_5
+from routers import stp_stage_2, stp_stage_3, stp_stage_4, stp_stage_5
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

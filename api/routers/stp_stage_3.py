@@ -11,7 +11,7 @@ ENFORCES M37: Human-in-Loop Status access.
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from api.database import get_db
+from database import get_db
 from sqlalchemy import text
 
 router = APIRouter(
