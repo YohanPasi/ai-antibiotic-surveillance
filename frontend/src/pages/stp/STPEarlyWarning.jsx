@@ -53,6 +53,20 @@ const STPEarlyWarning = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {predictions.map((pred, idx) => (
                     <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-lg transition-shadow">
+                        {/* Forecast Week Header */}
+                        {pred.forecast_week && (
+                            <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-600">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                                        Detected: {new Date(pred.detected_week).toLocaleDateString()}
+                                    </span>
+                                    <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold">
+                                        Forecast: {new Date(pred.forecast_week).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <h3 className="font-bold text-gray-400 text-xs uppercase tracking-wider mb-2">Risk Assessment</h3>

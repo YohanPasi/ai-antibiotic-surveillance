@@ -38,6 +38,14 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
             ]
         },
         {
+            title: "STP Surveillance (Research)",
+            items: [
+                { id: 'stp_antibiogram_entry', label: 'Ward Antibiogram Entry', icon: Beaker },
+                { id: 'stp_validation', label: 'Prediction Validation', icon: Shield },
+                { id: 'stp_model_status', label: 'Model Feedback Status', icon: Activity }
+            ]
+        },
+        {
             title: "Lab & Configuration",
             items: [
                 { id: 'ast_entry', label: 'Lab Entry', icon: Beaker },
