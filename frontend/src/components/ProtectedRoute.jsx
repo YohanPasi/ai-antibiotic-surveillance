@@ -7,7 +7,20 @@ const ProtectedRoute = ({ children }) => {
     const location = useLocation();
 
     if (loading) {
-        return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-purple-400">Security Check...</div>;
+        return (
+            <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-4">
+                <div className="text-purple-400 animate-pulse">Security Check...</div>
+                <button
+                    onClick={() => {
+                        localStorage.removeItem('token');
+                        window.location.reload();
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-300 underline"
+                >
+                    Stuck? Click to Reset
+                </button>
+            </div>
+        );
     }
 
     if (!user) {

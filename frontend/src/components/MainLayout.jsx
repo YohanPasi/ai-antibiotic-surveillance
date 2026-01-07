@@ -14,6 +14,13 @@ import { AuditLogView } from './esbl/screens/AuditLogView';
 import { PostASTReview } from './esbl/screens/PostASTReview';
 import { LabEntryForm } from './esbl/screens/LabEntryForm';
 
+// STP Pages (Stage 1-5 Frontend)
+import STPOverview from '../pages/stp/STPOverview';
+import STPWardTrends from '../pages/stp/STPWardTrends';
+import STPEarlyWarning from '../pages/stp/STPEarlyWarning';
+import STPModelEvaluation from '../pages/stp/STPModelEvaluation';
+import STPAlerts from '../pages/stp/STPAlerts';
+
 function MainLayout() {
     const [activeView, setActiveView] = useState('dashboard');
     const [selectedWard, setSelectedWard] = useState(null);
@@ -108,6 +115,14 @@ function MainLayout() {
                 );
             case 'analytics':
                 return <MRSAPerformanceDashboard />;
+
+            // STP Surveillance (Stage 1-5)
+            case 'stp_dashboard': return <STPOverview />;
+            case 'stp_ward_trends': return <STPWardTrends />;
+            case 'stp_predictions': return <STPEarlyWarning />;
+            case 'stp_evaluation': return <STPModelEvaluation />;
+            case 'stp_alerts': return <STPAlerts />;
+
             default:
                 return <div className="text-white">View Not Found</div>;
         }
