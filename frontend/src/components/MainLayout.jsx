@@ -21,6 +21,11 @@ import STPEarlyWarning from '../pages/stp/STPEarlyWarning';
 import STPModelEvaluation from '../pages/stp/STPModelEvaluation';
 import STPAlerts from '../pages/stp/STPAlerts';
 
+// STP Feedback Loop (Post-Deployment)
+import STPAntibiogramEntry from '../pages/stp/STPAntibiogramEntry';
+import STPValidation from '../pages/stp/STPValidation';
+import STPModelStatus from '../pages/stp/STPModelStatus';
+
 function MainLayout() {
     const [activeView, setActiveView] = useState('dashboard');
     const [selectedWard, setSelectedWard] = useState(null);
@@ -122,6 +127,11 @@ function MainLayout() {
             case 'stp_predictions': return <STPEarlyWarning />;
             case 'stp_evaluation': return <STPModelEvaluation />;
             case 'stp_alerts': return <STPAlerts />;
+
+            // STP Feedback Loop (Research)
+            case 'stp_antibiogram_entry': return <STPAntibiogramEntry />;
+            case 'stp_validation': return <STPValidation />;
+            case 'stp_model_status': return <STPModelStatus />;
 
             default:
                 return <div className="text-white">View Not Found</div>;
