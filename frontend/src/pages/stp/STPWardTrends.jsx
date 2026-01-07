@@ -11,8 +11,8 @@ const STPWardTrends = () => {
     const [profileData, setProfileData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [wards, setWards] = useState([]);
 
-    const wards = ['ICU', 'General Ward', 'Surgical Ward'];
     const organisms = [
         'Streptococcus pneumoniae',
         'Enterococcus faecalis',
@@ -24,6 +24,28 @@ const STPWardTrends = () => {
         'S. aureus'
     ];
 
+    // Fetch available wards on mount
+    useEffect(() => {
+        const fetchWards = async () => {
+            try {
+                const res = await fetch('http://localhost:8000/api/stp/stage2/wards');
+                if (res.ok) {
+                    const data = await res.json();
+                    setWards(data);
+                    // Default to first ward if current selection (ICU) not in list
+                    if (data.length > 0 && !data.includes('ICU')) {
+                        setSelectedWard(data[0]);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch wards list", err);
+                // Fallback
+                setWards(['ICU', 'General Ward', 'Surgical Ward']);
+            }
+        };
+        fetchWards();
+    }, []);
+
     useEffect(() => {
         const fetchData = async () => {
             if (!token) return;
@@ -33,7 +55,7 @@ const STPWardTrends = () => {
                 const headers = { 'Authorization': `Bearer ${token}` };
 
                 // 1. Fetch Weekly Trends
-                const trendRes = await fetch(`${import.meta.env.VITE_API_URL}/api/stp/stage2/weekly-rates?ward=${selectedWard}&organism=${encodeURIComponent(selectedOrganism)}&limit=52`, { headers });
+                const trendRes = await fetch(`http://localhost:8000/api/stp/stage2/weekly-rates?ward=${selectedWard}&organism=${encodeURIComponent(selectedOrganism)}&limit=52`, { headers });
                 if (!trendRes.ok) throw new Error('Failed to fetch trends');
                 const trendJson = await trendRes.json();
 
@@ -45,7 +67,7 @@ const STPWardTrends = () => {
                 setTrendData(formattedTrends);
 
                 // 2. Fetch Ward Profile (Heatmap Data)
-                const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/api/stp/stage2/ward-profile?ward=${selectedWard}`, { headers });
+                const profileRes = await fetch(`http://localhost:8000/api/stp/stage2/ward-profile?ward=${selectedWard}`, { headers });
                 if (!profileRes.ok) throw new Error('Failed to fetch profile');
                 const profileJson = await profileRes.json();
                 setProfileData(profileJson);
@@ -78,9 +100,11 @@ const STPWardTrends = () => {
                         <select
                             value={selectedWard}
                             onChange={(e) => setSelectedWard(e.target.value)}
-                            className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
                         >
-                            {wards.map(w => <option key={w} value={w}>{w}</option>)}
+                            {wards.map(ward => (
+                                <option key={ward} value={ward}>{ward}</option>
+                            ))}
                         </select>
                     </div>
 
@@ -117,9 +141,7 @@ const STPWardTrends = () => {
                         </div>
 
                         {profileData.length === 0 ? (
-                            <div className="h-64 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 rounded-lg text-slate-400">
-                                <p>No specific profile data found for {selectedWard}.</p>
-                            </div>
+                            <div className="text-center py-8 text-slate-400">No profile data available</div>
                         ) : (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {profileData.map((item, idx) => (
