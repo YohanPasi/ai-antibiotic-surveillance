@@ -163,7 +163,7 @@ function MainLayout() {
                 </main>
 
                 <footer className="py-4 px-6 border-t border-gray-200 dark:border-gray-800 text-center text-xs text-gray-500 dark:text-gray-600 bg-gray-50 dark:bg-gray-900 transition-colors">
-                    <p>© 2026 Sentinel AMR Surveillance | Teaching Hospital Peradeniya × SLIIT | Confidential Clinical Data</p>
+                    <p>© 2025 Antigravity Surveillance Project | Confidential Clinical Data</p>
                 </footer>
             </div>
         </div>

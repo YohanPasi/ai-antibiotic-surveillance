@@ -10,9 +10,18 @@ const Header = () => {
     return (
         <header className="h-16 flex items-center justify-between px-6 sticky top-0 z-40 transition-colors duration-300
             bg-white/80 dark:bg-gray-900/50 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100">
-            {/* Left: Empty for now */}
+            {/* Left: Operations/Breadcrumb (Placeholder) */}
             <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">AMR Surveillance Platform</h2>
+                <div className="relative group">
+                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 dark:text-gray-500 group-focus-within:text-purple-500 dark:group-focus-within:text-purple-400 transition-colors" />
+                    <input
+                        type="text"
+                        placeholder="Search isolate, ward..."
+                        className="text-sm rounded-full pl-10 pr-4 py-2 border border-transparent focus:outline-none w-64 transition-all
+                        bg-gray-100 dark:bg-gray-800/50 text-gray-800 dark:text-gray-300
+                        focus:border-purple-500 focus:bg-white dark:focus:bg-gray-800"
+                    />
+                </div>
             </div>
 
             {/* Right: User Profile & Status */}
@@ -24,6 +33,12 @@ const Header = () => {
                 >
                     {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </button>
+
+                {/* Status Indicator */}
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">System Online</span>
+                </div>
 
                 {/* Notifications */}
                 <NotificationDropdown />
