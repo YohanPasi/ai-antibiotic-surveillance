@@ -8,14 +8,16 @@ ENFORCES M30: Non-Clinical Disclaimer.
 ENFORCES M37: Human-in-Loop Status access.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from database import get_db
 from sqlalchemy import text
+from pydantic import BaseModel, Field
+from datetime import datetime, timedelta
 
 router = APIRouter(
-    prefix="/stp/stage3",
+    prefix="/api/stp/stage3",
     tags=["STP Stage 3: Predictive Modeling"],
     responses={
         200: {"description": "Success"},
@@ -122,6 +124,56 @@ def get_early_warnings(
         "data": data
     }
 
+@router.get("/early-warning-cards", response_model=dict)
+def get_early_warning_cards(
+    db: Session = Depends(get_db)
+):
+    """
+    Get formatted early warning cards for the dashboard.
+    """
+    query = """
+    SELECT 
+        warning_id, ward, organism, antibiotic, detected_at_week, 
+        signal_strength, method, severity
+    FROM stp_early_warnings
+    WHERE status = 'new'
+    ORDER BY signal_strength DESC
+    LIMIT 10
+    """
+    
+    result = db.execute(text(query)).fetchall()
+    
+    cards = []
+    for row in result:
+        # Map DB columns to Frontend 'prediction' object
+        # probability = signal_strength (clamped 0-1)
+        prob = row.signal_strength if row.signal_strength else 0.5
+        prob = max(0, min(1, prob)) # Clamp
+        
+        cards.append({
+            "ward": row.ward,
+            "organism": row.organism,
+            "antibiotic": row.antibiotic,
+            "detected_week": row.detected_at_week.isoformat() if row.detected_at_week else None,
+            "forecast_week": (row.detected_at_week + timedelta(days=7)).isoformat() if row.detected_at_week else None,
+            "prediction": {
+                "probability": round(prob, 2),
+                "risk": (row.severity or "medium").lower(),
+                "uncertainty": 0.1, # Placeholder or derive
+                "horizon": "T+1"
+            },
+            "features": [
+                {"name": "Signal Strength", "value": round(prob, 2)},
+                {"name": "Detection Method", "value": 1.0 if row.method == 'TrendSlope' else 0.5},
+            ]
+        })
+        
+    return {
+        "disclaimer": DISCLAIMER_TEXT,
+        "count": len(cards),
+        "data": cards
+    }
+
 @router.get("/explanations", response_model=dict)
 def get_explanations(
     prediction_id: str,
@@ -138,13 +190,95 @@ def get_explanations(
     LIMIT 10
     """
     
-    result = db.execute(text(query), {"pid": prediction_id}).fetchall()
+    # Check if prediction_id is UUID
+    import uuid
+    try:
+        uuid_obj = uuid.UUID(prediction_id)
+        result = db.execute(text(query), {"pid": prediction_id}).fetchall()
+        top_features = [
+            {"feature": row.feature_name, "impact": row.importance_value}
+            for row in result
+        ]
+    except ValueError:
+        # If not UUID, return empty (graceful degradation)
+        top_features = []
     
     return {
         "disclaimer": DISCLAIMER_TEXT,
         "prediction_id": prediction_id,
-        "top_features": [
-            {"feature": row.feature_name, "impact": row.importance_value}
-            for row in result
-        ]
+        "top_features": top_features
     }
+
+@router.get("/alerts", response_model=dict)
+def get_alerts(
+    status: str = "new",
+    db: Session = Depends(get_db)
+):
+    """
+    Get alerts filtered by status.
+    """
+    # 1. Get Total Count for this status
+    count_query = text("SELECT COUNT(*) FROM stp_early_warnings WHERE status = :status")
+    total_count = db.execute(count_query, {"status": status}).scalar()
+    
+    # 2. Get Paginated Alerts
+    query = """
+    SELECT 
+        warning_id, ward, organism, antibiotic, detected_at_week, 
+        signal_strength, method, severity, status
+    FROM stp_early_warnings
+    WHERE status = :status
+    ORDER BY detected_at_week DESC, signal_strength DESC
+    LIMIT 50
+    """
+    
+    result = db.execute(text(query), {"status": status}).fetchall()
+    
+    alerts = []
+    for row in result:
+        alerts.append({
+            "id": str(row.warning_id),
+            "severity": (row.severity or "medium").lower(),
+            "description": f"Resistance Spike: {row.organism} in {row.ward}",
+            "details": f"{row.antibiotic} resistance rising (Signal: {round(row.signal_strength or 0, 2)})",
+            "timestamp": row.detected_at_week.isoformat(),
+            "status": row.status
+        })
+        
+    return {
+        "total": total_count,
+        "count": len(alerts),
+        "alerts": alerts
+    }
+
+@router.patch("/alerts/{warning_id}/status")
+def update_alert_status(
+    warning_id: str,
+    action: str, # 'dismiss' or 'acknowledge'
+    db: Session = Depends(get_db)
+):
+    """
+    Review alerts (Human-in-the-loop M37).
+    """
+    status_map = {
+        "dismiss": "dismissed",
+        "acknowledge": "confirmed"
+    }
+    
+    new_status = status_map.get(action)
+    if not new_status:
+        raise HTTPException(status_code=400, detail="Invalid action")
+        
+    query = text("""
+        UPDATE stp_early_warnings
+        SET status = :status, reviewed_at = NOW()
+        WHERE warning_id = :wid
+    """)
+    
+    result = db.execute(query, {"status": new_status, "wid": warning_id})
+    db.commit()
+    
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Alert not found")
+        
+    return {"message": f"Alert {action}ed successfully"}
