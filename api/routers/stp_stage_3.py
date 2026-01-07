@@ -8,11 +8,13 @@ ENFORCES M30: Non-Clinical Disclaimer.
 ENFORCES M37: Human-in-Loop Status access.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from database import get_db
 from sqlalchemy import text
+from pydantic import BaseModel, Field
+from datetime import datetime, timedelta
 
 router = APIRouter(
     prefix="/api/stp/stage3",
@@ -152,6 +154,8 @@ def get_early_warning_cards(
             "ward": row.ward,
             "organism": row.organism,
             "antibiotic": row.antibiotic,
+            "detected_week": row.detected_at_week.isoformat() if row.detected_at_week else None,
+            "forecast_week": (row.detected_at_week + timedelta(days=7)).isoformat() if row.detected_at_week else None,
             "prediction": {
                 "probability": round(prob, 2),
                 "risk": (row.severity or "medium").lower(),
