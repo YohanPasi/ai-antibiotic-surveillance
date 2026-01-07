@@ -1,6 +1,7 @@
-import { User, Bell, Search, Sun, Moon } from 'lucide-react';
+import { User, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import NotificationDropdown from './NotificationDropdown';
 
 const Header = () => {
     const { user } = useAuth();
@@ -40,10 +41,7 @@ const Header = () => {
                 </div>
 
                 {/* Notifications */}
-                <button className="relative text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-gray-900"></span>
-                </button>
+                <NotificationDropdown />
 
                 <div className="h-6 w-px bg-gray-200 dark:bg-gray-800"></div>
 

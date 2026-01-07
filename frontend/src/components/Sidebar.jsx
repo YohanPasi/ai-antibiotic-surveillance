@@ -121,7 +121,9 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
 
                 <div>
                     <p className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase px-4 mb-3 tracking-wider">System</p>
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                    <button
+                        onClick={() => setActiveView('settings')}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
                         text-slate-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-slate-900 dark:hover:text-white">
                         <Settings className="w-4 h-4 text-slate-400 dark:text-gray-500" />
                         Settings

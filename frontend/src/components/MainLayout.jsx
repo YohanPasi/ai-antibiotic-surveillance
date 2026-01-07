@@ -25,6 +25,7 @@ import STPAlerts from '../pages/stp/STPAlerts';
 import STPAntibiogramEntry from '../pages/stp/STPAntibiogramEntry';
 import STPValidation from '../pages/stp/STPValidation';
 import STPModelStatus from '../pages/stp/STPModelStatus';
+import SettingsPage from './SettingsPage';
 
 function MainLayout() {
     const [activeView, setActiveView] = useState('dashboard');
@@ -132,6 +133,9 @@ function MainLayout() {
             case 'stp_antibiogram_entry': return <STPAntibiogramEntry />;
             case 'stp_validation': return <STPValidation />;
             case 'stp_model_status': return <STPModelStatus />;
+
+            // Settings
+            case 'settings': return <SettingsPage onClose={() => setActiveView('dashboard')} />;
 
             default:
                 return <div className="text-white">View Not Found</div>;
