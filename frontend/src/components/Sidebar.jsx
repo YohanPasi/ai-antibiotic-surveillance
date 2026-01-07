@@ -28,6 +28,16 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
             ]
         },
         {
+            title: "STP Surveillance (Streptococcus & Enterococcus)",
+            items: [
+                { id: 'stp_dashboard', label: 'Overview', icon: Activity },
+                { id: 'stp_ward_trends', label: 'Ward Trends', icon: Database },
+                { id: 'stp_predictions', label: 'Early Warning (AI)', icon: Brain },
+                { id: 'stp_evaluation', label: 'Model Evaluation', icon: Shield },
+                { id: 'stp_alerts', label: 'Alerts & Review', icon: FileText },
+            ]
+        },
+        {
             title: "Lab & Configuration",
             items: [
                 { id: 'ast_entry', label: 'Lab Entry', icon: Beaker },
@@ -38,8 +48,9 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
 
     const [expandedGroups, setExpandedGroups] = useState({
         "Non-Fermenter Surveillance": false,
+        "STP Surveillance (Streptococcus & Enterococcus)": true,
         "MRSA Control (AI)": false,
-        "Clinical Decision Support": true, // Auto-expand for visibility
+        "Clinical Decision Support": false, // Auto-expand for visibility
         "Lab & Configuration": false
     });
 

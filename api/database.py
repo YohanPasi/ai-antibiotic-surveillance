@@ -10,13 +10,20 @@ import os
 # Default uses Docker service name 'db', change to 'localhost' for local development
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://ast_user:ast_password_2024@db:5432/ast_db")
 
-# Create SQLAlchemy engine
+# Create SQLAlchemy engine with keep-alive
 engine = create_engine(
     DATABASE_URL,
     pool_size=10,
     max_overflow=20,
     pool_pre_ping=True,  # Verify connections before using
-    echo=False  # Set to True for SQL query logging
+    pool_recycle=3600,   # Recycle connections every hour
+    echo=False,  # Set to True for SQL query logging
+    connect_args={
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    }
 )
 
 # Create session factory
