@@ -9,7 +9,7 @@
 -- M42: Defines the specific time window used for prospective calculation.
 CREATE TABLE IF NOT EXISTS stp_model_evaluation_runs (
     evaluation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    model_id TEXT REFERENCES stp_model_registry(model_id),
+    model_id UUID REFERENCES stp_model_registry(model_id),
     run_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     evaluation_window_start DATE NOT NULL,
     evaluation_window_end DATE NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS stp_shap_stability_metrics (
     evaluation_id UUID REFERENCES stp_model_evaluation_runs(evaluation_id) ON DELETE CASCADE,
     comparison_window_start DATE NOT NULL, -- Previous window compared against
     jaccard_index NUMERIC NOT NULL, -- Similarity of top-k features
-    top_features_list TEXT[], -- The features that *were* stable
+    top_features_list JSONB, -- The features that *were* stable (JSON array)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
