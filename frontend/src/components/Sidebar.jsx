@@ -9,8 +9,8 @@ const Sidebar = ({ activeView, setActiveView, logout }) => {
             subtitle: "Pseudomonas & Acinetobacter",
             items: [
                 { id: 'dashboard', label: 'Dashboard', icon: Home },
-                { id: 'ward_detail', label: 'Ward Detail', icon: Activity },
-                { id: 'audit_log', label: 'Audit Logs', icon: FileText },
+                //  { id: 'ward_detail', label: 'Ward Detail', icon: Activity },
+                 { id: 'audit_log', label: 'Audit Logs', icon: FileText },
             ]
         },
         {

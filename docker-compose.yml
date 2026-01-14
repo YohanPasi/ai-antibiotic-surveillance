@@ -14,10 +14,6 @@ services:
       - model_data:/app/models/best_models
       - ./api/models/mrsa_artifacts:/app/models/mrsa_artifacts
       - ./Raw:/app/data/raw
-      # ESBL Artifact Mounts
-      - ./Models:/app/Models
-      - ./Config:/app/Config
-      - ./Processed:/app/Processed
     ports:
       - "8000:8000"
     environment:

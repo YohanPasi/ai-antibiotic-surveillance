@@ -39,9 +39,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 import auth
 from auth import User, get_current_user
 
-# Auth Logic
-import auth
-from auth import User, get_current_user
 
 # Startup Logic
 from startup_manager import StartupManager
@@ -62,6 +59,21 @@ app = FastAPI(
     redoc_url="/api/redoc"
 )
 
+# Configure CORS (Must be added immediately after app creation)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "http://localhost:8080"
+    ], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Register Stage 2 Router (Read-Only)
 app.include_router(stp_stage_2.router)
 app.include_router(stp_stage_3.router)
@@ -77,15 +89,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# Configure CORS for frontend communication
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ============================================
 # AUTHENTICATION ENDPOINTS

@@ -19,7 +19,7 @@ REACT_FILES = [
     "frontend/src/legacy/DataMigrationWizard.jsx"
 ]
 
-LINE_TARGET = 10005  # > 10,000 lines
+LINE_TARGET = 1005  # > 10,000 lines
 
 def ensure_dir(file_path):
     directory = os.path.dirname(file_path)

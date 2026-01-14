@@ -44,10 +44,10 @@ const Dashboard = ({ setActiveView, setSelectedWard, engineVersion }) => {
                     <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                         Hospital Surveillance
                     </h2>
-                    <p className="text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2 text-sm font-medium">
+                    {/* <p className="text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2 text-sm font-medium">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         AI Engine Online <span className="text-slate-300 dark:text-gray-600">|</span> Mode: <span className="text-amber-500 font-bold">SHADOW VALIDATION</span>
-                    </p>
+                    </p> */}
                 </div>
 
                 <button
