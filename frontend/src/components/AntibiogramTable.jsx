@@ -98,7 +98,20 @@ const AntibiogramTable = ({ wardId }) => {
                                     }
 
                                     const val = viewMode === 'current' ? cellData.current : cellData.predicted;
+                                    const hasForecast = cellData.has_forecast !== false;
+                                    const forecastMethod = cellData.forecast_method; // "LSTM" | "EWMA-Stat" | null
                                     const history = cellData.history || [];
+
+                                    // Genuinely no forecast possible (fewer than 2 data points)
+                                    if (viewMode === 'predicted' && !hasForecast) {
+                                        return (
+                                            <td key={abx} className="p-1 border-b border-gray-200 dark:border-gray-700">
+                                                <div className="py-1 px-1 rounded border border-dashed border-slate-200 dark:border-gray-600 bg-slate-50 dark:bg-gray-800/30 flex flex-col items-center justify-center h-16">
+                                                    <span className="text-[10px] text-slate-400 dark:text-gray-500 text-center leading-tight">Insufficient<br />Data</span>
+                                                </div>
+                                            </td>
+                                        );
+                                    }
 
                                     return (
                                         <td key={abx} className="p-1 border-b border-gray-200 dark:border-gray-700">
@@ -109,9 +122,12 @@ const AntibiogramTable = ({ wardId }) => {
                                                         <Sparkline data={history} color={val >= 60 ? "#065f46" : "#7f1d1d"} />
                                                     </div>
                                                 )}
-                                                {viewMode === 'predicted' && (
-                                                    <span className="text-[10px] mt-1 text-purple-600 dark:text-purple-200 opacity-70">
-                                                        Pred
+                                                {viewMode === 'predicted' && forecastMethod && (
+                                                    <span className={`text-[9px] mt-1 font-semibold opacity-80 px-1 rounded ${forecastMethod === 'LSTM'
+                                                        ? 'text-purple-600 dark:text-purple-300'
+                                                        : 'text-blue-500 dark:text-blue-300'
+                                                        }`}>
+                                                        {forecastMethod === 'LSTM' ? 'AI Forecast' : 'Trend Est.'}
                                                     </span>
                                                 )}
                                             </div>
