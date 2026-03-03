@@ -1,285 +1,535 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, AlertCircle, CheckCircle, Plus, Trash2, Beaker } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    X, Save, AlertCircle, CheckCircle, Loader2,
+    Trash2, FlaskConical, ChevronDown, Calendar,
+    Hash, User, Building2, TestTube2
+} from 'lucide-react';
 
-// Default Panels per Organism
-const DRUG_PANELS = {
-    'Pseudomonas aeruginosa': ['Meropenem (MEM)', 'Ceftazidime (CAZ)', 'Ciprofloxacin (CIP)', 'Amikacin (AK)', 'Piperacillin-Tazobactam (TZP)'],
-    'Acinetobacter spp.': ['Meropenem (MEM)', 'Imipenem (IPM)', 'Ampicillin-Sulbactam (SAM)', 'Ciprofloxacin (CIP)', 'Gentamicin (CN)'],
-    'Escherichia coli': ['Ampicillin (AMP)', 'Cefuroxime (CXM)', 'Ceftriaxone (CRO)', 'Gentamicin (CN)', 'Imipenem (IPM)'],
-    'Klebsiella pneumoniae': ['Amoxicillin-Clavulanate (AMC)', 'Ceftazidime (CAZ)', 'Ciprofloxacin (CIP)', 'Meropenem (MEM)'],
-    'Staphylococcus aureus': ['Cefoxitin (FOX)', 'Vancomycin (VA)', 'Clindamycin (DA)', 'Erythromycin (E)', 'Linezolid (LZD)']
+const API = import.meta.env.VITE_API_URL;
+
+// ── Design tokens ──────────────────────────────────────────────────────────
+const glass = `bg-white/[0.03] border border-white/[0.07]`;
+
+const inputCls = `w-full bg-[#0b0f14] border border-white/[0.08] rounded-xl px-3.5 py-2.5
+  text-[13px] text-slate-200 placeholder-slate-600
+  focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/10
+  transition-all duration-200`;
+
+const selectCls = `${inputCls} appearance-none cursor-pointer pr-8`;
+
+// ── Field wrapper ──────────────────────────────────────────────────────────
+const Field = ({ label, icon: Icon, children }) => (
+    <div className="flex flex-col gap-1.5">
+        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+            {Icon && <Icon className="w-3 h-3" />}
+            {label}
+        </label>
+        {children}
+    </div>
+);
+
+// ── Select with chevron ───────────────────────────────────────────────────
+const Select = ({ name, value, onChange, children, highlight }) => (
+    <div className="relative">
+        <select name={name} value={value} onChange={onChange}
+            className={`${selectCls} ${highlight ? 'text-violet-300 font-semibold border-violet-500/20' : ''}`}>
+            {children}
+        </select>
+        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none" />
+    </div>
+);
+
+// ── SIR button ────────────────────────────────────────────────────────────
+const SIRBtn = ({ opt, selected, onClick }) => {
+    const cfg = {
+        S: {
+            active: 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30',
+            idle: 'border-white/[0.07] text-slate-600 hover:border-emerald-500/40 hover:text-emerald-400 hover:bg-emerald-500/5',
+            label: 'Susceptible',
+        },
+        I: {
+            active: 'bg-amber-500 border-amber-400 text-white shadow-amber-500/30',
+            idle: 'border-white/[0.07] text-slate-600 hover:border-amber-500/40 hover:text-amber-400 hover:bg-amber-500/5',
+            label: 'Intermediate',
+        },
+        R: {
+            active: 'bg-red-500 border-red-400 text-white shadow-red-500/30',
+            idle: 'border-white/[0.07] text-slate-600 hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/5',
+            label: 'Resistant',
+        },
+    };
+    return (
+        <button
+            type="button"
+            title={cfg[opt].label}
+            onClick={onClick}
+            className={`relative w-9 h-9 rounded-lg font-black text-[11px] border
+                        transition-all duration-150 active:scale-90
+                        ${selected
+                    ? `${cfg[opt].active} shadow-lg scale-105`
+                    : `bg-white/[0.03] ${cfg[opt].idle}`}`}>
+            {opt}
+            {selected && (
+                <motion.span
+                    layoutId={`sir-glow-${opt}`}
+                    className="absolute inset-0 rounded-lg opacity-20 blur-sm"
+                    style={{ background: opt === 'S' ? '#10b981' : opt === 'I' ? '#f59e0b' : '#ef4444' }}
+                />
+            )}
+        </button>
+    );
 };
 
-const ASTEntryForm = ({ isOpen, onClose, onEntrySaved }) => {
-    // Metadata State
-    const [metadata, setMetadata] = useState({
-        ward: 'ICU',
-        organism: 'Pseudomonas aeruginosa',
-        specimen_type: 'Urine',
-        lab_no: '',
-        age: '',
-        gender: 'Male',
-        bht: ''
-    });
+// ── Skeleton row ──────────────────────────────────────────────────────────
+const SkeletonRow = () => (
+    <tr className="animate-pulse">
+        <td className="px-5 py-[13px]">
+            <div className="h-3.5 bg-white/[0.05] rounded-full w-44" />
+        </td>
+        <td className="px-5 py-[13px]">
+            <div className="h-3.5 bg-white/[0.05] rounded-full w-28 mx-auto" />
+        </td>
+        <td />
+    </tr>
+);
 
-    // Panel State: [{ id, antibiotic, result: '' }]
+// ── Main component ────────────────────────────────────────────────────────
+const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => {
+    const today = new Date().toISOString().split('T')[0];
+    const effectiveDefault = defaultCultureDate || today;
+    const minAllowedDate = effectiveDefault < today
+        ? effectiveDefault
+        : new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const [metadata, setMetadata] = useState({
+        ward: '', organism: '', specimen_type: '',
+        lab_no: '', age: '', gender: 'Male', bht: '',
+        culture_date: effectiveDefault,
+    });
     const [panel, setPanel] = useState([]);
-    const [newDrug, setNewDrug] = useState('');
+    const [panelLoading, setPanelLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
-
-    // Master Data State
     const [wardOptions, setWardOptions] = useState([]);
     const [specimenOptions, setSpecimenOptions] = useState([]);
+    const [organismOptions, setOrganismOptions] = useState([]);
 
-    // Auto-Populate Panel on Organism Change
+    // Fetch master data on mount
     useEffect(() => {
-        const defaults = DRUG_PANELS[metadata.organism] || [];
-        setPanel(defaults.map((drug, idx) => ({ id: idx, antibiotic: drug, result: '' })));
+        const load = async () => {
+            try {
+                const [wR, sR, oR] = await Promise.all([
+                    fetch(`${API}/api/master/definitions/WARD`),
+                    fetch(`${API}/api/master/definitions/SAMPLE_TYPE`),
+                    fetch(`${API}/api/panels/organisms`),
+                ]);
+                if (wR.ok) {
+                    const w = await wR.json(); setWardOptions(w);
+                    if (w.length) setMetadata(p => ({ ...p, ward: w[0].value }));
+                }
+                if (sR.ok) {
+                    const s = await sR.json(); setSpecimenOptions(s);
+                    if (s.length) setMetadata(p => ({ ...p, specimen_type: s[0].value }));
+                }
+                if (oR.ok) {
+                    const o = await oR.json(); setOrganismOptions(o);
+                    if (o.length) setMetadata(p => ({ ...p, organism: o[0].name }));
+                }
+            } catch (e) { console.error('Master data load failed', e); }
+        };
+        load();
+    }, []);
+
+    // Fetch panel on organism change
+    useEffect(() => {
+        if (!metadata.organism) return;
+        const ctrl = new AbortController();
+        setPanelLoading(true);
+        fetch(`${API}/api/panels/${encodeURIComponent(metadata.organism)}`, { signal: ctrl.signal })
+            .then(r => r.json())
+            .then(d => setPanel(d.map((x, i) => ({ id: i, antibiotic: x.display_name, result: '' }))))
+            .catch(e => { if (e.name !== 'AbortError') console.error(e); })
+            .finally(() => setPanelLoading(false));
+        return () => ctrl.abort();
     }, [metadata.organism]);
 
-    // Fetch Master Data on Mount
+    // Reset on open
     useEffect(() => {
-        const fetchMasterData = async () => {
-            try {
-                const [wardsRes, specimenRes] = await Promise.all([
-                    fetch(`${import.meta.env.VITE_API_URL}/api/master/definitions/WARD`),
-                    fetch(`${import.meta.env.VITE_API_URL}/api/master/definitions/SAMPLE_TYPE`)
-                ]);
-
-                if (wardsRes.ok) {
-                    const wards = await wardsRes.json();
-                    setWardOptions(wards);
-                    // Set default to first ward if not set or if current default "ICU" is invalid? 
-                    // Keeping "ICU" as safe default for now, or use first fetched val.
-                    if (wards.length > 0) setMetadata(prev => ({ ...prev, ward: wards[0].value }));
-                }
-
-                if (specimenRes.ok) {
-                    const specs = await specimenRes.json();
-                    setSpecimenOptions(specs);
-                    if (specs.length > 0) setMetadata(prev => ({ ...prev, specimen_type: specs[0].value }));
-                }
-
-            } catch (err) {
-                console.error("Failed to fetch master data", err);
-            }
-        };
-        fetchMasterData();
-    }, []);
+        if (isOpen) {
+            setMetadata(p => ({ ...p, culture_date: effectiveDefault }));
+            setMessage(null);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
-    const handleMetaChange = (e) => {
-        const { name, value } = e.target;
-        setMetadata(prev => ({ ...prev, [name]: value }));
-    };
+    const handleMeta = e => setMetadata(p => ({ ...p, [e.target.name]: e.target.value }));
+    const handleResult = (id, res) => setPanel(p => p.map(r => r.id === id ? { ...r, result: res } : r));
+    const removeDrug = id => setPanel(p => p.filter(r => r.id !== id));
 
-    const handleResultChange = (id, res) => {
-        setPanel(prev => prev.map(item => item.id === id ? { ...item, result: res } : item));
-    };
+    const completedCount = panel.filter(r => r.result !== '').length;
 
-    const addCustomDrug = () => {
-        if (!newDrug.trim()) return;
-        setPanel(prev => [...prev, { id: Date.now(), antibiotic: newDrug, result: '' }]);
-        setNewDrug('');
-    };
-
-    const removeDrug = (id) => {
-        setPanel(prev => prev.filter(item => item.id !== id));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setMessage(null);
-
-        // Filter out incomplete rows
-        const validResults = panel.filter(p => p.result !== '').map(p => ({
-            antibiotic: p.antibiotic,
-            result: p.result
-        }));
-
-        if (validResults.length === 0) {
-            setMessage({ type: 'error', text: 'Please enter at least one antibiotic result' });
-            setLoading(false);
-            return;
+    const handleSubmit = async () => {
+        setLoading(true); setMessage(null);
+        const results = panel.filter(p => p.result).map(p => ({ antibiotic: p.antibiotic, result: p.result }));
+        if (!results.length) {
+            setMessage({ type: 'error', text: 'Please mark at least one antibiotic result.' });
+            setLoading(false); return;
         }
-
-        const payload = {
-            ...metadata,
-            results: validResults
-        };
-
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/entry`, {
+            const res = await fetch(`${API}/api/entry`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ ...metadata, results }),
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
+            const data = await res.json();
+            if (res.ok) {
                 setMessage({ type: 'success', text: data.message });
-                setTimeout(() => {
-                    onClose();
-                    if (onEntrySaved) onEntrySaved();
-                }, 1500);
+                setTimeout(() => { onClose(); onEntrySaved?.(); }, 1500);
             } else {
-                setMessage({ type: 'error', text: data.detail || 'Failed to save entry' });
+                setMessage({ type: 'error', text: data.detail || 'Submission failed.' });
             }
-        } catch (error) {
-            setMessage({ type: 'error', text: 'Network Error' });
-        } finally {
-            setLoading(false);
-        }
+        } catch {
+            setMessage({ type: 'error', text: 'Network error — please try again.' });
+        } finally { setLoading(false); }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
-            <div className="bg-gray-900 border border-gray-700 rounded-lg w-[800px] h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-                {/* Header */}
-                <div className="flex justify-between items-center p-5 border-b border-gray-800 bg-gray-800/50">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-                            <Beaker className="w-5 h-5 text-purple-400" />
-                            Clinical Isolate Entry
-                        </h2>
-                        <p className="text-xs text-gray-400">Enter full susceptibility panel for a single isolate</p>
-                    </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
-                </div>
+        <AnimatePresence>
+            {/* Backdrop */}
+            <motion.div
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={onClose}
+                className="fixed inset-0 z-50 flex items-center justify-center"
+                style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(12px)' }}
+            >
+                {/* Modal */}
+                <motion.div
+                    key="modal"
+                    initial={{ opacity: 0, scale: 0.96, y: 16 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: 16 }}
+                    transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    onClick={e => e.stopPropagation()}
+                    className="w-[860px] max-h-[92vh] flex flex-col rounded-2xl overflow-hidden
+                               bg-[#080c11] border border-white/[0.08] shadow-2xl shadow-black/60"
+                >
+                    {/* ── Ambient glow ─────────────────────────────────── */}
+                    <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2
+                                    w-96 h-48 bg-indigo-600/10 rounded-full blur-3xl" />
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {/* Metadata Section */}
-                    <div className="grid grid-cols-3 gap-4 bg-gray-800/30 p-4 rounded-lg border border-gray-800">
-                        <div>
-                            <label className="block text-xs text-gray-400 mb-1">Ward</label>
-                            <select name="ward" value={metadata.ward} onChange={handleMetaChange} className="w-full form-select bg-gray-800 border-gray-700 rounded text-sm text-gray-200">
-                                {wardOptions.map(wd => (
-                                    <option key={wd.id} value={wd.value}>{wd.label}</option>
-                                ))}
-                                {wardOptions.length === 0 && <option value="ICU">ICU (Default)</option>}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-400 mb-1">Specimen</label>
-                            <select name="specimen_type" value={metadata.specimen_type} onChange={handleMetaChange} className="w-full form-select bg-gray-800 border-gray-700 rounded text-sm text-gray-200">
-                                {specimenOptions.map(sp => (
-                                    <option key={sp.id} value={sp.value}>{sp.label}</option>
-                                ))}
-                                {specimenOptions.length === 0 && <option value="Urine">Urine (Default)</option>}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-400 mb-1">Organism</label>
-                            <select name="organism" value={metadata.organism} onChange={handleMetaChange} className="w-full form-select bg-gray-800 border-blue-900/50 rounded text-sm text-blue-200 font-bold">
-                                <option>Pseudomonas aeruginosa</option>
-                                <option>Acinetobacter spp.</option>
-                                <option>Escherichia coli</option>
-                                <option>Klebsiella pneumoniae</option>
-                                <option>Staphylococcus aureus</option>
-                            </select>
-                        </div>
-                        <input type="text" name="lab_no" placeholder="Lab No" onChange={handleMetaChange} className="bg-gray-800 border-gray-700 rounded p-2 text-sm text-gray-300" />
-                        <input type="text" name="bht" placeholder="BHT" onChange={handleMetaChange} className="bg-gray-800 border-gray-700 rounded p-2 text-sm text-gray-300" />
-                        <div className="flex gap-2">
-                            <input type="number" name="age" placeholder="Age" onChange={handleMetaChange} className="w-20 bg-gray-800 border-gray-700 rounded p-2 text-sm text-gray-300" />
-                            <select name="gender" onChange={handleMetaChange} className="flex-1 bg-gray-800 border-gray-700 rounded text-sm text-gray-300">
-                                <option>Male</option><option>Female</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Antibiogram Panel */}
-                    <div>
-                        <div className="flex justify-between items-end mb-2">
-                            <h3 className="text-sm font-bold text-gray-300">Antibiogram Results</h3>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Add Custom Antibiotic..."
-                                    value={newDrug}
-                                    onChange={(e) => setNewDrug(e.target.value)}
-                                    className="bg-gray-800 border-gray-700 rounded px-2 py-1 text-xs w-48 text-white focus:border-blue-500"
-                                    onKeyDown={(e) => e.key === 'Enter' && addCustomDrug()}
-                                />
-                                <button onClick={addCustomDrug} className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs flex items-center">
-                                    <Plus className="w-3 h-3 mr-1" /> Add
-                                </button>
+                    {/* ── Header ───────────────────────────────────────── */}
+                    <div className="relative flex items-center justify-between px-7 py-5
+                                    border-b border-white/[0.06]">
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20
+                                            flex items-center justify-center flex-shrink-0">
+                                <FlaskConical className="w-4 h-4 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-[15px] font-semibold text-white tracking-tight">
+                                    Clinical Isolate Entry
+                                </h2>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                    Record susceptibility panel for a single patient isolate
+                                </p>
                             </div>
                         </div>
-
-                        <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
-                                    <tr>
-                                        <th className="px-4 py-3">Antibiotic</th>
-                                        <th className="px-4 py-3 text-center">Result (S / I / R)</th>
-                                        <th className="px-4 py-3 w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-800">
-                                    {panel.map((row) => (
-                                        <tr key={row.id} className="hover:bg-gray-800/30">
-                                            <td className="px-4 py-2 font-mono text-gray-300">{row.antibiotic}</td>
-                                            <td className="px-4 py-2 flex justify-center gap-2">
-                                                {['S', 'I', 'R'].map(opt => (
-                                                    <button
-                                                        key={opt}
-                                                        type="button"
-                                                        onClick={() => handleResultChange(row.id, opt)}
-                                                        className={`w-8 h-8 rounded-full font-bold text-xs transition-colors border ${row.result === opt
-                                                            ? (opt === 'S' ? 'bg-green-600 border-green-400 text-white' : opt === 'R' ? 'bg-red-600 border-red-400 text-white' : 'bg-yellow-600 border-yellow-400 text-white')
-                                                            : 'bg-gray-800 border-gray-700 text-gray-500 hover:border-gray-500'
-                                                            }`}
-                                                    >
-                                                        {opt}
-                                                    </button>
-                                                ))}
-                                            </td>
-                                            <td className="px-4 py-2 text-center">
-                                                <button onClick={() => removeDrug(row.id)} className="text-gray-600 hover:text-red-400">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {panel.length === 0 && (
-                                        <tr><td colSpan="3" className="p-8 text-center text-gray-500 italic">No antibiotics selected for this panel.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-5 border-t border-gray-800 bg-gray-800/50 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        {message && (
-                            <div className={`px-3 py-1 rounded flex items-center gap-2 text-xs ${message.type === 'success' ? 'bg-green-900/30 text-green-300 border border-green-800' : 'bg-red-900/30 text-red-300 border border-red-800'
-                                }`}>
-                                {message.type === 'success' ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                {message.text}
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex gap-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white text-sm">Cancel</button>
-                        <button
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded font-bold shadow-lg shadow-purple-900/20 flex items-center gap-2 disabled:opacity-50"
-                        >
-                            <Save className="w-4 h-4" />
-                            {loading ? 'Processing Pipeline...' : 'Commit Panel & Predict'}
+                        <button onClick={onClose}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center
+                                       text-slate-600 hover:text-slate-300 hover:bg-white/[0.06]
+                                       border border-transparent hover:border-white/[0.08]
+                                       transition-all duration-150">
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
+
+                    {/* ── Scrollable body ───────────────────────────────── */}
+                    <div className="flex-1 overflow-y-auto px-7 py-6 space-y-6
+                                    scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+
+                        {/* Predicted week banner */}
+                        {effectiveDefault !== today && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-start gap-3.5 px-4 py-3.5 rounded-xl
+                                           bg-indigo-500/[0.06] border border-indigo-500/20">
+                                <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25
+                                                flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                                </div>
+                                <div>
+                                    <p className="text-[12px] font-semibold text-indigo-300">
+                                        Submitting for Predicted Week
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                                        Culture date pre-filled to{' '}
+                                        <span className="text-indigo-300 font-medium">{effectiveDefault}</span>
+                                        {' '}(AI-forecasted week start). Adjust below if the actual collection date differs.
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* ── Metadata grid ────────────────────────────── */}
+                        <div className={`${glass} rounded-xl p-5`}>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600 mb-4">
+                                Isolate Information
+                            </p>
+                            <div className="grid grid-cols-3 gap-4">
+
+                                <Field label="Ward" icon={Building2}>
+                                    <Select name="ward" value={metadata.ward} onChange={handleMeta}>
+                                        {wardOptions.map(w => <option key={w.id} value={w.value}>{w.label}</option>)}
+                                        {!wardOptions.length && <option value="ICU">ICU</option>}
+                                    </Select>
+                                </Field>
+
+                                <Field label="Specimen" icon={TestTube2}>
+                                    <Select name="specimen_type" value={metadata.specimen_type} onChange={handleMeta}>
+                                        {specimenOptions.map(s => <option key={s.id} value={s.value}>{s.label}</option>)}
+                                        {!specimenOptions.length && <option value="Urine">Urine</option>}
+                                    </Select>
+                                </Field>
+
+                                <Field label="Organism" icon={FlaskConical}>
+                                    <Select name="organism" value={metadata.organism} onChange={handleMeta} highlight>
+                                        {organismOptions.map(o => <option key={o.id} value={o.name}>{o.name}</option>)}
+                                        {!organismOptions.length && <option value="">Loading…</option>}
+                                    </Select>
+                                </Field>
+
+                                <Field label="Culture Date" icon={Calendar}>
+                                    <input
+                                        type="date"
+                                        name="culture_date"
+                                        value={metadata.culture_date}
+                                        onChange={handleMeta}
+                                        min={minAllowedDate}
+                                        max={today}
+                                        className={`${inputCls} [&::-webkit-calendar-picker-indicator]:invert-[0.5] cursor-pointer`}
+                                    />
+                                </Field>
+
+                                <Field label="Lab Number" icon={Hash}>
+                                    <input type="text" name="lab_no"
+                                        placeholder="e.g. LAB-20241"
+                                        onChange={handleMeta}
+                                        className={inputCls} />
+                                </Field>
+
+                                <Field label="BHT Number" icon={Hash}>
+                                    <input type="text" name="bht"
+                                        placeholder="e.g. BHT-0042"
+                                        onChange={handleMeta}
+                                        className={inputCls} />
+                                </Field>
+
+                                {/* Age + Gender row */}
+                                <div className="col-span-3 grid grid-cols-3 gap-4">
+                                    <Field label="Patient Age" icon={User}>
+                                        <input type="number" name="age"
+                                            placeholder="Years"
+                                            onChange={handleMeta}
+                                            className={inputCls} />
+                                    </Field>
+                                    <Field label="Gender" icon={User}>
+                                        <Select name="gender" value={metadata.gender} onChange={handleMeta}>
+                                            <option>Male</option>
+                                            <option>Female</option>
+                                        </Select>
+                                    </Field>
+                                    {/* Spacer */}
+                                    <div />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── Antibiogram table ─────────────────────────── */}
+                        <div>
+                            {/* Table header bar */}
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2.5">
+                                    <p className="text-[13px] font-semibold text-white">
+                                        Antibiogram
+                                    </p>
+                                    {panelLoading && (
+                                        <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
+                                    )}
+                                    {!panelLoading && panel.length > 0 && (
+                                        <span className="text-[11px] text-slate-600">
+                                            {completedCount}/{panel.length} marked
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] text-slate-700 uppercase tracking-widest">
+                                    DB Panel · {metadata.organism || '—'}
+                                </span>
+                            </div>
+
+                            {/* Progress bar */}
+                            {!panelLoading && panel.length > 0 && (
+                                <div className="h-0.5 bg-white/[0.05] rounded-full mb-4 overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-indigo-500/50 rounded-full"
+                                        animate={{ width: `${(completedCount / panel.length) * 100}%` }}
+                                        transition={{ duration: 0.3 }}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Table */}
+                            <div className="rounded-xl overflow-hidden border border-white/[0.06]">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-white/[0.05] bg-white/[0.02]">
+                                            <th className="px-5 py-3 text-left text-[10px] font-bold uppercase
+                                                           tracking-[0.12em] text-slate-600 w-1/2">
+                                                Antibiotic
+                                            </th>
+                                            <th className="px-5 py-3 text-center text-[10px] font-bold uppercase
+                                                           tracking-[0.12em] text-slate-600">
+                                                S &nbsp;·&nbsp; I &nbsp;·&nbsp; R
+                                            </th>
+                                            <th className="w-12" />
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/[0.04]">
+
+                                        {panelLoading
+                                            ? [1, 2, 3, 4, 5, 6].map(i => <SkeletonRow key={i} />)
+                                            : panel.map((row, idx) => (
+                                                <motion.tr
+                                                    key={row.id}
+                                                    initial={{ opacity: 0, x: -6 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: idx * 0.03, duration: 0.18 }}
+                                                    className={`group transition-colors duration-100
+                                                        ${row.result
+                                                            ? 'bg-white/[0.015]'
+                                                            : 'hover:bg-white/[0.02]'}`}>
+
+                                                    {/* Antibiotic name */}
+                                                    <td className="px-5 py-3">
+                                                        <div className="flex items-center gap-2.5">
+                                                            {/* completion dot */}
+                                                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors duration-200
+                                                                ${row.result === 'S' ? 'bg-emerald-500' :
+                                                                    row.result === 'I' ? 'bg-amber-500' :
+                                                                        row.result === 'R' ? 'bg-red-500' :
+                                                                            'bg-white/[0.08]'}`} />
+                                                            <span className="text-[13px] text-slate-300 font-medium">
+                                                                {row.antibiotic}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+
+                                                    {/* SIR buttons */}
+                                                    <td className="px-5 py-3">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            {['S', 'I', 'R'].map(opt => (
+                                                                <SIRBtn
+                                                                    key={opt} opt={opt}
+                                                                    selected={row.result === opt}
+                                                                    onClick={() => handleResult(row.id, opt)}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Remove */}
+                                                    <td className="px-3 py-3 text-center">
+                                                        <button onClick={() => removeDrug(row.id)}
+                                                            className="opacity-0 group-hover:opacity-100
+                                                                       text-slate-700 hover:text-red-400
+                                                                       transition-all duration-150">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </td>
+                                                </motion.tr>
+                                            ))
+                                        }
+
+                                        {/* Empty state */}
+                                        {!panelLoading && panel.length === 0 && (
+                                            <tr>
+                                                <td colSpan={3} className="px-5 py-14 text-center">
+                                                    <FlaskConical className="w-7 h-7 text-slate-800 mx-auto mb-2" />
+                                                    <p className="text-[13px] text-slate-600">
+                                                        Select an organism to load its antibiotic panel
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Footer ───────────────────────────────────────── */}
+                    <div className="flex items-center justify-between px-7 py-4
+                                    border-t border-white/[0.06] bg-white/[0.01]">
+
+                        {/* Status message */}
+                        <AnimatePresence mode="wait">
+                            {message ? (
+                                <motion.div
+                                    key="msg"
+                                    initial={{ opacity: 0, x: -8 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-[12px]
+                                                font-medium border
+                                                ${message.type === 'success'
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                                            : 'bg-red-500/10 border-red-500/20 text-red-300'}`}>
+                                    {message.type === 'success'
+                                        ? <CheckCircle className="w-3.5 h-3.5" />
+                                        : <AlertCircle className="w-3.5 h-3.5" />}
+                                    {message.text}
+                                </motion.div>
+                            ) : (
+                                <div key="hint" className="text-[11px] text-slate-700">
+                                    {completedCount > 0
+                                        ? `${completedCount} result${completedCount !== 1 ? 's' : ''} ready to submit`
+                                        : 'Mark S / I / R for each antibiotic'}
+                                </div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-3">
+                            <button type="button" onClick={onClose}
+                                className="px-4 py-2.5 text-[13px] text-slate-500 hover:text-slate-200
+                                           transition-colors duration-150">
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={loading || completedCount === 0}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px]
+                                           font-semibold text-white bg-indigo-600 hover:bg-indigo-500
+                                           shadow-lg shadow-indigo-600/20
+                                           disabled:opacity-30 disabled:cursor-not-allowed
+                                           transition-all duration-200 active:scale-95">
+                                {loading ? (
+                                    <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                                ) : (
+                                    <><Save className="w-4 h-4" /> Commit Panel</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 };
 

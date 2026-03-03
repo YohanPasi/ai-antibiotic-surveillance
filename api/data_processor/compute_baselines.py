@@ -19,14 +19,25 @@ from datetime import datetime, timedelta
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Database connection parameters
-DB_PARAMS = {
-    'host': os.getenv('DB_HOST', 'db'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'ast_db'),
-    'user': os.getenv('DB_USER', 'ast_user'),
-    'password': os.getenv('DB_PASSWORD', 'ast_password_2024')
-}
+db_url = os.getenv('DATABASE_URL')
+if db_url and db_url.startswith("postgresql://"):
+    import urllib.parse
+    parsed = urllib.parse.urlparse(db_url)
+    DB_PARAMS = {
+        'host': parsed.hostname or 'localhost',
+        'port': parsed.port or 5432,
+        'database': parsed.path.lstrip('/'),
+        'user': parsed.username,
+        'password': parsed.password
+    }
+else:
+    DB_PARAMS = {
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'port': os.getenv('DB_PORT', '5432'),
+        'database': os.getenv('DB_NAME', 'ast_db'),
+        'user': os.getenv('DB_USER', 'ast_user'),
+        'password': os.getenv('DB_PASSWORD', 'ast_password_2024')
+    }
 
 # Stage C Configuration
 MINIMUM_WEEKS = 1          # AGGRESSIVE: Allow single-week baselines for sparse synthetic data

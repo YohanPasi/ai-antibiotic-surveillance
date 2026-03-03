@@ -8,42 +8,58 @@ const Header = () => {
     const { darkMode, toggleTheme } = useTheme();
 
     return (
-        <header className="h-16 flex items-center justify-between px-6 sticky top-0 z-40 transition-colors duration-300
-            bg-white/80 dark:bg-gray-900/50 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100">
-            {/* Left: Empty for now */}
-            <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">AMR Surveillance Platform</h2>
+        <header className="h-14 flex items-center justify-between px-6 sticky top-0 z-40
+                           bg-gray-950/80 backdrop-blur-md border-b border-white/5
+                           transition-all duration-300 flex-shrink-0">
+
+            {/* Left: breadcrumb / title */}
+            <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-gray-300">AMR Surveillance Platform</span>
+                <span className="hidden sm:block w-px h-4 bg-white/10" />
+                <span className="hidden sm:flex items-center gap-1.5 text-xs text-gray-600">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Live
+                </span>
             </div>
 
-            {/* Right: User Profile & Status */}
-            <div className="flex items-center gap-6">
-                {/* Theme Toggle */}
+            {/* Right controls */}
+            <div className="flex items-center gap-2">
+
+                {/* Theme toggle */}
                 <button
                     onClick={toggleTheme}
-                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5
+                               flex items-center justify-center text-gray-400 hover:text-white
+                               transition-all duration-200"
+                    title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
                 >
-                    {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    {darkMode
+                        ? <Sun className="w-4 h-4" />
+                        : <Moon className="w-4 h-4" />}
                 </button>
 
                 {/* Notifications */}
                 <NotificationDropdown />
 
-                <div className="h-6 w-px bg-gray-200 dark:bg-gray-800"></div>
+                {/* Divider */}
+                <span className="w-px h-5 bg-white/10 mx-1" />
 
-                {/* User Profile */}
-                <div className="flex items-center gap-3">
-                    <div className="text-right hidden md:block">
-                        <p className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-none">{user?.username || 'Guest'}</p>
-                        <p className="text-[10px] font-medium text-gray-500 uppercase mt-1">{user?.role || 'Viewer'}</p>
+                {/* User chip */}
+                <div className="flex items-center gap-2.5 pl-1">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-xs font-bold text-gray-200 leading-none">{user?.username || 'Guest'}</p>
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mt-0.5">
+                            {user?.role || 'Viewer'}
+                        </p>
                     </div>
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center border shadow-sm overflow-hidden
-                        bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                        <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700
+                                    border border-white/10 flex items-center justify-center shadow-md">
+                        <User className="w-4 h-4 text-white" strokeWidth={2} />
                     </div>
                 </div>
             </div>
         </header>
-    ); // Removed original 'export default Header;' since I replaced the whole body essentially. Wait no, replace tool replaces range.
+    );
 };
 
 export default Header;

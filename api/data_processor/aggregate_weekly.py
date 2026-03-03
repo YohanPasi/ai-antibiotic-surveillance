@@ -8,17 +8,22 @@ RULES:
 3. Grouping: Week + Ward + Organism + Antibiotic.
 4. Calculation: S% = (Count S / Total) * 100.
 5. Signal Confidence: Mark 'Low Confidence' if Total < 3.
+6. Panel Filter: Only organism-antibiotic pairs in the DB master panel are aggregated.
 """
 import psycopg2
 import os
+import sys
 import logging
 from datetime import timedelta
+
+# Allow imports from api/ root (for utils.normalization)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.normalization import normalize_antibiotic, normalize_organism
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Database connection parameters
 # Database connection parameters
 DATABASE_URL = os.getenv('DATABASE_URL')
 
@@ -27,9 +32,35 @@ def get_iso_week_start(date):
     """Get the Monday of the ISO week."""
     return date - timedelta(days=date.weekday())
 
+
+def load_panel_from_db(conn) -> dict:
+    """
+    Load organism-antibiotic panels from DB at the start of each aggregation run.
+    Returns: {normalize_organism(name): {normalize_antibiotic(abx), ...}}
+    Pre-normalized so the aggregation loop only normalizes raw values.
+    """
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT o.name, a.name
+        FROM organism_antibiotic_panel oap
+        JOIN organisms  o ON oap.organism_id  = o.id
+        JOIN antibiotics a ON oap.antibiotic_id = a.id
+        WHERE o.is_active = TRUE AND a.is_active = TRUE AND oap.is_active = TRUE
+    """)
+    rows = cur.fetchall()
+    panel: dict = {}
+    for org_name, abx_name in rows:
+        panel.setdefault(normalize_organism(org_name), set()).add(
+            normalize_antibiotic(abx_name)
+        )
+    logger.info(f"  Panel loaded from DB: {len(panel)} organisms, "
+                f"{sum(len(v) for v in panel.values())} antibiotic mappings.")
+    return panel
+
+
 def aggregate_weekly_data():
     logger.info("=" * 60)
-    logger.info("⚡ STAGE B: SIGNAL CONSTRUCTION")
+    logger.info("⚡ STAGE B: SIGNAL CONSTRUCTION (Phase 2.5 — DB-driven panels)")
     logger.info("=" * 60)
     
     # Connect
@@ -43,6 +74,10 @@ def aggregate_weekly_data():
     except Exception as e:
         logger.error(f"✗ Database Error: {e}")
         return False
+
+    # Load DB-driven panel (Phase 2.5)
+    panel_config = load_panel_from_db(conn)
+    unknown_skipped = 0
         
     # Clear Aggregation Table (Fresh Build)
     cursor.execute("TRUNCATE TABLE ast_weekly_aggregated RESTART IDENTITY CASCADE")
@@ -62,10 +97,12 @@ def aggregate_weekly_data():
     logger.info(f"✓ Input: {len(raw_records)} isolate records from Bulk Data")
 
     # 1b. FETCH MANUAL ENTRIES
+    # Safety Check: Enforce Non-Fermenters scope to prevent contamination leaks
     cursor.execute("""
-        SELECT entry_date, ward, organism, antibiotic, result
+        SELECT culture_date, ward, organism, antibiotic, result
         FROM ast_manual_entry
-        WHERE entry_date IS NOT NULL
+        WHERE culture_date IS NOT NULL
+          AND organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
     """)
     manual_records = cursor.fetchall()
     logger.info(f"✓ Input: {len(manual_records)} isolate records from Manual Entry")
@@ -83,7 +120,18 @@ def aggregate_weekly_data():
         
         for antibiotic, sir in ab_results.items():
             if not sir: continue
-            
+
+            abx_norm = normalize_antibiotic(antibiotic)
+            org_norm  = normalize_organism(organism)
+
+            # Strict existence check — do NOT fall back on empty set
+            if org_norm not in panel_config:
+                unknown_skipped += 1
+                continue
+            if abx_norm not in panel_config[org_norm]:
+                unknown_skipped += 1
+                continue
+
             key = (week_start, ward, organism, antibiotic)
             
             if key not in signals:
@@ -101,7 +149,18 @@ def aggregate_weekly_data():
     # 2b. PROCESS MANUAL ENTRIES
     for date, ward, organism, antibiotic, result in manual_records:
         if not result: continue
-        
+
+        abx_norm = normalize_antibiotic(antibiotic)
+        org_norm  = normalize_organism(organism)
+
+        # Strict existence check
+        if org_norm not in panel_config:
+            unknown_skipped += 1
+            continue
+        if abx_norm not in panel_config[org_norm]:
+            unknown_skipped += 1
+            continue
+
         # Normalize Result
         res = result.upper()
         
@@ -172,10 +231,14 @@ def aggregate_weekly_data():
     conn.close()
     
     logger.info("-" * 40)
-    logger.info("✓ STAGE B COMPLETE (FAST MODE)")
+    logger.info("✓ STAGE B COMPLETE (Phase 2.5 — DB-driven panels)")
     logger.info(f"  Total Signals: {inserted}")
     logger.info(f"  High Confidence (>=3 isolates): {inserted - low_confidence}")
     logger.info(f"  Low Confidence (<3 isolates):   {low_confidence}")
+    if unknown_skipped > 0:
+        logger.warning(f"  ⚠ {unknown_skipped} rows skipped — organism not in panel or antibiotic not in panel. Check normalization or DB seed.")
+    else:
+        logger.info("  ✅ No unknown organisms/antibiotics skipped.")
     logger.info("-" * 40)
     
     return True

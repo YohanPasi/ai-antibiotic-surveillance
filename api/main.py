@@ -365,27 +365,53 @@ async def trigger_surveillance_sweep(background_tasks: BackgroundTasks):
     }
 
 
+async def trigger_nf_pipeline():
+    """
+    Executes the Phase 2 Non-Fermenter Controlled Sequence:
+    1. Stage B: Full Aggregation
+    2. Stage C: Baseline Recompute
+    3. Sweep: Prediction Engine
+    """
+    try:
+        import subprocess
+        logger.info("⚙️ Triggering Phase 2 NF Surveillance Pipeline...")
+        logger.info("   1. Running Stage B: Aggregation...")
+        subprocess.run(["python", "/app/data_processor/aggregate_weekly.py"], check=True)
+        logger.info("   2. Running Stage C: Baseline Recompute...")
+        subprocess.run(["python", "/app/data_processor/compute_baselines.py"], check=True)
+        logger.info("   3. Running Sweep: Prediction Engine...")
+        await run_surveillance_sweep()
+        logger.info("✅ NF Pipeline Completed Successfully")
+    except Exception as e:
+        logger.error(f"NF Pipeline Error: {e}")
+
 @app.post("/api/entry")
 async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTasks):
     """
     Manual AST Data Entry Endpoint (Panel/Collection).
-    Saves raw data and triggers the Learning Loop.
+    Saves raw data and triggers the correctly sequenced Learning Loop.
     """
     db = SessionLocal()
     try:
+        culture_date_val = entry.culture_date or datetime.now().date()
+        
+        # Backend Guard: Reject Future Dates (Data Integrity)
+        if culture_date_val > datetime.now().date():
+            raise HTTPException(status_code=400, detail="Future culture date not allowed")
+
         # 1. SQL Query
         query = text("""
-            INSERT INTO esbl_lab_results (
-                encounter_id, lab_no, age, gender, bht, ward, specimen_type, organism, antibiotic, result
+            INSERT INTO ast_manual_entry (
+                culture_date, lab_no, age, gender, bht, ward, specimen_type, organism, antibiotic, result
             ) VALUES (
-                :enc_id, :lab, :age, :gen, :bht, :ward, :spec, :org, :abx, :res
+                :cd, :lab, :age, :gen, :bht, :ward, :spec, :org, :abx, :res
             )
         """)
         
         # 2. Iterate Collection and Insert
         for item in entry.results:
             db.execute(query, {
-                "enc_id": entry.lab_no,  # Use lab_no as encounter link
+                "cd": culture_date_val,
                 "lab": entry.lab_no, "age": entry.age, "gen": entry.gender,
                 "bht": entry.bht, "ward": entry.ward, "spec": entry.specimen_type,
                 "org": entry.organism, "abx": item.antibiotic, "res": item.result
@@ -400,12 +426,16 @@ async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTas
             except Exception as val_err:
                 logger.error(f"Validation Trigger Error: {val_err}")
 
+        # Explicit Commit to avoid race conditions with aggregate rebuild
         db.commit()
         
-        # 4. Trigger Background Pipeline ("Stage E" Prep)
-        background_tasks.add_task(trigger_pipeline_update)
+        # 4. Trigger Background Controlled Sequence
+        if entry.organism in ('Pseudomonas aeruginosa', 'Acinetobacter baumannii'):
+            background_tasks.add_task(trigger_nf_pipeline)
+        else:
+            background_tasks.add_task(trigger_pipeline_update)
         
-        return {"status": "success", "message": f"Panel saved ({len(entry.results)} results). AI Pipeline triggered."}
+        return {"status": "success", "message": f"Panel saved ({len(entry.results)} results). Execution Pipeline triggered."}
         
     except Exception as e:
         db.rollback()
@@ -414,25 +444,35 @@ async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTas
     finally:
         db.close()
 
+# Scope lock: Non-Fermenters only
+NF_ORGANISMS_SQL = "('Pseudomonas aeruginosa', 'Acinetobacter baumannii')"
+
 @app.get("/api/options", response_model=OptionsResponse)
 async def get_available_options():
     """
     Get available filter options (wards, organisms, antibiotics).
+    Non-Fermenter module: only Pseudomonas aeruginosa and Acinetobacter baumannii.
     """
     try:
         db = SessionLocal()
         
-        # Get distinct values from database
+        # Wards that have NF data only
         wards_query = """
             SELECT DISTINCT ward FROM ast_weekly_aggregated 
-            WHERE ward IS NOT NULL ORDER BY ward
+            WHERE ward IS NOT NULL
+              AND organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
+            ORDER BY ward
         """
+        # Strict NF organism list
         organisms_query = """
             SELECT DISTINCT organism FROM ast_weekly_aggregated 
+            WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             ORDER BY organism
         """
+        # Only antibiotics that appear for NF organisms
         antibiotics_query = """
             SELECT DISTINCT antibiotic FROM ast_weekly_aggregated 
+            WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             ORDER BY antibiotic
         """
         
@@ -443,8 +483,8 @@ async def get_available_options():
         db.close()
         
         return OptionsResponse(
-            wards=wards if wards else ["ICU", "Ward A", "Ward B"],  # Fallback for demo
-            organisms=organisms if organisms else ["Pseudomonas aeruginosa", "Acinetobacter spp.", "Escherichia coli"],
+            wards=wards if wards else ["ICU", "Ward A", "Ward B"],
+            organisms=organisms if organisms else ["Pseudomonas aeruginosa", "Acinetobacter baumannii"],
             antibiotics=antibiotics if antibiotics else ["Meropenem", "Ceftazidime", "Ciprofloxacin"]
         )
     except Exception as e:
@@ -720,27 +760,42 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
     """
     db = SessionLocal()
     try:
-        # 1. Fetch History (Last 12 weeks)
+        # 1. Fetch History — most recent 12 weeks, then reverse for ASC chart display
         query = """
             SELECT week_start_date, susceptible_count, total_tested
             FROM ast_weekly_aggregated
             WHERE ward = :ward AND organism = :organism AND antibiotic = :antibiotic
-            ORDER BY week_start_date ASC
+            ORDER BY week_start_date DESC
             LIMIT 12
         """
         results = db.execute(text(query), {
             "ward": ward, "organism": organism, "antibiotic": antibiotic
         }).fetchall()
-        
+
+        # Reverse so chart renders oldest → newest left to right
+        results = list(reversed(results))
+
+        # 1b. Fetch the true last signal date independently — never rely on list ordering
+        anchor_query = """
+            SELECT MAX(week_start_date)
+            FROM ast_weekly_aggregated
+            WHERE ward = :ward AND organism = :organism AND antibiotic = :antibiotic
+        """
+        anchor_row = db.execute(text(anchor_query), {
+            "ward": ward, "organism": organism, "antibiotic": antibiotic
+        }).fetchone()
+        true_last_date = anchor_row[0] if anchor_row and anchor_row[0] else None
+
         history = []
         s_values = []
-        
+
         for row in results:
             total = row[2]
             s_percent = (row[1] / total * 100.0) if total > 0 else 0.0
             history.append({
                 "week": row[0].strftime("%Y-W%U"),
                 "date": row[0].strftime("%b %d"),
+                "week_start_date": row[0].isoformat(),  # ISO string for frontend stale detection
                 "observed_s": round(s_percent, 1)
             })
             s_values.append(s_percent)
@@ -775,16 +830,24 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
              else:
                 pred_value = s_values[-1] # Fallback to naive persistence
                 
-             # Create Forecast Object
-             last_date = datetime.strptime(history[-1]["date"] + f" {datetime.now().year}", "%b %d %Y") # Approx
-             next_date = last_date + timedelta(days=7)
-             
-             forecast = {
-                 "week": "Next Week",
-                 "date": "Next Week", # Simplified for UI
-                 "predicted_s": round(pred_value, 1)
-             }
-             
+             # Prediction anchor: always MAX(week_start_date) for this specific triple
+             # Never use results[-1] — list ordering assumptions are fragile
+             if true_last_date is None:
+                 forecast = None
+             else:
+                 last_actual_date = true_last_date
+                 next_week_start  = last_actual_date + timedelta(days=7)
+                 next_week_end    = last_actual_date + timedelta(days=13)
+
+                 forecast = {
+                     "week": f"Week of {next_week_start.strftime('%b %d, %Y')}",
+                     "date": next_week_start.strftime("%b %d"),
+                     "predicted_s": round(pred_value, 1),
+                     "predicted_week_start": next_week_start.isoformat(),
+                     "predicted_week_end": next_week_end.isoformat(),
+                 }
+
+
              # Calculate Status for this specific target
              # Using the logic from prediction_service (simplified here for display)
              baseline_val = baseline[-1]["expected_s"]
@@ -831,6 +894,8 @@ async def get_dashboard_summary():
                 SELECT ward, alert_status, log_date,
                        ROW_NUMBER() OVER(PARTITION BY ward, organism, antibiotic ORDER BY log_date DESC) as rn
                 FROM surveillance_logs
+                -- SCOPE LOCK: Non-Fermenters only
+                WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             )
             SELECT 
                 ward,
@@ -854,7 +919,7 @@ async def get_dashboard_summary():
                 "amber": row[2],
                 "red": row[3],
                 "last_signal": row[4],
-                "highest_severity": "Critical" if row[3] > 0 else "Warning" if row[2] > 0 else "Stable"
+                "highest_severity": "Critical" if row[3] > 0 else "Warning" if row[2] > 0 else "Normal"
             })
             
         return {
@@ -884,7 +949,9 @@ async def get_ward_status(ward_id: str):
                         alert_status, stewardship_domain, stewardship_prompt, log_date,
                         ROW_NUMBER() OVER(PARTITION BY organism, antibiotic ORDER BY log_date DESC) as rn
                  FROM surveillance_logs
+                 -- SCOPE LOCK: Non-Fermenters only
                  WHERE ward = :ward
+                   AND organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             )
             SELECT organism, antibiotic, 
                    observed_s_percent, baseline_s_percent, predicted_s_percent,
@@ -919,6 +986,20 @@ async def get_ward_status(ward_id: str):
             if row[3] is not None: d["base"].append(float(row[3]))
             if row[4] is not None: d["pred"].append(float(row[4]))
             
+        # Fetch last observed week per (organism, antibiotic) from aggregated data
+        # This is the true last date with sufficient isolates — different from global last_data_week
+        recency_query = """
+            SELECT organism, antibiotic,
+                   TO_CHAR(MAX(week_start_date), 'YYYY-MM-DD') as last_data_week
+            FROM ast_weekly_aggregated
+            WHERE ward = :ward
+              AND organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
+            GROUP BY organism, antibiotic
+        """
+        recency_rows = db.execute(text(recency_query), {"ward": ward_id}).fetchall()
+        # Map (organism, antibiotic) -> last_data_week
+        recency_map = { (r[0], r[1]): r[2] for r in recency_rows }
+
         # Build Final List
         details = []
         for (org, abx), d in details_map.items():
@@ -936,7 +1017,8 @@ async def get_ward_status(ward_id: str):
                 "current_s": round(obs_avg, 1),
                 "baseline_s": round(base_avg, 1),
                 "forecast_s": round(pred_avg, 1),
-                "trend": trend
+                "trend": trend,
+                "last_data_week": recency_map.get((org, abx))  # None if no aggregated data
             })
             
         return {
@@ -1657,10 +1739,30 @@ async def get_antibiogram(ward: Optional[str] = None):
                 "history": history
             }
 
+        # ----------------------------------------------------------------
+        # LAYER 4: Last data week — for correct date labelling in UI
+        # The UI must show the date of the last actual data point, 
+        # NOT the current system clock date. This is the epidemiological
+        # time reference for both "Current Observed" and "Predicted" views.
+        # ----------------------------------------------------------------
+        last_week_row = db.execute(text("""
+            SELECT MAX(week_start_date) FROM ast_weekly_aggregated
+            WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
+              AND total_tested >= 3
+        """)).fetchone()
+        last_data_week = last_week_row[0] if last_week_row and last_week_row[0] else None
+        predicted_week_start = None
+        if last_data_week:
+            from datetime import timedelta
+            predicted_week_start = (last_data_week + timedelta(days=7)).isoformat()
+            last_data_week = last_data_week.isoformat()
+
         return {
             "matrix": matrix,
             "antibiotics": sorted(list(antibiotics_set)),
-            "scope": f"Ward {ward}" if ward else "Hospital-Wide"
+            "scope": f"Ward {ward}" if ward else "Hospital-Wide",
+            "last_data_week": last_data_week,
+            "predicted_week_start": predicted_week_start,
         }
 
     except Exception as e:
@@ -1741,6 +1843,197 @@ def create_master_definition(def_in: MasterDefinitionCreate, db: Session = Depen
 def delete_master_definition(id: int, db: Session = Depends(get_db)):
     """Soft delete a master data definition"""
     return MasterDataService.delete_definition(db, id)
+
+# ============================================
+# PANEL CONFIGURATION ROUTES (Phase 2.5)
+# ============================================
+import re as _re
+from utils.normalization import normalize_antibiotic, normalize_organism
+
+# ── In-memory panel cache ────────────────────────────────────────────────────
+# Keyed by normalize_organism(name) → set of normalize_antibiotic(abx_name)
+# Populated at startup and refreshed after any panel write.
+_panel_cache: dict = {}
+
+def refresh_panel_cache(db: Session):
+    """Reload panel config from DB into _panel_cache. Called at startup + after writes."""
+    global _panel_cache
+    try:
+        rows = db.execute(text("""
+            SELECT o.name, a.name
+            FROM organism_antibiotic_panel oap
+            JOIN organisms  o ON oap.organism_id  = o.id
+            JOIN antibiotics a ON oap.antibiotic_id = a.id
+            WHERE o.is_active = TRUE AND a.is_active = TRUE AND oap.is_active = TRUE
+        """)).fetchall()
+        cache: dict = {}
+        for org_name, abx_name in rows:
+            cache.setdefault(normalize_organism(org_name), set()).add(
+                normalize_antibiotic(abx_name)
+            )
+        _panel_cache = cache
+        logger.info(f"Panel cache refreshed: {len(cache)} organisms loaded.")
+    except Exception as e:
+        logger.warning(f"Panel cache refresh failed (non-fatal): {e}")
+
+@app.on_event("startup")
+async def load_panel_cache_on_startup():
+    """Warm the panel cache so aggregation can use it immediately."""
+    db = next(get_db())
+    try:
+        refresh_panel_cache(db)
+    finally:
+        db.close()
+
+def get_panel_cache() -> dict:
+    """Return the current in-memory panel cache."""
+    return _panel_cache
+
+# ── READ endpoints ────────────────────────────────────────────────────────────
+
+@app.get("/api/panels/organisms", tags=["Panel Configuration"])
+def list_organisms(db: Session = Depends(get_db)):
+    """List all active organisms."""
+    rows = db.execute(text(
+        "SELECT id, name, group_name FROM organisms WHERE is_active = TRUE ORDER BY group_name, name"
+    )).fetchall()
+    return [{"id": r[0], "name": r[1], "group_name": r[2]} for r in rows]
+
+
+@app.get("/api/panels/antibiotics", tags=["Panel Configuration"])
+def list_antibiotics(db: Session = Depends(get_db)):
+    """List all active antibiotics (master list)."""
+    rows = db.execute(text(
+        "SELECT id, name, short_code FROM antibiotics WHERE is_active = TRUE ORDER BY name"
+    )).fetchall()
+    return [
+        {
+            "id": r[0], "name": r[1], "short_code": r[2],
+            "display_name": f"{r[1]} ({r[2]})" if r[2] else r[1]
+        }
+        for r in rows
+    ]
+
+
+@app.get("/api/panels/cache-status", tags=["Panel Configuration"])
+def panel_cache_status():
+    """Debug: return count of organisms and antibiotics currently in memory cache."""
+    total_abx = sum(len(v) for v in _panel_cache.values())
+    return {"organisms_in_cache": len(_panel_cache), "antibiotics_in_cache": total_abx}
+
+
+@app.get("/api/panels/{organism}", tags=["Panel Configuration"])
+def get_organism_panel(organism: str, db: Session = Depends(get_db)):
+    """Return the antibiotic panel for a given organism, with display_name."""
+    rows = db.execute(text("""
+        SELECT a.id, a.name, a.short_code
+        FROM organism_antibiotic_panel oap
+        JOIN organisms  o ON oap.organism_id  = o.id
+        JOIN antibiotics a ON oap.antibiotic_id = a.id
+        WHERE LOWER(o.name) = LOWER(:org)
+          AND o.is_active = TRUE AND a.is_active = TRUE AND oap.is_active = TRUE
+        ORDER BY a.name
+    """), {"org": organism}).fetchall()
+    return [
+        {
+            "id": r[0], "name": r[1], "short_code": r[2],
+            "display_name": f"{r[1]} ({r[2]})" if r[2] else r[1]
+        }
+        for r in rows
+    ]
+
+# ── WRITE endpoints (admin only in future — guarded by current_user dep) ─────
+
+@app.post("/api/panels/organisms", tags=["Panel Configuration"])
+def create_organism(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new organism (admin only). Case-insensitive duplicate prevention."""
+    name = payload.get("name", "").strip().title()
+    group = payload.get("group_name", "General").strip()
+    if not name:
+        raise HTTPException(400, "name is required")
+    existing = db.execute(
+        text("SELECT 1 FROM organisms WHERE LOWER(name) = LOWER(:n)"), {"n": name}
+    ).fetchone()
+    if existing:
+        raise HTTPException(400, f"Organism '{name}' already exists.")
+    db.execute(
+        text("INSERT INTO organisms (name, group_name) VALUES (:n, :g)"),
+        {"n": name, "g": group}
+    )
+    db.commit()
+    refresh_panel_cache(db)
+    return {"status": "created", "name": name}
+
+
+@app.post("/api/panels/antibiotics", tags=["Panel Configuration"])
+def create_antibiotic(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new antibiotic (admin only). Case-insensitive duplicate prevention."""
+    name = payload.get("name", "").strip().title()
+    short_code = payload.get("short_code", "").strip().upper() or None
+    if not name:
+        raise HTTPException(400, "name is required")
+    existing = db.execute(
+        text("SELECT 1 FROM antibiotics WHERE LOWER(name) = LOWER(:n)"), {"n": name}
+    ).fetchone()
+    if existing:
+        raise HTTPException(400, f"Antibiotic '{name}' already exists.")
+    db.execute(
+        text("INSERT INTO antibiotics (name, short_code) VALUES (:n, :s)"),
+        {"n": name, "s": short_code}
+    )
+    db.commit()
+    refresh_panel_cache(db)
+    return {"status": "created", "name": name, "short_code": short_code}
+
+
+@app.post("/api/panels/mapping", tags=["Panel Configuration"])
+def add_panel_mapping(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Assign an antibiotic to an organism panel (admin only)."""
+    org_id = payload.get("organism_id")
+    abx_id = payload.get("antibiotic_id")
+    if not org_id or not abx_id:
+        raise HTTPException(400, "organism_id and antibiotic_id are required")
+    # Upsert: if soft-deleted mapping exists, re-activate it
+    db.execute(text("""
+        INSERT INTO organism_antibiotic_panel (organism_id, antibiotic_id, is_active)
+        VALUES (:org, :abx, TRUE)
+        ON CONFLICT (organism_id, antibiotic_id) DO UPDATE SET is_active = TRUE
+    """), {"org": org_id, "abx": abx_id})
+    db.commit()
+    refresh_panel_cache(db)
+    return {"status": "mapped", "organism_id": org_id, "antibiotic_id": abx_id}
+
+
+@app.delete("/api/panels/mapping/{org_id}/{abx_id}", tags=["Panel Configuration"])
+def remove_panel_mapping(
+    org_id: int,
+    abx_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft-delete: remove antibiotic from organism panel (admin only). Historical data untouched."""
+    result = db.execute(text("""
+        UPDATE organism_antibiotic_panel
+        SET is_active = FALSE
+        WHERE organism_id = :org AND antibiotic_id = :abx
+    """), {"org": org_id, "abx": abx_id})
+    db.commit()
+    refresh_panel_cache(db)
+    if result.rowcount == 0:
+        raise HTTPException(404, "Mapping not found")
+    return {"status": "removed", "organism_id": org_id, "antibiotic_id": abx_id}
 
 # ============================================
 # STP STAGE 1: SURVEILLANCE ENDPOINTS

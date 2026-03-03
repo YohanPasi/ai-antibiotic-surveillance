@@ -39,6 +39,7 @@ class ASTPanelEntry(BaseModel):
     specimen_type: str
     organism: str
     results: List[AntibioticResult] # The Collection of ABX results
+    culture_date: Optional[date] = None
     
     class Config:
         json_schema_extra = {
