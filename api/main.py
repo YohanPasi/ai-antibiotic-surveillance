@@ -365,6 +365,8 @@ async def trigger_surveillance_sweep(background_tasks: BackgroundTasks):
     }
 
 
+import asyncio
+
 async def trigger_nf_pipeline():
     """
     Executes the Phase 2 Non-Fermenter Controlled Sequence:
@@ -374,13 +376,17 @@ async def trigger_nf_pipeline():
     """
     try:
         import subprocess
+        # Wait 2 seconds for the synchronous SQLAlchemy connection pooling 
+        # to fully release row-exclusive locks on PostgreSQL.
+        await asyncio.sleep(2)
+        
         logger.info("⚙️ Triggering Phase 2 NF Surveillance Pipeline...")
         logger.info("   1. Running Stage B: Aggregation...")
         subprocess.run(["python", "/app/data_processor/aggregate_weekly.py"], check=True)
         logger.info("   2. Running Stage C: Baseline Recompute...")
         subprocess.run(["python", "/app/data_processor/compute_baselines.py"], check=True)
         logger.info("   3. Running Sweep: Prediction Engine...")
-        await run_surveillance_sweep()
+        run_surveillance_sweep()
         logger.info("✅ NF Pipeline Completed Successfully")
     except Exception as e:
         logger.error(f"NF Pipeline Error: {e}")
@@ -811,6 +817,20 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
                 "expected_s": round(avg, 1)
             })
             
+        # ── Safe defaults for model-performance locals (set inside if block below) ──
+        # These must be initialised here so the return-dict enrichment is always valid
+        # regardless of whether the if len(s_values) >= 3 branch runs.
+        observed_s        = s_values[-1] if s_values else None
+        baseline_val      = baseline[-1]["expected_s"] if baseline else (s_values[-1] if s_values else None)
+        adaptive_tolerance = 10.0
+        rolling_mae_4c    = None
+        mean_bias_4c      = None
+        degraded_4c       = False
+        validated_count_4b = 0
+        active_model_4b   = "BASELINE_MEAN"
+        pred_value        = s_values[-1] if s_values else 0.0
+        drift_analysis    = {}
+
         # 3. Generate ONE Forecast Point
         # We need the last 4 weeks of data for the LSTM
         forecast = None
@@ -839,26 +859,152 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
                  next_week_start  = last_actual_date + timedelta(days=7)
                  next_week_end    = last_actual_date + timedelta(days=13)
 
+                 # ── Phase 3B: Adaptive CI ──────────────────────────────────────
+                 # Use rolling MAE from model_performance when ≥ 6 validated weeks exist.
+                 # Fallback to static ±10% for cold-start or sparse targets.
+                 _ci_fallback_half = 10.0
+                 try:
+                     perf_row = db.execute(text("""
+                         SELECT mae_score, validated_count
+                         FROM model_performance
+                         WHERE ward        = :ward
+                           AND organism    = :org
+                           AND antibiotic  = :abx
+                           AND model_name  = 'Phase3B_Rolling'
+                         ORDER BY updated_at DESC
+                         LIMIT 1
+                     """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+
+                     if perf_row and perf_row[0] is not None and (perf_row[1] or 0) >= 6:
+                         ci_half   = float(perf_row[0]) * 1.96
+                         ci_source = "adaptive"
+                     else:
+                         ci_half   = _ci_fallback_half
+                         ci_source = "static_fallback"
+                 except Exception:
+                     ci_half   = _ci_fallback_half
+                     ci_source = "static_fallback"
+
+                 ci_lower = max(0.0,   round(pred_value - ci_half, 1))
+                 ci_upper = min(100.0, round(pred_value + ci_half, 1))
+
                  forecast = {
                      "week": f"Week of {next_week_start.strftime('%b %d, %Y')}",
                      "date": next_week_start.strftime("%b %d"),
                      "predicted_s": round(pred_value, 1),
                      "predicted_week_start": next_week_start.isoformat(),
-                     "predicted_week_end": next_week_end.isoformat(),
+                     "predicted_week_end":   next_week_end.isoformat(),
+                     "ci_lower":             ci_lower,
+                     "ci_upper":             ci_upper,
+                     "ci_half_width":        round(ci_half, 2),
+                     "ci_source":            ci_source,   # "adaptive" or "static_fallback"
                  }
 
 
-             # Calculate Status for this specific target
-             # Using the logic from prediction_service (simplified here for display)
-             baseline_val = baseline[-1]["expected_s"]
-             alert_status, _, _ = PredictionService.get_hybrid_status(
-                 observed_s=s_values[-1],
-                 baseline_lower=baseline_val - 10, # Approximate lower bound
-                 lstm_forecast=pred_value
+             # ── Phase 4B + 4C: Adaptive tolerance + Drift + G8 hierarchy ─────
+             baseline_val = baseline[-1]["expected_s"] if baseline else s_values[-1]
+             observed_s   = s_values[-1]
+
+             drift_analysis = {}
+             try:
+                 from models.drift_detector import run_drift_analysis
+
+                 # ── Phase 4C (R6): Adaptive tolerance ─────────────────────────
+                 # tolerance = min(max(rolling_mae × 2, rolling_std), 25.0)
+                 # Computed before G8 alert classification
+                 rolling_std = statistics.stdev(s_values) if len(s_values) >= 2 else 10.0
+
+                 # Read Phase 3B rolling metrics for this target
+                 perf_4c = db.execute(text("""
+                     SELECT mae_score, mean_bias, degradation_flagged
+                     FROM model_performance
+                     WHERE ward = :ward AND organism = :org AND antibiotic = :abx
+                       AND model_name = 'Phase3B_Rolling'
+                     ORDER BY updated_at DESC LIMIT 1
+                 """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+
+                 rolling_mae_4c  = float(perf_4c[0]) if perf_4c and perf_4c[0] else None
+                 mean_bias_4c    = float(perf_4c[1]) if perf_4c and perf_4c[1] else None
+                 degraded_4c     = bool(perf_4c[2])  if perf_4c and perf_4c[2] else False
+
+                 if rolling_mae_4c is not None:
+                     # R6: tolerance = min(max(rolling_mae × 2, rolling_std), 25.0)
+                     adaptive_tolerance = min(max(rolling_mae_4c * 2, rolling_std), 25.0)
+                 else:
+                     adaptive_tolerance = max(rolling_std, 10.0)  # fallback
+
+                 # ── Phase 4B: CUSUM + slope + volatility + G8 ─────────────────
+                 # CHECK 6: Slice to last 16 weeks — prevents full multi-year history
+                 #          from being passed to CPU-heavy CUSUM/OLS each request.
+                 drift_history = s_values[-16:]
+
+                 # CHECK 5: Read active model + validated_count for cold-start bypass
+                 active_model_row = db.execute(text("""
+                     SELECT model_name
+                     FROM model_performance
+                     WHERE ward = :ward AND organism = :org AND antibiotic = :abx
+                       AND is_active = TRUE
+                     LIMIT 1
+                 """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+                 active_model_4b = active_model_row[0] if active_model_row else ""
+
+                 validated_ct_row = db.execute(text("""
+                     SELECT validated_count
+                     FROM model_performance
+                     WHERE ward = :ward AND organism = :org AND antibiotic = :abx
+                     ORDER BY updated_at DESC LIMIT 1
+                 """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+                 validated_count_4b = int(validated_ct_row[0]) if validated_ct_row and validated_ct_row[0] else 0
+
+                 drift_analysis = run_drift_analysis(
+                     history              = drift_history,
+                     observed_s           = observed_s,
+                     baseline_s           = baseline_val,
+                     adaptive_tolerance   = adaptive_tolerance,
+                     degradation_flagged  = degraded_4c,
+                     mean_bias            = mean_bias_4c,
+                     rolling_mae          = rolling_mae_4c,
+                     validated_count      = validated_count_4b,   # CHECK 5
+                     active_model         = active_model_4b,       # CHECK 5
+                 )
+
+                 # Primary G8 alert now drives the status field
+                 # INSUFFICIENT_DATA falls back to GREEN for display
+                 primary = drift_analysis.get("primary_alert", "GREEN")
+                 status = primary if primary != "INSUFFICIENT_DATA" else "GREEN"
+
+
+             except Exception as _drift_err:
+                 logger.warning(f"Phase 4B drift analysis failed: {_drift_err}")
+                 # Graceful fallback to Phase 3-era hybrid status
+                 alert_status, _, _ = PredictionService.get_hybrid_status(
+                     observed_s     = observed_s,
+                     baseline_lower = baseline_val - 10,
+                     lstm_forecast  = pred_value
+                 )
+                 status = alert_status.upper()
+                 adaptive_tolerance = 10.0
+
+             _, domain = PredictionService.generate_detailed_stewardship(
+                 status.lower(), organism, antibiotic, ward
              )
-             status = alert_status.upper()
-             
-             _, domain = PredictionService.generate_detailed_stewardship(alert_status, organism, antibiotic, ward)
+
+        # ── Enrich drift_analysis with values the frontend needs for Panel B/D ──
+        # These locals exist inside the `if len(s_values) >= 3` block.
+        # Safe defaults cover cold-start / short-history targets.
+        _obs   = observed_s   if len(s_values) >= 3 else (s_values[-1] if s_values else None)
+        _base  = baseline_val if len(s_values) >= 3 else None
+        _tol   = adaptive_tolerance if len(s_values) >= 3 else 10.0
+
+        if isinstance(drift_analysis, dict):
+            drift_analysis["observed_s"]         = round(_obs,  1) if _obs  is not None else None
+            drift_analysis["baseline_s"]         = round(_base, 1) if _base is not None else None
+            drift_analysis["adaptive_tolerance"] = round(_tol,  1)
+            drift_analysis["degradation_flagged"]= degraded_4c     if len(s_values) >= 3 else False
+            drift_analysis["mean_bias"]          = round(mean_bias_4c,   2) if (len(s_values) >= 3 and mean_bias_4c   is not None) else None
+            drift_analysis["rolling_mae"]        = round(rolling_mae_4c, 2) if (len(s_values) >= 3 and rolling_mae_4c is not None) else None
+            drift_analysis["validated_count"]    = validated_count_4b if len(s_values) >= 3 else 0
+            drift_analysis["active_model_name"]  = active_model_4b   if len(s_values) >= 3 else "BASELINE_MEAN"
 
         return {
             "ward": ward,
@@ -869,7 +1015,18 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
             "forecast": forecast,
             "status": status,
             "stewardship_domain": domain,
-            "engine_version": "Hybrid_LSTM_v1"
+            "drift_analysis": drift_analysis,   # G8 full alert structure — now enriched
+            "engine_version": "Hybrid_LSTM_v4B",
+            # model_performance: convenience top-level copy for Panel D
+            "model_performance": {
+                "active_model":         active_model_4b   if len(s_values) >= 3 else "BASELINE_MEAN",
+                "rolling_mae":          round(rolling_mae_4c, 2) if (len(s_values) >= 3 and rolling_mae_4c is not None) else None,
+                "mean_bias":            round(mean_bias_4c,   2) if (len(s_values) >= 3 and mean_bias_4c   is not None) else None,
+                "degradation_flagged":  degraded_4c     if len(s_values) >= 3 else False,
+                "validated_count":      validated_count_4b if len(s_values) >= 3 else 0,
+                "ci_source":            forecast.get("ci_source")    if forecast else "static_fallback",
+                "ci_half_width":        forecast.get("ci_half_width") if forecast else 10.0,
+            },
         }
 
     except Exception as e:
@@ -2439,6 +2596,84 @@ async def freeze_stp_dataset(
 # ============================================
 # Startup/Shutdown Events
 # ============================================
+
+
+# ============================================
+# PHASE 3B — PERFORMANCE SUMMARY ENDPOINT
+# ============================================
+
+@app.get("/api/performance/summary")
+def get_performance_summary(db: Session = Depends(get_db)):
+    """
+    Returns per-target rolling performance metrics computed by Phase 3B.
+
+    Each row contains:
+      - mae:              Rolling 12-week Mean Absolute Error (%)
+      - bias:             Mean signed bias — positive = over-predicting susceptibility
+      - mda:              Mean Directional Accuracy (%)
+      - validated_count:  Number of validated weeks in the rolling window
+      - performance_status:
+            EXCELLENT          (MAE ≤ 5%)
+            ACCEPTABLE         (MAE ≤ 10%)
+            NEEDS_RECAL        (MAE > 10%)
+            DEGRADED           (MAE > 12% with ≥ 8 samples — sticky until retrained)
+            INSUFFICIENT_DATA  (< 6 validated weeks)
+      - degraded:         True if degradation flag is set (sticky)
+      - adaptive_ci_half: Half-width of adaptive CI (MAE × 1.96), or 10.0 if insufficient data
+    """
+    try:
+        result = db.execute(text("""
+            SELECT
+                ward,
+                organism,
+                antibiotic,
+                mae_score,
+                mean_bias,
+                mda,
+                validated_count,
+                performance_status,
+                degradation_flagged,
+                updated_at
+            FROM model_performance
+            WHERE model_name = 'Phase3B_Rolling'
+            ORDER BY ward, organism, antibiotic
+        """)).fetchall()
+
+        rows = []
+        for r in result:
+            validated_count = r[6] or 0
+            mae = float(r[3]) if r[3] is not None else None
+
+            # Adaptive CI half-width: MAE × 1.96, fallback ±10% when insufficient data
+            adaptive_ci_half = (
+                round(float(mae) * 1.96, 2)
+                if mae is not None and validated_count >= 6
+                else 10.0
+            )
+
+            rows.append({
+                "ward":              r[0],
+                "organism":          r[1],
+                "antibiotic":        r[2],
+                "mae":               round(mae, 2) if mae is not None else None,
+                "bias":              round(float(r[4]), 2) if r[4] is not None else None,
+                "mda":               round(float(r[5]), 1) if r[5] is not None else None,
+                "validated_count":   validated_count,
+                "performance_status":r[7] or "INSUFFICIENT_DATA",
+                "degraded":          bool(r[8]) if r[8] is not None else False,
+                "adaptive_ci_half":  adaptive_ci_half,
+                "updated_at":        r[9].isoformat() if r[9] else None,
+            })
+
+        return {
+            "total_targets": len(rows),
+            "summary": rows
+        }
+
+    except Exception as e:
+        logger.error(f"Performance summary error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.on_event("startup")
 async def startup_event():

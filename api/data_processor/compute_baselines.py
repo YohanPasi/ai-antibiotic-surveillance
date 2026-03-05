@@ -20,24 +20,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 db_url = os.getenv('DATABASE_URL')
-if db_url and db_url.startswith("postgresql://"):
-    import urllib.parse
-    parsed = urllib.parse.urlparse(db_url)
-    DB_PARAMS = {
-        'host': parsed.hostname or 'localhost',
-        'port': parsed.port or 5432,
-        'database': parsed.path.lstrip('/'),
-        'user': parsed.username,
-        'password': parsed.password
-    }
-else:
-    DB_PARAMS = {
-        'host': os.getenv('DB_HOST', 'localhost'),
-        'port': os.getenv('DB_PORT', '5432'),
-        'database': os.getenv('DB_NAME', 'ast_db'),
-        'user': os.getenv('DB_USER', 'ast_user'),
-        'password': os.getenv('DB_PASSWORD', 'ast_password_2024')
-    }
 
 # Stage C Configuration
 MINIMUM_WEEKS = 1          # AGGRESSIVE: Allow single-week baselines for sparse synthetic data
@@ -57,7 +39,11 @@ def compute_baselines():
     logger.info("=" * 60)
     
     try:
-        conn = psycopg2.connect(**DB_PARAMS)
+        if not db_url:
+            logger.error("❌ DATABASE_URL missing")
+            return False
+
+        conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
     except Exception as e:
         logger.error(f"✗ Database Error: {e}")

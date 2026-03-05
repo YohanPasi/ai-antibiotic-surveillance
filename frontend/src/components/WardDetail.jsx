@@ -5,6 +5,8 @@ import {
     Minus, FlaskConical, BarChart2, ChevronRight, Info, Calendar, AlertTriangle, Clock
 } from 'lucide-react';
 import HistoricalChart from './HistoricalChart';
+import ProcessControlChart from './ProcessControlChart';
+import CockpitPanels from './CockpitPanels';
 import AntibiogramTable from './AntibiogramTable';
 
 /* ── Stale-data helpers ────────────────────────────────────────── */
@@ -27,15 +29,29 @@ const fmtIso = (iso, year = false) => {
     return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', opts);
 };
 
-/* ── status config ─────────────────────────────────────────────────── */
+/* ── G8 status config (keyed to exact backend strings) ─────────────── */
 const statusConfig = {
-    critical: { dot: 'bg-red-500', ring: 'ring-red-500/30', text: 'text-red-400', label: 'Critical', badge: 'bg-red-500/10 border-red-500/20 text-red-400' },
-    red: { dot: 'bg-red-500', ring: 'ring-red-500/30', text: 'text-red-400', label: 'Critical', badge: 'bg-red-500/10 border-red-500/20 text-red-400' },
-    amber: { dot: 'bg-amber-400', ring: 'ring-amber-400/30', text: 'text-amber-400', label: 'Warning', badge: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
-    'amber-high': { dot: 'bg-amber-400', ring: 'ring-amber-400/30', text: 'text-amber-400', label: 'Elevated', badge: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
-    green: { dot: 'bg-emerald-400', ring: 'ring-emerald-400/30', text: 'text-emerald-400', label: 'Normal', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+    // G8 primary alerts — exact backend strings
+    RED: { dot: 'bg-red-500', ring: 'ring-red-500/30', text: 'text-red-400', label: 'Critical Breach', badge: 'bg-red-500/10 border-red-500/20 text-red-400', priority: 1 },
+    DRIFT_WARNING: { dot: 'bg-orange-400', ring: 'ring-orange-400/30', text: 'text-orange-400', label: 'Drift Warning', badge: 'bg-orange-500/10 border-orange-500/20 text-orange-400', priority: 2 },
+    DEGRADED: { dot: 'bg-rose-400', ring: 'ring-rose-400/30', text: 'text-rose-400', label: 'Model Degraded', badge: 'bg-rose-500/10 border-rose-500/20 text-rose-400', priority: 3 },
+    BIAS_WARNING: { dot: 'bg-yellow-400', ring: 'ring-yellow-400/30', text: 'text-yellow-400', label: 'Bias Warning', badge: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400', priority: 4 },
+    AMBER: { dot: 'bg-amber-400', ring: 'ring-amber-400/30', text: 'text-amber-400', label: 'Watch', badge: 'bg-amber-500/10 border-amber-500/20 text-amber-400', priority: 5 },
+    GREEN: { dot: 'bg-emerald-400', ring: 'ring-emerald-400/30', text: 'text-emerald-400', label: 'Normal', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', priority: 6 },
+    INSUFFICIENT_DATA: { dot: 'bg-gray-500', ring: 'ring-gray-500/30', text: 'text-gray-400', label: 'Learning Phase', badge: 'bg-gray-500/10 border-gray-500/20 text-gray-400', priority: 7 },
+    // Legacy fallbacks (backward-compat for old endpoints)
+    critical: { dot: 'bg-red-500', ring: 'ring-red-500/30', text: 'text-red-400', label: 'Critical', badge: 'bg-red-500/10 border-red-500/20 text-red-400', priority: 1 },
+    red: { dot: 'bg-red-500', ring: 'ring-red-500/30', text: 'text-red-400', label: 'Critical', badge: 'bg-red-500/10 border-red-500/20 text-red-400', priority: 1 },
+    amber: { dot: 'bg-amber-400', ring: 'ring-amber-400/30', text: 'text-amber-400', label: 'Warning', badge: 'bg-amber-500/10 border-amber-500/20 text-amber-400', priority: 5 },
+    'amber-high': { dot: 'bg-amber-400', ring: 'ring-amber-400/30', text: 'text-amber-400', label: 'Elevated', badge: 'bg-amber-500/10 border-amber-500/20 text-amber-400', priority: 5 },
+    green: { dot: 'bg-emerald-400', ring: 'ring-emerald-400/30', text: 'text-emerald-400', label: 'Normal', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', priority: 6 },
 };
-const getStatus = key => statusConfig[key] ?? statusConfig.green;
+// Resolve G8 primary_alert → statusConfig entry (new format preferred, old fallback)
+const getStatus = (row) => {
+    // New backend format: primary_alert field (string like 'RED', 'DRIFT_WARNING')
+    const key = row?.primary_alert ?? row?.status ?? 'GREEN';
+    return statusConfig[key] ?? statusConfig.GREEN;
+};
 
 /* ── trend icon ────────────────────────────────────────────────────── */
 const TrendIcon = ({ trend }) => {
@@ -83,11 +99,20 @@ const WardDetail = ({ wardId, goBack }) => {
         fetch(`http://localhost:8000/api/analysis/target?ward=${wardId}&organism=${organism}&antibiotic=${antibiotic}`)
             .then(res => res.json())
             .then(data => {
-                const merged = data.history.map((h, i) => ({ ...h, expected_s: data.baseline[i]?.expected_s }));
-                // Derive last signal week from last history entry
-                const lastEntry = data.history.at(-1);
-                const lastSignalWeek = lastEntry?.week_start_date ?? null;
-                setAnalysisData({ history: merged, forecast: data.forecast, lastSignalWeek });
+                // ── Phase A: Store the FULL API response — no cherry-picking.
+                // Merge baseline into history for chart (backward-compat).
+                const merged = (data.history || []).map((h, i) => ({
+                    ...h,
+                    expected_s: data.baseline?.[i]?.expected_s ?? h.expected_s,
+                }));
+                const lastEntry = merged.at(-1);
+                // Preserve every backend field: primary_alert, secondary_alerts,
+                // drift_analysis, model_performance, engine_version, etc.
+                setAnalysisData({
+                    ...data,
+                    history: merged,
+                    lastSignalWeek: lastEntry?.week_start_date ?? null,
+                });
                 setAnalysisLoading(false);
             })
             .catch(err => { console.error(err); setAnalysisLoading(false); });
@@ -108,10 +133,12 @@ const WardDetail = ({ wardId, goBack }) => {
         </div>
     );
 
-    /* ── KPI summary from details ── */
-    const critCount = details.filter(d => d.status === 'critical' || d.status === 'red').length;
-    const warnCount = details.filter(d => d.status === 'amber' || d.status === 'amber-high').length;
-    const safeCount = details.filter(d => d.status === 'green').length;
+    /* ── KPI summary — G8 hierarchy ── */
+    // Count using primary_alert (new) with fallback to status (old endpoint)
+    const resolveAlert = (d) => d?.primary_alert ?? d?.status ?? 'GREEN';
+    const critCount = details.filter(d => resolveAlert(d) === 'RED').length;
+    const driftCount = details.filter(d => resolveAlert(d) === 'DRIFT_WARNING').length;
+    const warnCount = details.filter(d => ['AMBER', 'BIAS_WARNING', 'DEGRADED', 'amber', 'amber-high'].includes(resolveAlert(d))).length;
     const downTrends = details.filter(d => d.trend === '↓').length;
 
     return (
@@ -144,13 +171,13 @@ const WardDetail = ({ wardId, goBack }) => {
                 </div>
             </div>
 
-            {/* ── KPI Strip ── */}
+            {/* ── KPI Strip — G8 counts ── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: 'Total Targets', value: details.length, accent: 'bg-violet-500', icon: Activity },
-                    { label: 'Critical', value: critCount, accent: 'bg-red-500', icon: TrendingDown },
-                    { label: 'Warning', value: warnCount, accent: 'bg-amber-500', icon: BarChart2 },
-                    { label: 'Declining Trends', value: downTrends, accent: 'bg-rose-600', icon: TrendingDown },
+                    { label: 'Critical (RED)', value: critCount, accent: 'bg-red-500', icon: TrendingDown },
+                    { label: 'Drift / Watch', value: driftCount + warnCount, accent: 'bg-orange-500', icon: BarChart2 },
+                    { label: 'Declining', value: downTrends, accent: 'bg-rose-600', icon: TrendingDown },
                 ].map(({ label, value, accent, icon: Icon }, i) => (
                     <motion.div
                         key={label}
@@ -223,105 +250,131 @@ const WardDetail = ({ wardId, goBack }) => {
                         </thead>
                         <tbody>
                             <AnimatePresence>
-                                {details.map((row, idx) => {
-                                    const sv = getStatus(row.status);
-                                    const isHovered = hoveredRow === idx;
-                                    return (
-                                        <motion.tr
-                                            key={idx}
-                                            initial={{ opacity: 0, x: -6 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: idx * 0.045, duration: 0.25 }}
-                                            onMouseEnter={() => setHoveredRow(idx)}
-                                            onMouseLeave={() => setHoveredRow(null)}
-                                            onClick={() => handleRowClick(row.organism, row.antibiotic)}
-                                            className="border-b border-white/[0.04] cursor-pointer
+                                {/* G8-sorted: sort by priority so RED targets float to top */}
+                                {[...details]
+                                    .sort((a, b) => (getStatus(a).priority ?? 9) - (getStatus(b).priority ?? 9))
+                                    .map((row, idx) => {
+                                        const sv = getStatus(row);
+                                        const isHovered = hoveredRow === idx;
+                                        const secondaryAlerts = row.secondary_alerts ?? [];
+                                        const isColdStart = (row.primary_alert ?? row.status) === 'INSUFFICIENT_DATA';
+                                        return (
+                                            <motion.tr
+                                                key={`${row.organism}-${row.antibiotic}`}
+                                                initial={{ opacity: 0, x: -6 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: idx * 0.045, duration: 0.25 }}
+                                                onMouseEnter={() => setHoveredRow(idx)}
+                                                onMouseLeave={() => setHoveredRow(null)}
+                                                onClick={() => handleRowClick(row.organism, row.antibiotic)}
+                                                className="border-b border-white/[0.04] cursor-pointer
                                                        hover:bg-white/[0.03] transition-colors duration-150"
-                                        >
-                                            {/* Organism */}
-                                            <td className="px-6 py-4">
-                                                <span className="font-semibold text-white text-sm italic">
-                                                    {row.organism}
-                                                </span>
-                                            </td>
-
-                                            {/* Antibiotic */}
-                                            <td className="px-6 py-4">
-                                                <span className="font-mono text-gray-300 text-xs bg-white/5
-                                                                  border border-white/10 px-2 py-0.5 rounded">
-                                                    {row.antibiotic}
-                                                </span>
-                                            </td>
-
-                                            {/* Current S% */}
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="text-lg font-bold text-white tabular-nums">
-                                                    {row.current_s.toFixed(1)}%
-                                                </span>
-                                            </td>
-
-                                            {/* Baseline */}
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="text-sm text-gray-400 tabular-nums">
-                                                    {row.baseline_s.toFixed(1)}%
-                                                </span>
-                                            </td>
-
-                                            {/* Forecast */}
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="text-sm font-semibold text-violet-300 tabular-nums">
-                                                    {row.forecast_s.toFixed(1)}%
-                                                </span>
-                                            </td>
-
-                                            {/* Trend */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center justify-center">
-                                                    <TrendIcon trend={row.trend} />
-                                                </div>
-                                            </td>
-
-                                            {/* Status badge */}
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                                                                  text-[11px] font-bold border ${sv.badge}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${sv.dot}`} />
-                                                    {sv.label}
-                                                </span>
-                                            </td>
-
-                                            {/* Last data week */}
-                                            <td className="px-6 py-4">
-                                                {row.last_data_week ? (
-                                                    <span style={{
-                                                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                                                        fontSize: 10, fontWeight: 600, padding: '2px 7px',
-                                                        borderRadius: 99,
-                                                        background: isStale(row.last_data_week) ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.04)',
-                                                        border: isStale(row.last_data_week) ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.08)',
-                                                        color: isStale(row.last_data_week) ? '#fbbf24' : '#6b7280',
-                                                    }}>
-                                                        {isStale(row.last_data_week) && <AlertTriangle style={{ width: 9, height: 9 }} />}
-                                                        {fmtIso(row.last_data_week, true)}
+                                            >
+                                                {/* Organism */}
+                                                <td className="px-6 py-4">
+                                                    <span className="font-semibold text-white text-sm italic">
+                                                        {row.organism}
                                                     </span>
-                                                ) : (
-                                                    <span className="text-gray-700 text-xs">—</span>
-                                                )}
-                                            </td>
+                                                </td>
 
-                                            {/* CTA */}
-                                            <td className="px-6 py-4 text-right">
-                                                <motion.div
-                                                    animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : 6 }}
-                                                    transition={{ duration: 0.15 }}
-                                                    className="inline-flex items-center gap-1 text-blue-400 text-xs font-bold"
-                                                >
-                                                    Analyse <ChevronRight className="w-3 h-3" />
-                                                </motion.div>
-                                            </td>
-                                        </motion.tr>
-                                    );
-                                })}
+                                                {/* Antibiotic */}
+                                                <td className="px-6 py-4">
+                                                    <span className="font-mono text-gray-300 text-xs bg-white/5
+                                                                  border border-white/10 px-2 py-0.5 rounded">
+                                                        {row.antibiotic}
+                                                    </span>
+                                                </td>
+
+                                                {/* Current S% */}
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`text-lg font-bold tabular-nums ${sv.text ?? 'text-white'
+                                                        }`}>
+                                                        {(row.current_s ?? 0).toFixed(1)}%
+                                                    </span>
+                                                </td>
+
+                                                {/* Baseline */}
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className="text-sm text-gray-400 tabular-nums">
+                                                        {(row.baseline_s ?? 0).toFixed(1)}%
+                                                    </span>
+                                                </td>
+
+                                                {/* Forecast */}
+                                                <td className="px-6 py-4 text-center">
+                                                    {isColdStart ? (
+                                                        <span className="text-xs text-gray-600 italic">Learning…</span>
+                                                    ) : (
+                                                        <span className="text-sm font-semibold text-violet-300 tabular-nums">
+                                                            {(row.forecast_s ?? 0).toFixed(1)}%
+                                                        </span>
+                                                    )}
+                                                </td>
+
+                                                {/* Trend */}
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-center">
+                                                        <TrendIcon trend={row.trend} />
+                                                    </div>
+                                                </td>
+
+                                                {/* G8 Primary Alert Badge + Secondary Pills */}
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        {/* Primary */}
+                                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+                                                                      text-[11px] font-bold border ${sv.badge}`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${sv.dot}`} />
+                                                            {sv.label}
+                                                        </span>
+                                                        {/* Secondary alerts as small pills */}
+                                                        {secondaryAlerts.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                {secondaryAlerts.map(sec => (
+                                                                    <span key={sec}
+                                                                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded
+                                                                               bg-white/5 border border-white/10 text-gray-400"
+                                                                    >
+                                                                        {sec.replace('_', ' ')}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+
+                                                {/* Last data week */}
+                                                <td className="px-6 py-4">
+                                                    {row.last_data_week ? (
+                                                        <span style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                                                            fontSize: 10, fontWeight: 600, padding: '2px 7px',
+                                                            borderRadius: 99,
+                                                            background: isStale(row.last_data_week) ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.04)',
+                                                            border: isStale(row.last_data_week) ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                                                            color: isStale(row.last_data_week) ? '#fbbf24' : '#6b7280',
+                                                        }}>
+                                                            {isStale(row.last_data_week) && <AlertTriangle style={{ width: 9, height: 9 }} />}
+                                                            {fmtIso(row.last_data_week, true)}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-700 text-xs">—</span>
+                                                    )}
+                                                </td>
+
+                                                {/* CTA */}
+                                                <td className="px-6 py-4 text-right">
+                                                    <motion.div
+                                                        animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : 6 }}
+                                                        transition={{ duration: 0.15 }}
+                                                        className="inline-flex items-center gap-1 text-blue-400 text-xs font-bold"
+                                                    >
+                                                        Analyse <ChevronRight className="w-3 h-3" />
+                                                    </motion.div>
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })}
                             </AnimatePresence>
                         </tbody>
                     </table>
@@ -466,26 +519,27 @@ const WardDetail = ({ wardId, goBack }) => {
                                     </motion.div>
                                 )}
 
-                                {/* Chart */}
-                                <HistoricalChart
-                                    data={analysisData?.history}
-                                    prediction={analysisData?.forecast}
+                                {/* ── Phase B: Process Control Chart ── */}
+                                <ProcessControlChart
+                                    history={analysisData?.history}
+                                    forecast={analysisData?.forecast}
+                                    driftAnalysis={analysisData?.drift_analysis}
+                                    modelSwitchEvents={analysisData?.model_switch_events ?? []}
                                     loading={analysisLoading}
                                 />
 
-                                {/* Interpretation note */}
-                                <div className="flex gap-3 p-4 rounded-xl border border-amber-500/15 bg-amber-500/5">
-                                    <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                                    <div>
-                                        <p className="text-xs font-bold text-amber-400 mb-1">Interpretation Note</p>
-                                        <p className="text-xs text-gray-400 leading-relaxed">
-                                            The <strong className="text-white">Forecast Point</strong> (hollow circle) indicates the predicted
-                                            trajectory for next week. Compare it against the{' '}
-                                            <strong className="text-white">Statistical Baseline</strong> (dashed line).
-                                            Significant downward deviation suggests actionable resistance erosion requiring stewardship review.
-                                        </p>
-                                    </div>
-                                </div>
+                                {/* ── Phase C: Clinical cockpit panels (G8 translation + diagnostics + governance) ── */}
+                                {!analysisLoading && (
+                                    <CockpitPanels
+                                        driftAnalysis={analysisData?.drift_analysis}
+                                        modelPerformance={analysisData?.model_performance}
+                                        forecast={analysisData?.forecast}
+                                        organism={selectedTarget?.organism}
+                                        antibiotic={selectedTarget?.antibiotic}
+                                        ward={wardId}
+                                    />
+                                )}
+
                             </div>
                         </motion.div>
                     </motion.div>

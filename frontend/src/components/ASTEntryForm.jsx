@@ -177,18 +177,31 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
             setMessage({ type: 'error', text: 'Please mark at least one antibiotic result.' });
             setLoading(false); return;
         }
+
+        // Clean metadata (Pydantic wants null for optional ints, not empty strings)
+        const cleanMetadata = { ...metadata };
+        if (cleanMetadata.age === '') cleanMetadata.age = null;
+        if (cleanMetadata.lab_no === '') cleanMetadata.lab_no = null;
+        if (cleanMetadata.bht === '') cleanMetadata.bht = null;
+
         try {
             const res = await fetch(`${API}/api/entry`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...metadata, results }),
+                body: JSON.stringify({ ...cleanMetadata, results }),
             });
             const data = await res.json();
             if (res.ok) {
-                setMessage({ type: 'success', text: data.message });
+                setMessage({ type: 'success', text: data.message || 'AST Result saved successfully' });
                 setTimeout(() => { onClose(); onEntrySaved?.(); }, 1500);
             } else {
-                setMessage({ type: 'error', text: data.detail || 'Submission failed.' });
+                let errorMsg = 'Submission failed.';
+                if (Array.isArray(data.detail)) {
+                    errorMsg = data.detail.map(e => `${e.loc.slice(1).join('.')}: ${e.msg}`).join(' | ');
+                } else if (typeof data.detail === 'string') {
+                    errorMsg = data.detail;
+                }
+                setMessage({ type: 'error', text: errorMsg });
             }
         } catch {
             setMessage({ type: 'error', text: 'Network error — please try again.' });
