@@ -381,7 +381,7 @@ def run_drift_analysis(
     All tolerances must have already been computed by Phase 4C.
     """
     # CHECK 5: Cold-start or insufficient data — bypass all detectors
-    if validated_count < 6 or active_model.upper() == "BASELINE_MEAN":
+    if len(history) < 8:
         return {
             "primary_alert":    "INSUFFICIENT_DATA",
             "primary_priority": 7,   # Below GREEN — signals 'no information'

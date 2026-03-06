@@ -373,13 +373,16 @@ async def trigger_nf_pipeline():
     1. Stage B: Full Aggregation
     2. Stage C: Baseline Recompute
     3. Sweep: Prediction Engine
+    4. Phase 3A: Forecast Validation (populates forecast_validation_log)
+    5. Phase 3B: Rolling Model Performance Update
     """
     try:
         import subprocess
-        # Wait 2 seconds for the synchronous SQLAlchemy connection pooling 
+        from sqlalchemy import text as sql_text
+        # Wait 2 seconds for the synchronous SQLAlchemy connection pooling
         # to fully release row-exclusive locks on PostgreSQL.
         await asyncio.sleep(2)
-        
+
         logger.info("⚙️ Triggering Phase 2 NF Surveillance Pipeline...")
         logger.info("   1. Running Stage B: Aggregation...")
         subprocess.run(["python", "/app/data_processor/aggregate_weekly.py"], check=True)
@@ -387,6 +390,35 @@ async def trigger_nf_pipeline():
         subprocess.run(["python", "/app/data_processor/compute_baselines.py"], check=True)
         logger.info("   3. Running Sweep: Prediction Engine...")
         run_surveillance_sweep()
+
+        # ── Phase 3A: Validate closed-week predictions → populates forecast_validation_log ──
+        logger.info("   4. Running Phase 3A: Forecast Validation...")
+        try:
+            from cron.stage_e_continuous_learning import finalize_closed_week_predictions
+            db_3a = SessionLocal()
+            raw_conn = db_3a.connection().connection
+            raw_cur  = raw_conn.cursor()
+            finalize_closed_week_predictions(raw_cur, raw_conn)
+            raw_cur.close()
+            db_3a.close()
+            logger.info("   ✅ Phase 3A complete — forecast_validation_log updated")
+        except Exception as p3a_err:
+            logger.warning(f"   ⚠️ Phase 3A skipped: {p3a_err}")
+
+        # ── Phase 3B: Update rolling model performance metrics ──────────────────
+        logger.info("   5. Running Phase 3B: Rolling Performance Update...")
+        try:
+            from cron.stage_e_continuous_learning import update_rolling_performance_metrics
+            db_3b = SessionLocal()
+            raw_conn = db_3b.connection().connection
+            raw_cur  = raw_conn.cursor()
+            update_rolling_performance_metrics(raw_cur, raw_conn)
+            raw_cur.close()
+            db_3b.close()
+            logger.info("   ✅ Phase 3B complete — model_performance updated")
+        except Exception as p3b_err:
+            logger.warning(f"   ⚠️ Phase 3B skipped: {p3b_err}")
+
         logger.info("✅ NF Pipeline Completed Successfully")
     except Exception as e:
         logger.error(f"NF Pipeline Error: {e}")

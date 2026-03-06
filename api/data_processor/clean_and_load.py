@@ -28,7 +28,7 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 
 
 # File path
-EXCEL_FILE_PATH = '/app/data/raw/Stage_D_Expanded_10000_Final_Schema_Aligned.xlsx.xlsx'
+EXCEL_FILE_PATH = '/app/data/raw/NF.xlsx'
 
 def standardize_sir_value(value):
     """Standardize S/I/R values."""
