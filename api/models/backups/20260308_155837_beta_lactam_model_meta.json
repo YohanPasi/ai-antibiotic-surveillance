@@ -1,0 +1,14 @@
+{
+    "model_version": "beta_lactam_xgb_v1",
+    "evidence_version": "v1.0",
+    "features_used": 21,
+    "generations_supported": [
+        "Gen1",
+        "Gen2",
+        "Gen3",
+        "Gen4",
+        "Carbapenem",
+        "BL_Combo"
+    ],
+    "calibration": "isotonic"
+}

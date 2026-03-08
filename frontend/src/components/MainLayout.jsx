@@ -9,10 +9,10 @@ import Sidebar from './Sidebar';
 import MRSAPerformanceDashboard from './MRSAPerformanceDashboard';
 import Header from './Header';
 import { useAuth } from '../context/AuthContext';
-import { ESBLModule } from './esbl/ESBLModule'; // Stage 9 Import
-import { AuditLogView } from './esbl/screens/AuditLogView';
-import { PostASTReview } from './esbl/screens/PostASTReview';
-import { LabEntryForm } from './esbl/screens/LabEntryForm';
+import BetaLactamModule from './beta-lactam/BetaLactamModule'; // Stage 9 Refactor
+import AuditLogView from './beta-lactam/screens/AuditLogView';
+import PostASTReview from './beta-lactam/screens/PostASTReview';
+import LabEntryForm from './beta-lactam/screens/LabEntryForm';
 
 // STP Pages (Stage 1-5 Frontend)
 import STPOverview from '../pages/stp/STPOverview';
@@ -70,26 +70,20 @@ function MainLayout() {
                 );
             case 'mrsa_prediction':
                 return <MRSAPage />;
-            case 'esbl_cdss': // Stage 9: New Module
-                return <ESBLModule />;
+            case 'esbl_cdss': // Stage 9: Mapped to Beta-Lactam
+                return <BetaLactamModule />;
             case 'esbl_audit':
                 return <AuditLogView />; // Renders as full page card
             case 'esbl_lab_entry':
                 return <LabEntryForm onSubmit={async (id, data, context) => {
                     try {
-                        // 1. Save to Supabase (Permanent Record)
-                        // context is passed from the LabEntryForm (foundCase.inputs)
-                        await import('../services/esblService').then(m =>
-                            m.esblService.persistASTResults(id, data, context)
-                        );
-
-                        // 2. Store encounter ID for PostASTReview
+                        // 1. Store encounter ID for PostASTReview
                         setCurrentEncounterId(id);
 
-                        // 3. Navigate to Review
+                        // 2. Navigate to Review
                         setActiveView('esbl_post_ast');
                     } catch (err) {
-                        alert("Failed to save to database: " + err.message);
+                        alert("Failed to navigate to review: " + err.message);
                     }
                 }} />;
             case 'esbl_post_ast':

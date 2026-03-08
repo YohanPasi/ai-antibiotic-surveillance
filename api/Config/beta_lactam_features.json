@@ -1,0 +1,31 @@
+{
+    "numerical": [
+        "Age"
+    ],
+    "categorical": [
+        "Gender",
+        "Ward",
+        "Organism",
+        "Sample_Type",
+        "Cell_Count_Level"
+    ],
+    "one_hot_columns": [
+        "Age",
+        "Gender_Female",
+        "Gender_Male",
+        "Ward_04",
+        "Ward_07",
+        "Ward_07B",
+        "Ward_08",
+        "Ward_14",
+        "Organism_E_coli",
+        "Organism_Enterobacter_spp",
+        "Organism_Klebsiella_pneumoniae",
+        "Sample_Type_Blood",
+        "Sample_Type_Pus/Wound",
+        "Sample_Type_Sputum",
+        "Cell_Count_Level_High",
+        "Cell_Count_Level_Low",
+        "Cell_Count_Level_Moderate"
+    ]
+}

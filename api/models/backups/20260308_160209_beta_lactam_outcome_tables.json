@@ -1,0 +1,32 @@
+{
+    "Gen1": {
+        "historical_success": 7172,
+        "historical_total": 12000,
+        "prior_probability": 0.5976666666666667
+    },
+    "Gen2": {
+        "historical_success": 0,
+        "historical_total": 12000,
+        "prior_probability": 0.0
+    },
+    "Gen3": {
+        "historical_success": 0,
+        "historical_total": 12000,
+        "prior_probability": 0.0
+    },
+    "Gen4": {
+        "historical_success": 7172,
+        "historical_total": 12000,
+        "prior_probability": 0.5976666666666667
+    },
+    "Carbapenem": {
+        "historical_success": 7162,
+        "historical_total": 12000,
+        "prior_probability": 0.5968333333333333
+    },
+    "BL_Combo": {
+        "historical_success": 0,
+        "historical_total": 12000,
+        "prior_probability": 0.0
+    }
+}

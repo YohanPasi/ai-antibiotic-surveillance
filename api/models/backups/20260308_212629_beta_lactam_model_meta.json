@@ -1,0 +1,68 @@
+{
+    "version": "v2",
+    "training_timestamp": "2026-03-08T16:02:51.090253",
+    "total_samples": 5,
+    "dataset_fingerprint": "5 rows",
+    "metrics": {
+        "Gen1": {
+            "AUC": 0.5,
+            "Brier_Score": 0.25,
+            "Sensitivity": 0.0,
+            "NPV": 0.0,
+            "TP": 0,
+            "FP": 1,
+            "TN": 0,
+            "FN": 0
+        },
+        "Gen2": {
+            "AUC": 0.5,
+            "Brier_Score": 0.014209335970684356,
+            "Sensitivity": 0.0,
+            "NPV": 1.0,
+            "TP": 0,
+            "FP": 0,
+            "TN": 1,
+            "FN": 0
+        },
+        "Gen3": {
+            "AUC": 0.5,
+            "Brier_Score": 0.014209335970684356,
+            "Sensitivity": 0.0,
+            "NPV": 1.0,
+            "TP": 0,
+            "FP": 0,
+            "TN": 1,
+            "FN": 0
+        },
+        "Gen4": {
+            "AUC": 0.5,
+            "Brier_Score": 0.7758034973619425,
+            "Sensitivity": 0.0,
+            "NPV": 0.0,
+            "TP": 0,
+            "FP": 0,
+            "TN": 0,
+            "FN": 1
+        },
+        "Carbapenem": {
+            "AUC": 0.5,
+            "Brier_Score": 0.014209335970684356,
+            "Sensitivity": 0.0,
+            "NPV": 1.0,
+            "TP": 0,
+            "FP": 0,
+            "TN": 1,
+            "FN": 0
+        },
+        "BL_Combo": {
+            "AUC": 0.5,
+            "Brier_Score": 0.0723294939740251,
+            "Sensitivity": 0.0,
+            "NPV": 1.0,
+            "TP": 0,
+            "FP": 0,
+            "TN": 1,
+            "FN": 0
+        }
+    }
+}

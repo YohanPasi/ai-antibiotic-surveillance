@@ -51,9 +51,9 @@ class MRSAService:
             self.classifier   = self.rf_pipeline.named_steps['classifier']
             self.preprocessor = self.rf_pipeline.named_steps['preprocessor']
 
-            print("✅ MRSA Service Ready (v2).")
+            print("MRSA Service Ready (v2).")
         except Exception as e:
-            print(f"❌ Failed to load MRSA artifacts: {e}")
+            print(f"Failed to load MRSA artifacts: {e}")
             self.rf_pipeline = None
 
     def predict(self, db: Session, request: MRSAPredictionRequest) -> MRSAPredictionResponse:
