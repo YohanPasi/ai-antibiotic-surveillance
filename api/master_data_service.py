@@ -6,6 +6,24 @@ from mrsa_schemas import MasterDefinitionCreate
 class MasterDataService:
     @staticmethod
     def get_definitions_by_category(db: Session, category: str):
+        if category == "WARD":
+            # Dynamically fetch actual active wards from the data so the modal always matches the dashboard
+            sql = text("SELECT DISTINCT ward FROM ast_weekly_aggregated ORDER BY ward")
+            rows = db.execute(sql).fetchall()
+            if rows:
+                # Mock the MasterDefinition schema
+                return [
+                    {
+                        "id": i + 1000, 
+                        "category": "WARD", 
+                        "label": r[0], 
+                        "value": r[0], 
+                        "is_active": True
+                    } 
+                    for i, r in enumerate(rows)
+                ]
+                
+        # For SAMPLE_TYPE and others, use the static configuration database
         sql = text("SELECT * FROM master_definitions WHERE category = :cat AND is_active = TRUE ORDER BY label")
         result = db.execute(sql, {"cat": category}).fetchall()
         return result

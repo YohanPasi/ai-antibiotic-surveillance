@@ -29,11 +29,12 @@ class MRSAAnalyticsService:
         window_start = datetime.now() - timedelta(days=30)
         
         query = text("""
-            SELECT 
-                actual_mrsa, 
-                consensus_band, 
-                rf_band, 
-                xgb_band 
+            SELECT
+                actual_mrsa,
+                consensus_band,
+                rf_band,
+                lr_band,
+                xgb_band
             FROM mrsa_validation_log
             WHERE validation_date >= :start
         """)
@@ -56,12 +57,17 @@ class MRSAAnalyticsService:
         rf_correct = 0
         xgb_correct = 0
 
+        lr_correct = 0  # was missing from old implementation
+
         for row in rows:
-            actual = row[0] # Boolean
-            pred_band = row[1]
-            
-            is_pred_positive = (pred_band == "RED")
-            
+            actual  = row[0]   # Boolean
+            con_band = row[1]
+            rf_band  = row[2]
+            lr_band  = row[3]  # FIX: was previously using xgb_band column for LR
+            xgb_band = row[4]
+
+            is_pred_positive = (con_band == "RED")
+
             if actual and not is_pred_positive:
                 fn_count += 1
             elif actual and is_pred_positive:
@@ -70,12 +76,11 @@ class MRSAAnalyticsService:
                 tn_count += 1
             elif not actual and is_pred_positive:
                 fp_count += 1
-                
-            # Simple accuracy check for sub-models (Red vs Non-Red)
-            # RF
-            if (row[2] == "RED") == actual: rf_correct += 1
-            # XGB
-            if (row[3] == "RED") == actual: xgb_correct += 1
+
+            # Per-model accuracy (RED vs non-RED)
+            if (rf_band  == "RED") == actual: rf_correct  += 1
+            if (lr_band  == "RED") == actual: lr_correct  += 1  # FIX: now using correct column
+            if (xgb_band == "RED") == actual: xgb_correct += 1
 
         # Calculate Rates
         # NPV = TN / (TN + FN)
@@ -120,11 +125,12 @@ class MRSAAnalyticsService:
                 early_detection_count=tp_count
             ),
             model_health={
-                "rf_acc": round(rf_correct/total, 2),
-                "xgb_acc": round(xgb_correct/total, 2),
-                "consensus_acc": round((tp_count+tn_count)/total, 2)
+                "rf_acc":        round(rf_correct  / total, 2),
+                "lr_acc":        round(lr_correct  / total, 2),  # FIX: now tracked correctly
+                "xgb_acc":       round(xgb_correct / total, 2),
+                "consensus_acc": round((tp_count + tn_count) / total, 2)
             },
-            governance_status="ACTIVE" if npv_status == "OK" else "REVIEW_NEEDED"
+            governance_status=self.governance_check({"sensitivity": sensitivity, "npv": npv, "fn": fn_count})
         )
 
     def _empty_response(self):
@@ -183,6 +189,81 @@ class MRSAAnalyticsService:
             ))
             
         return sorted(results, key=lambda x: x.red_rate, reverse=True)
+
+    @staticmethod
+    def governance_check(metrics: dict) -> str:
+        """
+        Determine governance action based on live safety metrics.
+        Called automatically from get_summary() and the /api/mrsa/governance/status endpoint.
+
+        Thresholds (clinical research defaults):
+          DISABLE_MODULE  — NPV < 70% (too many missed MRSA cases)
+          RETRAIN_REVIEW  — Sensitivity < 80% OR NPV < 85%
+          MONITOR         — Sensitivity < 90% (within acceptable range but close to limit)
+          ACTIVE          — All metrics within safe thresholds
+        """
+        npv         = metrics.get("npv", 100)
+        sensitivity = metrics.get("sensitivity", 100)
+        fn          = metrics.get("fn", 0)
+
+        if npv < 70:
+            return "DISABLE_MODULE"    # Unsafe — too many missed MRSA cases
+        if sensitivity < 80 or npv < 85:
+            return "RETRAIN_REVIEW"    # Performance degraded — trigger retraining workflow
+        if sensitivity < 90:
+            return "MONITOR"           # Borderline — watch closely
+        return "ACTIVE"                # All clear
+
+    def get_governance_status(self, db: Session) -> dict:
+        """
+        Standalone governance status endpoint — returns current model health decision
+        along with the metrics that drove it, without the full analytics payload.
+        """
+        window_start = datetime.now() - timedelta(days=30)
+        query = text("""
+            SELECT actual_mrsa, consensus_band
+            FROM mrsa_validation_log
+            WHERE validation_date >= :start
+        """)
+        rows = db.execute(query, {"start": window_start}).fetchall()
+
+        if not rows:
+            return {
+                "governance_status": "NO_DATA",
+                "message": "No validation data in the last 30 days. Run AST entry for Staphylococcus aureus to populate.",
+                "metrics": {}
+            }
+
+        total = len(rows)
+        tp = sum(1 for r in rows if r[0] and r[1] == "RED")
+        tn = sum(1 for r in rows if not r[0] and r[1] != "RED")
+        fn = sum(1 for r in rows if r[0] and r[1] != "RED")
+
+        sensitivity = round((tp / (tp + fn) * 100) if (tp + fn) > 0 else 0, 1)
+        npv         = round((tn / (tn + fn) * 100) if (tn + fn) > 0 else 0, 1)
+
+        status = self.governance_check({"sensitivity": sensitivity, "npv": npv, "fn": fn})
+
+        # Human-readable recommendation
+        recommendations = {
+            "ACTIVE":         "System operating within safe clinical thresholds. Continue monitoring.",
+            "MONITOR":        "Sensitivity approaching lower limit. Increase validation frequency.",
+            "RETRAIN_REVIEW": "Performance below threshold. Schedule model retraining before next release.",
+            "DISABLE_MODULE": "CRITICAL: NPV below safe limit. Disable MRSA module until retrained and validated.",
+        }
+
+        return {
+            "governance_status": status,
+            "message": recommendations[status],
+            "metrics": {
+                "sensitivity_pct": sensitivity,
+                "npv_pct": npv,
+                "false_negatives": fn,
+                "true_positives": tp,
+                "total_validations": total,
+                "window_days": 30
+            }
+        }
 
     def log_decision(self, db: Session, decision: GovernanceDecisionCreate, admin_user: str):
         query = text("""

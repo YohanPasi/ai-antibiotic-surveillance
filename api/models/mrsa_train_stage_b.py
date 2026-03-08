@@ -3,7 +3,9 @@ import numpy as np
 import xgboost as xgb
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OrdinalEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix, classification_report
 from sqlalchemy import create_engine
 import shap
@@ -12,80 +14,104 @@ import json
 import os
 import sys
 
-# DATABASE CONNECTION
+# ── DATABASE CONNECTION ────────────────────────────────────────────────────────
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://ast_user:ast_password_2024@db:5432/ast_db")
 engine = create_engine(DATABASE_URL)
 
 ARTIFACT_DIR = "/app/models/mrsa_artifacts"
 os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
+MODEL_VERSION = 'v2'
+
+# ── Feature Set v2 (canonical — matches docs/mrsa_features.md) ────────────────
+FEATURE_COLS = [
+    'ward',
+    'sample_type',
+    'gram_stain',
+    'cell_count_category',
+    'growth_time',
+    'recent_antibiotic_use',
+    'length_of_stay',
+]
+
+CATEGORICAL_FEATURES = [
+    'ward',
+    'sample_type',
+    'gram_stain',
+    'cell_count_category',
+    'recent_antibiotic_use',
+]
+
+NUMERIC_FEATURES = [
+    'growth_time',
+    'length_of_stay',
+]
+
+
 def run_mrsa_stage_b():
-    print("🧪 Starting MRSA Stage B: Training & Feature Engineering...")
+    print("🧪 Starting MRSA Stage B: Training & Feature Engineering — Schema v2...")
 
     # 1. LOAD DATA
     print("   - Loading data from DB...")
     df = pd.read_sql("SELECT * FROM mrsa_raw_clean", engine)
     print(f"     Loaded {len(df)} rows.")
 
-    # 2. PREPROCESSING
-    # Drop metadata
-    drop_cols = ['id', 'entry_date', 'bht']
+    # 2. DROP METADATA COLUMNS (never features)
+    drop_cols = ['id', 'entry_date', 'bht', 'age', 'gender', 'pus_type',
+                 'cell_count', 'gram_positivity']  # v1 columns — dropped if present
     df = df.drop(columns=[c for c in drop_cols if c in df.columns])
 
-    # Target
+    # 3. TARGET + FEATURES
     y = df['mrsa_label']
-    X = df.drop(columns=['mrsa_label'])
+    X = df[FEATURE_COLS].copy()
 
-    # A. Missing Values
+    # 4. MISSING VALUE HANDLING
     print("   - Handling missing values...")
-    X['age'] = X['age'].fillna(X['age'].median())
-    # Handle growth_time - convert to numeric if it's string (e.g. "24h") or mixed
-    X['growth_time'] = pd.to_numeric(X['growth_time'], errors='coerce')
-    X['growth_time'] = X['growth_time'].fillna(X['growth_time'].median())
-    
-    # Fill categorical NAs
-    cat_cols = ['ward', 'gender', 'sample_type', 'pus_type', 'cell_count', 'gram_positivity']
-    for c in cat_cols:
-        if c in X.columns:
-            X[c] = X[c].fillna('Unknown')
 
-    # B. Encoding
-    print("   - Encoding features...")
-    
-    # Cell Count: Ordinal Mapping
-    # Standardize text first
-    X['cell_count'] = X['cell_count'].astype(str).str.lower().str.strip()
-    cell_map = {
-        'none': 0, 'no wc': 0, 'not seen': 0, '0': 0,
-        'rare': 1, '+': 1, 'scanty': 1,
-        'few': 2, '++': 2,
-        'moderate': 3, '+++': 3,
-        'many': 4, 'plenty': 4, '++++': 4,
-        'unknown': 0 # Default to 0 risk if unknown
-    }
-    # Apply map, default to 0 if not found
-    X['cell_count_encoded'] = X['cell_count'].map(cell_map).fillna(0)
-    X = X.drop(columns=['cell_count'])
+    # growth_time: -1 sentinel for NULL (non-blood specimens).
+    # Do NOT use median imputation — NULL is clinically informative.
+    X['growth_time'] = pd.to_numeric(X['growth_time'], errors='coerce').fillna(-1)
 
-    # One-Hot Encoding for others
-    # We use pandas get_dummies for simplicity. In prod pipeline, we'd save a OneHotEncoder artifact.
-    # For this stage, we'll save the column names to ensure consistency.
-    X_encoded = pd.get_dummies(X, columns=['ward', 'gender', 'sample_type', 'pus_type', 'gram_positivity'], drop_first=True) # drop_first=True to reduce collinearity binary classification
-    
-    # C. Scaling
-    print("   - Scaling numeric features...")
-    scaler = StandardScaler()
-    num_cols = ['age', 'growth_time', 'cell_count_encoded']
-    X_encoded[num_cols] = scaler.fit_transform(X_encoded[num_cols])
+    # length_of_stay: 0 is a valid and common default
+    X['length_of_stay'] = pd.to_numeric(X['length_of_stay'], errors='coerce').fillna(0)
 
-    # 3. TRAIN/TEST SPLIT
+    # cell_count_category: should already be LOW/MEDIUM/HIGH from ingestion
+    # Fallback in case legacy rows have old ordinal values
+    cell_ordinal_to_cat = {0: 'LOW', 1: 'LOW', 2: 'MEDIUM', 3: 'HIGH', 4: 'HIGH'}
+    if X['cell_count_category'].dtype in [np.int64, np.float64]:
+        X['cell_count_category'] = X['cell_count_category'].map(cell_ordinal_to_cat).fillna('LOW')
+
+    for col in CATEGORICAL_FEATURES:
+        X[col] = X[col].fillna('Unknown').astype(str)
+
+    # 5. PREPROCESSING PIPELINE
+    print("   - Building preprocessing pipeline...")
+
+    # CRITICAL: remainder='drop' — not 'passthrough'.
+    # 'passthrough' appends extra columns in undefined order → silent feature mismatch at inference.
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), CATEGORICAL_FEATURES),
+            ('num', StandardScaler(), NUMERIC_FEATURES),
+        ],
+        remainder='drop'
+    )
+
+    # 6. TRAIN / VALIDATION / TEST SPLIT (70 / 15 / 15)
     print("   - Splitting data (70% Train, 15% Val, 15% Test)...")
-    # First split 70/30
-    X_train, X_temp, y_train, y_temp = train_test_split(X_encoded, y, test_size=0.3, stratify=y, random_state=42)
-    # Then split temp 50/50 (15/15)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, stratify=y_temp, random_state=42)
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=0.3, stratify=y, random_state=42
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.5, stratify=y_temp, random_state=42
+    )
 
-    # 4. MODEL TRAINING (XGBoost)
+    # 7. FIT PREPROCESSOR
+    X_train_t = preprocessor.fit_transform(X_train)
+    X_val_t   = preprocessor.transform(X_val)
+    X_test_t  = preprocessor.transform(X_test)
+
+    # 8. MODEL TRAINING (XGBoost — raw features, Pipeline-less for SHAP compatibility)
     print("   - Training XGBoost Classifier...")
     model = XGBClassifier(
         n_estimators=300,
@@ -96,28 +122,29 @@ def run_mrsa_stage_b():
         eval_metric="logloss",
         random_state=42
     )
-    
+
     model.fit(
-        X_train, y_train,
-        eval_set=[(X_val, y_val)],
+        X_train_t, y_train,
+        eval_set=[(X_val_t, y_val)],
         verbose=False
     )
 
-    # 5. EVALUATION
+    # 9. EVALUATION
     print("   - Evaluating model...")
-    y_pred = model.predict(X_test)
-    y_prob = model.predict_proba(X_test)[:, 1]
+    y_pred = model.predict(X_test_t)
+    y_prob = model.predict_proba(X_test_t)[:, 1]
 
     auc = roc_auc_score(y_test, y_prob)
     acc = accuracy_score(y_test, y_pred)
     tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
-    
+
     sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
     specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
     npv = tn / (tn + fn) if (tn + fn) > 0 else 0
     ppv = tp / (tp + fp) if (tp + fp) > 0 else 0
 
     metrics = {
+        "schema_version": MODEL_VERSION,
         "AUC": round(auc, 4),
         "Accuracy": round(acc, 4),
         "Sensitivity": round(sensitivity, 4),
@@ -127,26 +154,30 @@ def run_mrsa_stage_b():
     }
     print(f"     Results: {json.dumps(metrics, indent=2)}")
 
-    # 6. SHAP EXPLANATION
-    print("   - Generating SHAP values...")
+    # 10. SHAP EXPLANATION (sample)
+    print("   - Generating SHAP values (sample)...")
     explainer = shap.TreeExplainer(model)
-    # Use a small sample for SHAP to be fast
-    shap_values = explainer.shap_values(X_test.iloc[:100])
-    
-    # 7. SAVE ARTIFACTS
+    shap_values = explainer.shap_values(X_test_t[:100])
+
+    # 11. SAVE ARTIFACTS
     print("   - Saving artifacts...")
-    # Save Model
-    joblib.dump(model, os.path.join(ARTIFACT_DIR, "mrsa_xgb_model.pkl"))
-    # Save Scaler
-    joblib.dump(scaler, os.path.join(ARTIFACT_DIR, "scaler.pkl"))
-    # Save Feature Columns (to ensure correct input order/structure for inference)
-    with open(os.path.join(ARTIFACT_DIR, "feature_columns.json"), "w") as f:
-        json.dump(list(X_encoded.columns), f)
-    # Save Metrics
-    with open(os.path.join(ARTIFACT_DIR, "training_report.json"), "w") as f:
+
+    # Save raw XGBoost model (used by SHAP explain service)
+    joblib.dump(model, os.path.join(ARTIFACT_DIR, f"mrsa_xgb_model_{MODEL_VERSION}.pkl"))
+
+    # Save preprocessor (used by SHAP explain service to transform live input)
+    joblib.dump(preprocessor, os.path.join(ARTIFACT_DIR, f"mrsa_preprocessor_{MODEL_VERSION}.pkl"))
+
+    # Save feature order lock — inference MUST use this order
+    with open(os.path.join(ARTIFACT_DIR, f"feature_columns_{MODEL_VERSION}.json"), "w") as f:
+        json.dump(FEATURE_COLS, f, indent=2)
+
+    # Save metrics
+    with open(os.path.join(ARTIFACT_DIR, f"stage_b_training_report_{MODEL_VERSION}.json"), "w") as f:
         json.dump(metrics, f, indent=4)
 
     print("✅ Stage B Complete: Model trained and artifacts saved.")
+
 
 if __name__ == "__main__":
     run_mrsa_stage_b()

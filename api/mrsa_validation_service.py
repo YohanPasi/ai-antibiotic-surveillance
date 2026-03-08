@@ -21,7 +21,11 @@ class MRSAValidationService:
         if entry.organism != "Staphylococcus aureus":
             return
 
-        logger.info(f"🔎 Validating MRSA Prediction vs AST for Lab {entry.lab_no}...")
+        logger.info(
+            f"🔎 Validating MRSA Prediction vs AST — "
+            f"Ward={entry.ward} | Specimen={entry.specimen_type} | "
+            f"LabNo={entry.lab_no or 'Not provided'} | BHT={entry.bht or 'Not provided'}"
+        )
         
         # 1. Determine Ground Truth from Cefoxitin (FOX)
         fox_result = None
@@ -37,44 +41,105 @@ class MRSAValidationService:
 
         actual_mrsa = self.fox_mapping.get(fox_result, False)
         
-        # 2. Find Matched Prediction (Logic Option B)
-        # Match Prediction: Same Ward, Same Sample Type, Created within last 72h
-        # NOTE: This assumes Ward/Sample didn't change and patient flow is consistent.
-        
-        # Time Window
+        # ── Time window ────────────────────────────────────────────────────────
         time_limit = datetime.now() - timedelta(hours=72)
-        
-        query = text("""
-            SELECT id, risk_band, input_snapshot, 
-                   rf_risk_band, lr_risk_band, xgb_risk_band, consensus_band, 
-                   consensus_version, confidence_level
-            FROM mrsa_risk_assessments
-            WHERE ward = :ward
-              AND sample_type = :sample
-              AND timestamp >= :limit
-            ORDER BY timestamp DESC
-            LIMIT 1
-        """)
-        
-        prediction = db.execute(query, {
-            "ward": entry.ward,
-            "sample": entry.specimen_type,
-            "limit": time_limit
-        }).fetchone()
-        
+
+        # ══════════════════════════════════════════════════════════════════════
+        # 2. TWO-TIER MATCH STRATEGY
+        #
+        # Tier 1 (Patient-level): Match using BHT or lab_no identifiers.
+        #   - BHT is extracted from input_snapshot JSONB (stored at predict time).
+        #   - This is the PREFERRED match — no cross-patient confusion possible.
+        #
+        # Tier 2 (Proximity): Fallback to ward + specimen_type + 72h window.
+        #   - Used when no patient identifiers were provided.
+        #   - Can produce cross-patient mismatches at high throughput.
+        #   - Logs an explicit WARNING so mismatches are traceable.
+        # ══════════════════════════════════════════════════════════════════════
+
+        prediction = None
+        match_tier = None
+
+        # ── Tier 1: Patient-level (BHT) ───────────────────────────────────────
+        if entry.bht:
+            tier1_query = text("""
+                SELECT id, risk_band, input_snapshot,
+                       rf_risk_band, lr_risk_band, xgb_risk_band, consensus_band,
+                       consensus_version, confidence_level, model_version
+                FROM mrsa_risk_assessments
+                WHERE ward = :ward
+                  AND sample_type = :sample
+                  AND timestamp >= :limit
+                  AND input_snapshot->>'bht' = :bht
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """)
+            prediction = db.execute(tier1_query, {
+                "ward":  entry.ward, "sample": entry.specimen_type,
+                "limit": time_limit, "bht":   entry.bht,
+            }).fetchone()
+            if prediction:
+                match_tier = "T1-BHT"
+                logger.info(f"   ✅ Tier 1 Match (BHT): Prediction ID {prediction[0]}")
+
+        # ── Tier 1b: Patient-level (lab_no via JSONB snapshot) ─────────────────
+        if not prediction and entry.lab_no:
+            tier1b_query = text("""
+                SELECT id, risk_band, input_snapshot,
+                       rf_risk_band, lr_risk_band, xgb_risk_band, consensus_band,
+                       consensus_version, confidence_level, model_version
+                FROM mrsa_risk_assessments
+                WHERE ward = :ward
+                  AND sample_type = :sample
+                  AND timestamp >= :limit
+                  AND input_snapshot->>'lab_no' = :lab_no
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """)
+            prediction = db.execute(tier1b_query, {
+                "ward":   entry.ward, "sample":  entry.specimen_type,
+                "limit":  time_limit, "lab_no": entry.lab_no,
+            }).fetchone()
+            if prediction:
+                match_tier = "T1-LabNo"
+                logger.info(f"   ✅ Tier 1b Match (LabNo): Prediction ID {prediction[0]}")
+
+        # ── Tier 2: Proximity fallback ─────────────────────────────────────────
+        if not prediction:
+            tier2_query = text("""
+                SELECT id, risk_band, input_snapshot,
+                       rf_risk_band, lr_risk_band, xgb_risk_band, consensus_band,
+                       consensus_version, confidence_level, model_version
+                FROM mrsa_risk_assessments
+                WHERE ward = :ward
+                  AND sample_type = :sample
+                  AND timestamp >= :limit
+                ORDER BY timestamp DESC
+                LIMIT 1
+            """)
+            prediction = db.execute(tier2_query, {
+                "ward":  entry.ward, "sample": entry.specimen_type,
+                "limit": time_limit,
+            }).fetchone()
+            if prediction:
+                match_tier = "T2-Proximity"
+                logger.warning(
+                    f"   ⚠ Tier 2 Proximity Match used for Prediction ID {prediction[0]}. "
+                    f"No BHT/LabNo provided — cross-patient mismatch possible at high ward throughput."
+                )
+
         if not prediction:
             logger.info("   ℹ No recent prediction found for this Ward/Sample combination.")
             return
 
-        pred_id = prediction[0]
-        # Handle cases where detailed bands might be null (pre-Stage C.5 records)
-        rf_band = prediction[3] 
-        lr_band = prediction[4]
+        pred_id  = prediction[0]
+        rf_band  = prediction[3]
+        lr_band  = prediction[4]
         xgb_band = prediction[5]
-        con_band = prediction[6] or prediction[1] # Fallback to main risk_band
+        con_band = prediction[6] or prediction[1]  # Fallback to main risk_band
         conf_level = prediction[8]
-        
-        logger.info(f"   ✅ Match Found! Prediction ID: {pred_id} (Consensus: {con_band})")
+
+        logger.info(f"   Consensus: {con_band} | Match tier: {match_tier}")
 
         # 3. Evaluate Correctness
         # Logic: RED = Predicted MRSA, GREEN/AMBER = Predicted MSSA
@@ -91,10 +156,11 @@ class MRSAValidationService:
         con_correct = (is_positive(con_band) == actual_mrsa)
 
         # 4. Log to Validation Table
-        # Construct Model Versions Snapshot (Mock or fetch from DB/Config if possible. 
-        # Actually simplest is to just log static snapshot for now as defined in C.5)
+        # Derive version from saved model_version field, fallback to v2 defaults
+        stored_version = prediction[9] if len(prediction) > 9 else "C5_v2"
         versions_snapshot = {
-            "rf": "RF_v1", "lr": "LR_v1", "xgb": "XGB_v1", "consensus": "C5_v1"
+            "rf": "RF_v2", "lr": "LR_v2", "xgb": "XGB_v2",
+            "consensus": stored_version or "C5_v2"
         }
         
         log_sql = text("""
@@ -124,24 +190,11 @@ class MRSAValidationService:
             "conf": conf_level,
             "vers": json.dumps(versions_snapshot)
         })
-        # Commit is handled by caller or here? Main entry endpoint commits. 
-        # But if we run in background task, we need our own session or use passed db if sync.
-        # Since we use dependency injection in main, we should probably commit here if we passed a session that is kept open?
-        # Actually line 212 in main.py adds task `trigger_pipeline_update`.
-        # Validation should be synchronous within the transaction OR a background task with new session.
-        # The user's code snippet `background_tasks.add_task` implies NEW session.
-        
-        # For simplicity and transaction safety, let's flush/commit here if DB passed allows it.
-        # However, usually we don't commit a passed session unless we own it.
-        # Let's assume the caller manages transaction if called synchronously, 
-        # or we create a session if called as background task.
-        # Given the instruction to modifying `main.py`, I will implement this as a standalone 
-        # function that creates its own session if needed, OR accepts one.
-        
-        # Wait, if this is called from `main.py` inside the `try` block before commit (Line 202-205 in user snippet),
-        # then it uses the SAME transaction.
-        pass # DB commit will happen in main.py
-        
-        logger.info(f"   📝 Validation Logged. (Correct: {con_correct})")
+        # DB commit is handled by the caller (main.py) — same transaction.
+        logger.info(
+            f"   📝 Validation Logged — Correct: {con_correct} | "
+            f"Fox: {fox_result} | Actual: {'MRSA' if actual_mrsa else 'MSSA'} | "
+            f"Predicted: {con_band} | Tier: {match_tier}"
+        )
 
 mrsa_validation_service = MRSAValidationService()

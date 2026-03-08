@@ -10,102 +10,114 @@ from fastapi import HTTPException
 from mrsa_schemas import MRSAPredictionRequest, MRSAPredictionResponse, MRSAExplanationResponse
 from datetime import datetime
 
-ARTIFACT_DIR = r'/app/models/mrsa_artifacts' if os.path.exists('/app/models/mrsa_artifacts') else r'd:\Yohan\Project\api\models\mrsa_artifacts'
+ARTIFACT_DIR = r'/app/models/mrsa_artifacts' if os.path.exists('/app') else r'd:\Yohan\Project\api\models\mrsa_artifacts'
+
+# v2 feature columns — used for SHAP explain
+FEATURE_COLS_V2 = [
+    'ward',
+    'sample_type',
+    'gram_stain',
+    'cell_count_category',
+    'growth_time',
+    'recent_antibiotic_use',
+    'length_of_stay',
+]
+
+# Known column names for SHAP display value lookup
+KNOWN_FEATURE_COLS = FEATURE_COLS_V2
+
 
 class MRSAService:
     def __init__(self):
-        self.pipeline = None
+        self.rf_pipeline = None
         self.feature_columns = None
-        self.model_version = "RF_v1"
+        self.model_version = "RF_v2"
         self._load_artifacts()
 
     def _load_artifacts(self):
+        """Load the RF pipeline (used by SHAP explain) and feature lock."""
         print(f"Loading MRSA Artifacts from {ARTIFACT_DIR}...")
         try:
-            self.pipeline = joblib.load(os.path.join(ARTIFACT_DIR, 'mrsa_rf_pipeline.pkl'))
-            with open(os.path.join(ARTIFACT_DIR, 'feature_columns.json'), 'r') as f:
-                self.feature_columns = json.load(f)
-            
-            # Pre-compute SHAP explainer (Background dataset for expected value)
-            # Using specific tree explainer on the classifier part
-            # Note: For strict exactness we iterate, but for speed we cache
-            self.classifier = self.pipeline.named_steps['classifier']
-            self.preprocessor = self.pipeline.named_steps['preprocessor']
-            
-            print("✅ MRSA Service Ready.")
+            self.rf_pipeline = joblib.load(os.path.join(ARTIFACT_DIR, 'mrsa_rf_pipeline_v2.pkl'))
+
+            lock_path = os.path.join(ARTIFACT_DIR, 'feature_columns_v2.json')
+            if os.path.exists(lock_path):
+                with open(lock_path) as f:
+                    self.feature_columns = json.load(f)
+            else:
+                self.feature_columns = FEATURE_COLS_V2
+
+            # Cache preprocessor and classifier for SHAP
+            self.classifier   = self.rf_pipeline.named_steps['classifier']
+            self.preprocessor = self.rf_pipeline.named_steps['preprocessor']
+
+            print("✅ MRSA Service Ready (v2).")
         except Exception as e:
             print(f"❌ Failed to load MRSA artifacts: {e}")
-            self.pipeline = None
+            self.rf_pipeline = None
 
     def predict(self, db: Session, request: MRSAPredictionRequest) -> MRSAPredictionResponse:
-        # 1. Runtime Isolation Guard
-        forbidden = ["forecast", "antibiotic", "week", "future"]
-        req_dict = request.dict()
-        if any(k in req_dict for k in forbidden):
-             raise HTTPException(status_code=400, detail="Security Rejection: Forbidden forecasting fields detected.")
+        """
+        Run consensus prediction and write audit record.
 
-        # 2. DataFrame Construction
-        input_data = pd.DataFrame([req_dict])
-        
-        # 3. Consensus Prediction (Delegated)
+        BUG FIX: The old implementation called consensus_service.predict_consensus() TWICE
+        (once to get the result, then again with assessment_id to update the DB).
+        Now: predict_consensus() is called ONCE, then save_consensus_audit() is called separately.
+        """
+        req_dict = request.dict()
+
+        # Strip bht — must never reach the model
+        model_input = {k: v for k, v in req_dict.items() if k != 'bht'}
+
         try:
             from mrsa_consensus_service import consensus_service
-            # This handles prediction, logic, and auditing
-            result = consensus_service.predict_consensus(input_data)
-            
-            # Extract Core Values for compatibility
-            # We use RF probability as the "Primary Probability" for continuity
-            prob = result['models']['rf']['prob']
-            
-            # But the RISK BAND is the CONSENSUS BAND
-            band = result['consensus_band']
-            
-            # Message logic based on Consensus Band & Confidence
-            confidence = result['confidence_level']
-            
-            if band == "GREEN":
-                msg = "MRSA unlikely. Standard empiric therapy."
-            elif band == "AMBER":
-                msg = "Intermediate Risk. Review risk factors."
-            else:
-                msg = "High Risk. Consider anti-MRSA coverage."
-                
-            if confidence != "HIGH":
-                msg += f" (Note: Confidence is {confidence} due to model disagreement)"
 
-            # We need the ID from the DB. Consensus service did the inert, but we need to fetch the ID?
-            # Actually consensus_service.predict_consensus accepts an ID if we want to update.
-            # But we need to CREATE the record first or let consensus service create it?
-            # The previous logic created it.
-            # Let's let consensus service CREATE it.
-            # Wait, my previous implementation of predict_consensus UPDATEs if ID provided.
-            # I need to Create first.
-            
-            # Creating Audit Record Initial Placeholder
-            sql = text("""
-                INSERT INTO mrsa_risk_assessments 
-                (ward, sample_type, mrsa_probability, risk_band, model_version, input_snapshot)
+            # ── Single consensus call (FIXED double-call bug) ──────────────────
+            result = consensus_service.predict_consensus(model_input)
+
+            # ── Primary probability: XGB (champion model) ──────────────────────
+            prob  = result['models']['xgb']['prob']
+            band  = result['consensus_band']
+            confidence = result['confidence_level']
+
+            # ── Stewardship message ────────────────────────────────────────────
+            if band == "GREEN":
+                msg = "MRSA unlikely based on current specimen data. Standard empiric therapy appropriate."
+            elif band == "AMBER":
+                msg = "Intermediate risk detected. Review all patient risk factors before prescribing."
+            else:
+                msg = "High MRSA risk. Consider anti-MRSA coverage pending culture results."
+
+            if confidence != "HIGH":
+                msg += f" (Models have {confidence.lower()} agreement — review manually.)"
+
+            # ── Persist audit record (INSERT, THEN update consensus columns) ───
+            # Schema version tag on input_snapshot for backward compat of explain()
+            snap = {**req_dict, "_schema_version": "v2"}
+
+            insert_sql = text("""
+                INSERT INTO mrsa_risk_assessments
+                    (ward, sample_type, mrsa_probability, risk_band, model_version, input_snapshot)
                 VALUES (:ward, :sample, :prob, :band, :ver, :snap)
                 RETURNING id
             """)
-            audit_res = db.execute(sql, {
-                "ward": request.ward,
+            audit_res = db.execute(insert_sql, {
+                "ward":   request.ward,
                 "sample": request.sample_type,
-                "prob": prob,
-                "band": band,
-                "ver": "C5_Consensus",
-                "snap": json.dumps(req_dict)
+                "prob":   prob,
+                "band":   band,
+                "ver":    result['consensus_version'],
+                "snap":   json.dumps(snap),
             })
             db.commit()
             assessment_id = audit_res.fetchone()[0]
-            
-            # Now Update with Full Consensus Details
-            consensus_service.predict_consensus(input_data, assessment_id=assessment_id)
-            
+
+            # ── Write consensus model breakdown columns (one DB call, not two) ─
+            consensus_service.save_consensus_audit(assessment_id, result)
+
         except Exception as e:
             db.rollback()
-            # Fallback to simple RF if consensus fails? No, fail hard for safety.
-            print(f"Prediction/Consensus Failed: {e}")
+            print(f"Prediction failed: {e}")
             raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
         return MRSAPredictionResponse(
@@ -115,162 +127,126 @@ class MRSAService:
             stewardship_message=msg,
             model_version=result['consensus_version'],
             input_snapshot=req_dict,
-            consensus_details=result
+            consensus_details=result,
         )
 
     def explain(self, db: Session, assessment_id: int) -> MRSAExplanationResponse:
-        # 1. Fetch Snapshot (Guaranteed consistency)
+        """
+        Generate SHAP explanations for a stored assessment.
+        Supports both v1 (schema_version absent) and v2 snapshots via version detection.
+        """
         sql = text("SELECT input_snapshot, risk_band FROM mrsa_risk_assessments WHERE id = :id")
-        result = db.execute(sql, {"id": assessment_id}).fetchone()
-        
-        if not result:
+        row = db.execute(sql, {"id": assessment_id}).fetchone()
+
+        if not row:
             raise HTTPException(status_code=404, detail="Assessment not found.")
-            
-        snapshot = result[0]
-        risk_band = result[1]
-        
-        # 2. Transform Input using Preprocessor
+
+        snapshot = row[0]  # dict from JSONB
+        risk_band = row[1]
+
+        # ── Schema version detection for backward compatibility ────────────────
+        schema_version = snapshot.get("_schema_version", "v1")
+
+        if schema_version == "v1":
+            # Remap v1 fields → v2 for SHAP compatibility
+            snapshot["gram_stain"] = snapshot.pop("gram_positivity", "Unknown")
+            cc = snapshot.pop("cell_count", 0)
+            if isinstance(cc, (int, float)):
+                snapshot["cell_count_category"] = "LOW" if cc <= 1 else ("MEDIUM" if cc <= 3 else "HIGH")
+            else:
+                snapshot["cell_count_category"] = "LOW"
+            snapshot.setdefault("recent_antibiotic_use", "Unknown")
+            snapshot.setdefault("length_of_stay", 0)
+            snapshot.pop("age", None)
+            snapshot.pop("gender", None)
+            snapshot.pop("pus_type", None)
+
+        # ── Build feature DataFrame in v2 locked order ─────────────────────────
         input_df = pd.DataFrame([snapshot])
+        input_df['growth_time'] = pd.to_numeric(
+            input_df.get('growth_time', pd.Series([-1])), errors='coerce'
+        ).fillna(-1)
+
+        # Select only v2 model columns
+        for col in FEATURE_COLS_V2:
+            if col not in input_df.columns:
+                input_df[col] = 'Unknown' if col != 'growth_time' else -1
+        input_df = input_df[FEATURE_COLS_V2]
+
+        # ── SHAP computation ───────────────────────────────────────────────────
         try:
             X_transformed = self.preprocessor.transform(input_df)
-            
-            # 3. Calculate SHAP
-            # For RF, TreeExplainer is best. 
             explainer = shap.TreeExplainer(self.classifier)
-            # check_additivity=False because of approximate float precision in sklearn pipeline
             shap_values = explainer.shap_values(X_transformed, check_additivity=False)
-            
-            # Debug Log
-            print(f"DEBUG: SHAP type={type(shap_values)}")
+
+            # Unpack SHAP output (sklearn RF returns list of arrays)
             if isinstance(shap_values, list):
-                 print(f"DEBUG: SHAP list len={len(shap_values)} shape0={shap_values[0].shape}")
-            elif hasattr(shap_values, 'shape'):
-                 print(f"DEBUG: SHAP array shape={shap_values.shape}")
-
-            # 4. Handle SHAP return structure
-            # Logic: We want a 1D array of feature contributions for the SINGLE sample we predicted
-            if isinstance(shap_values, list):
-                if len(shap_values) >= 2:
-                     # List of arrays? 
-                     # If shap_values[1] is (1, N), we want index 0
-                     temp = shap_values[1]
-                else:
-                     temp = shap_values[0]
+                vals = shap_values[1][0] if len(shap_values) >= 2 else shap_values[0][0]
+            elif len(shap_values.shape) == 3:
+                vals = shap_values[0, :, 1]
             else:
-                temp = shap_values
-
-            # Handle Dimensions
-            # Target: (N_features,) 1D array
-            if len(temp.shape) == 3: 
-                # (Samples, Features, Classes) e.g. (1, 20, 2)
-                # We want Sample 0, All Features, Class 1
-                vals = temp[0, :, 1]
-            elif len(temp.shape) == 2:
-                # (Samples, Features) e.g. (1, 20) OR (Features, Classes)? Usually (1, 20)
-                # If N_feat=20
-                if temp.shape[0] == 1:
-                    vals = temp[0] 
-                else: 
-                     # Suspicious but maybe it is (20, 2)? No, shap usually (Samples, Feats)
-                     vals = temp[0] 
-            else:
-                 vals = temp
-
-            print(f"DEBUG: Final vals shape={vals.shape}")
+                vals = shap_values[0]
 
         except Exception as e:
-            print(f"SHAP Calculation Error: {e}") 
-            raise HTTPException(status_code=500, detail=f"Explanation computation failed: {str(e)}")
+            print(f"SHAP error: {e}")
+            raise HTTPException(status_code=500, detail=f"Explanation failed: {str(e)}")
 
-        # 4. Map back to feature names
+        # ── Map SHAP values → feature names ───────────────────────────────────
         try:
-            # Restore Missing Code
-            ohe_cats = self.preprocessor.named_transformers_['cat'].get_feature_names_out()
-            nums = ['age', 'growth_time'] 
-            all_feats = list(nums) + list(ohe_cats) + ['cell_count']
-            
-            print(f"DEBUG: all_feats ({len(all_feats)}): {all_feats}", flush=True)
-            print(f"DEBUG: vals ({len(vals)})", flush=True)
+            ohe_cats = self.preprocessor.named_transformers_['cat'].get_feature_names_out(
+                input_features=FEATURE_COLS_V2[:5]  # categorical features only
+            )
+            num_feats = ['growth_time', 'length_of_stay']
+            all_feats = list(ohe_cats) + num_feats  # must match ColumnTransformer order (cat first)
+
+            print(f"DEBUG: all_feats={len(all_feats)}, vals={len(vals)}")
 
             explanations = []
-            # Ensure proper iteration
-            if len(vals) != len(all_feats):
-                print(f"WARNING: Feature count mismatch! Feats={len(all_feats)}, SHAP={len(vals)}")
-            
-            for name, impact in zip(all_feats, vals):
-                if isinstance(impact, (list, np.ndarray)):
-                     try:
-                        impact = float(impact) 
-                     except:
-                        impact = float(impact[0]) 
+            for feat_name, impact in zip(all_feats, vals):
+                impact = float(np.ravel(impact)[0]) if isinstance(impact, (list, np.ndarray)) else float(impact)
 
-                # FILTERING LOGIC: Only show relevant/active features
-                # 1. Minimum Impact Filter
-                if abs(impact) < 0.015: 
+                # Minimum impact filter — suppress noise
+                if abs(impact) < 0.015:
                     continue
 
-                # 2. Domain Specific: Hide Pus Type if Sample is NOT Pus/Wound
-                # "Pus Type" is only relevant for Pus samples. "Unknown" appears otherwise, which is confusing.
-                if "pus_type" in name.lower():
-                     sample_val = str(input_df.iloc[0].get("sample_type", "")).lower()
-                     if "pus" not in sample_val and "wound" not in sample_val:
-                         continue
+                # Inactive OHE category filter — only show the active category
+                for col in FEATURE_COLS_V2:
+                    prefix = f"{col}_"
+                    if feat_name.startswith(prefix):
+                        feat_val_suffix = feat_name[len(prefix):]
+                        actual_val = str(input_df.iloc[0].get(col, ""))
+                        if actual_val.lower().strip() != feat_val_suffix.lower().strip():
+                            break  # skip inactive OHE category
+                else:
+                    pass  # numeric features — always show
 
-                # 3. Inactive Category Filter
-                # Note: Feature names are like 'ward_ICU', 'sample_type_Blood' (No cat__ prefix)
-                found_col = None
-                known_cols = ['ward', 'sample_type', 'pus_type', 'gram_positivity', 'gender']
-                
-                for col in known_cols:
-                        # Check strictly for "colname_" to avoid partial matches
-                        # e.g. "ward_" matches "ward_ICU"
-                        prefix = f"{col}_"
-                        if name.startswith(prefix):
-                            found_col = col
-                            break
-                
-                if found_col:
-                    # Extract the value part from the feature name
-                    # e.g. ward_ICU -> ICU
-                    feature_val_suffix = name.replace(f"{found_col}_", "")
-                    
-                    # Get actual input value
-                    actual_val = str(input_df.iloc[0].get(found_col, ""))
-                    
-                    # Normalizing comparison (Case insensitive stripping)
-                    if actual_val.lower().strip() != feature_val_suffix.lower().strip():
-                        # Double check for spaces/underscores (e.g. "Ward 01" vs "Ward_01")
-                        suffix_clean = feature_val_suffix.replace("_", " ").lower().strip()
-                        actual_clean = actual_val.replace("_", " ").lower().strip()
-                        
-                        if actual_clean != suffix_clean:
-                            continue
+                # Clean display name
+                clean_name = feat_name.replace("_", " ").title()
 
-                clean_name = name.replace("cat__", "").replace("remainder__", "").replace("_", " ").title()
-                # Safe get for display value
+                # Display value — find matching original column
                 display_val = ""
-                # Try to find which original column this feature belongs to for display
-                for col in ['age', 'growth_time', 'cell_count', 'ward', 'sample_type', 'pus_type', 'gram_positivity', 'gender']:
-                    if col in name.lower():
+                for col in FEATURE_COLS_V2:
+                    if col in feat_name.lower():
                         display_val = str(input_df.iloc[0].get(col, ""))
                         break
-                
+
                 explanations.append({
                     "feature": clean_name,
-                    "impact": float(impact),
-                    "value": display_val
+                    "impact": round(impact, 4),
+                    "value": display_val,
                 })
-            
-            explanations.sort(key=lambda x: abs(x['impact']), reverse=True)
-            
+
+            explanations.sort(key=lambda x: abs(x["impact"]), reverse=True)
+
             return MRSAExplanationResponse(
                 assessment_id=assessment_id,
                 risk_band=risk_band,
-                explanations=explanations[:10] # Top 10
+                explanations=explanations[:10],
             )
-            
+
         except Exception as e:
             print(f"Feature mapping failed: {e}")
             raise HTTPException(status_code=500, detail="Could not map explanations.")
+
 
 mrsa_service = MRSAService()

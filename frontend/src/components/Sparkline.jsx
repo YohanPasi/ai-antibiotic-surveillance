@@ -2,18 +2,16 @@ import React from 'react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 
 const Sparkline = ({ data }) => {
-    // Data expected: array of numbers [60, 70, 65, 80]
-    if (!data || data.length < 2) return <span className="text-xs text-gray-500">-</span>;
+    if (!data || data.length < 2) return <span className="text-xs text-gray-600">—</span>;
 
     const chartData = data.map((val, i) => ({ i, val }));
     const lastVal = data[data.length - 1];
 
-    // Determine color based on last value
-    const strokeColor = lastVal >= 80 ? '#22c55e' : (lastVal >= 60 ? '#eab308' : '#ef4444');
-    const fillColor = lastVal >= 80 ? '#22c55e' : (lastVal >= 60 ? '#eab308' : '#ef4444');
+    const strokeColor = lastVal >= 80 ? '#34d399' : lastVal >= 60 ? '#fbbf24' : '#f87171';
+    const fillColor = lastVal >= 80 ? '#34d399' : lastVal >= 60 ? '#fbbf24' : '#f87171';
 
     return (
-        <div style={{ width: 60, height: 24 }}>
+        <div style={{ width: 56, height: 22 }}>
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                     <YAxis domain={[0, 100]} hide />
@@ -22,9 +20,10 @@ const Sparkline = ({ data }) => {
                         dataKey="val"
                         stroke={strokeColor}
                         fill={fillColor}
-                        fillOpacity={0.2}
-                        strokeWidth={2}
+                        fillOpacity={0.15}
+                        strokeWidth={1.5}
                         dot={false}
+                        isAnimationActive={false}
                     />
                 </AreaChart>
             </ResponsiveContainer>

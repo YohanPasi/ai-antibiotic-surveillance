@@ -39,9 +39,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 import auth
 from auth import User, get_current_user
 
-# Auth Logic
-import auth
-from auth import User, get_current_user
 
 # Startup Logic
 from startup_manager import StartupManager
@@ -62,6 +59,21 @@ app = FastAPI(
     redoc_url="/api/redoc"
 )
 
+# Configure CORS (Must be added immediately after app creation)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "http://localhost:8080"
+    ], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Register Stage 2 Router (Read-Only)
 app.include_router(stp_stage_2.router)
 app.include_router(stp_stage_3.router)
@@ -77,15 +89,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# Configure CORS for frontend communication
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ============================================
 # AUTHENTICATION ENDPOINTS
@@ -189,30 +192,264 @@ def trigger_pipeline_update():
         logger.error(f"❌ Pipeline Update Failed: {e}")
 
 # ============================================
+# In-Process Surveillance Sweep
+# ============================================
+
+def run_surveillance_sweep():
+    """
+    Runs LSTM+SMA hybrid predictions for ALL (ward, organism, antibiotic)
+    combinations in ast_weekly_aggregated and writes to surveillance_logs.
+    Covers all organisms — Pseudomonas, Acinetobacter, Staphylococcus, etc.
+    """
+    db = SessionLocal()
+    try:
+        logger.info("🏥 Starting In-Process Surveillance Sweep for ALL organisms...")
+        # Get Ward-specific targets
+        targets_ward = db.execute(text("""
+            SELECT DISTINCT ward, organism, antibiotic
+            FROM ast_weekly_aggregated
+            WHERE total_tested >= 3
+        """)).fetchall()
+
+        # Get Hospital-Wide targets
+        targets_hw = db.execute(text("""
+            SELECT DISTINCT NULL as ward, organism, antibiotic
+            FROM ast_weekly_aggregated
+            WHERE total_tested >= 3
+        """)).fetchall()
+
+        targets = targets_ward + targets_hw
+        logger.info(f"   Found {len(targets_ward)} Ward and {len(targets_hw)} Hospital-Wide targets")
+
+        success_count = 0
+        skip_count = 0
+
+        for ward, organism, antibiotic in targets:
+            try:
+                if ward is not None:
+                    rows = db.execute(text("""
+                        SELECT susceptibility_percent
+                        FROM ast_weekly_aggregated
+                        WHERE organism = :organism AND antibiotic = :antibiotic
+                          AND ward = :ward AND total_tested >= 3
+                        ORDER BY week_start_date DESC LIMIT 5
+                    """), {"organism": organism, "antibiotic": antibiotic, "ward": ward}).fetchall()
+                else:
+                    rows = db.execute(text("""
+                        SELECT ROUND((SUM(susceptible_count)::NUMERIC / SUM(total_tested)::NUMERIC) * 100, 2)
+                        FROM ast_weekly_aggregated
+                        WHERE organism = :organism AND antibiotic = :antibiotic
+                        GROUP BY week_start_date
+                        HAVING SUM(total_tested) >= 3
+                        ORDER BY week_start_date DESC LIMIT 5
+                    """), {"organism": organism, "antibiotic": antibiotic}).fetchall()
+
+                history_data = [float(r[0]) for r in rows if r[0] is not None]
+                if not history_data:
+                    skip_count += 1
+                    continue
+
+                observed_s = history_data[0]
+                past_history = history_data[1:]
+
+                if len(past_history) < 2:
+                    baseline_mean = statistics.mean(history_data)
+                    baseline_lower = baseline_mean - 10.0
+                else:
+                    baseline_mean = statistics.mean(past_history)
+                    baseline_std = statistics.stdev(past_history)
+                    baseline_lower = baseline_mean - (1.5 * baseline_std)
+                baseline_lower = max(0, min(100, baseline_lower))
+
+                lstm_model = getattr(app.state, 'lstm_model', None)
+                lstm_forecast = PredictionService.predict_with_lstm(lstm_model, past_history[::-1]) if lstm_model else baseline_mean
+
+                if ward is not None:
+                    prev_statuses = [r[0] for r in db.execute(text("""
+                        SELECT alert_status FROM surveillance_logs
+                        WHERE ward = :ward AND organism = :organism AND antibiotic = :antibiotic
+                        ORDER BY log_date DESC LIMIT 3
+                    """), {"ward": ward, "organism": organism, "antibiotic": antibiotic}).fetchall()]
+                else:
+                    prev_statuses = [r[0] for r in db.execute(text("""
+                        SELECT alert_status FROM surveillance_logs
+                        WHERE ward IS NULL AND organism = :organism AND antibiotic = :antibiotic
+                        ORDER BY log_date DESC LIMIT 3
+                    """), {"organism": organism, "antibiotic": antibiotic}).fetchall()]
+
+                status, direction, reason = PredictionService.get_hybrid_status(
+                    observed_s, baseline_lower, lstm_forecast, prev_statuses
+                )
+                prompt, domain = PredictionService.generate_detailed_stewardship(
+                    status, organism, antibiotic, ward if ward else "Hospital-Wide"
+                )
+
+                db.execute(text("""
+                    INSERT INTO surveillance_logs (
+                        week_start_date, ward, organism, antibiotic,
+                        observed_s_percent, predicted_s_percent, baseline_s_percent, baseline_lower_bound,
+                        forecast_deviation, alert_status, previous_alert_status, alert_reason,
+                        stewardship_prompt, stewardship_domain, model_version, consensus_path
+                    ) VALUES (
+                        CURRENT_DATE, :ward, :org, :abx,
+                        :obs, :pred, :base, :base_lower,
+                        :dev, :status, :prev_status, :reason,
+                        :prompt, :domain, 'LSTM_v1_Hybrid', 'Sweep_Automated_V2'
+                    )
+                """), {
+                    "ward": ward, "org": organism, "abx": antibiotic,
+                    "obs": observed_s, "pred": lstm_forecast,
+                    "base": baseline_mean, "base_lower": baseline_lower,
+                    "dev": lstm_forecast - baseline_mean,
+                    "status": status,
+                    "prev_status": prev_statuses[0] if prev_statuses else None,
+                    "reason": reason, "prompt": prompt, "domain": domain
+                })
+                success_count += 1
+
+            except Exception as target_err:
+                db.rollback()
+                logger.warning(f"   ⚠️ Sweep skipped {ward}/{organism}/{antibiotic}: {target_err}")
+                skip_count += 1
+                continue
+
+        db.commit()
+        logger.info(f"✅ Surveillance Sweep Complete — {success_count} logged, {skip_count} skipped")
+        return {"success": success_count, "skipped": skip_count}
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Surveillance Sweep Failed: {e}")
+        return {"error": str(e)}
+    finally:
+        db.close()
+
+
+@app.on_event("startup")
+async def on_startup():
+    """
+    On API startup: trigger a background sweep if surveillance_logs is
+    smaller than ast_weekly_aggregated (i.e. new organisms have no AI log yet).
+    """
+    db = SessionLocal()
+    try:
+        log_count = db.execute(text("SELECT COUNT(*) FROM surveillance_logs")).scalar()
+        agg_count = db.execute(text("SELECT COUNT(DISTINCT ward || organism || antibiotic) FROM ast_weekly_aggregated")).scalar()
+        if agg_count > 0 and log_count < agg_count:
+            logger.info("🚀 Startup: surveillance_logs incomplete — running background sweep...")
+            import threading
+            threading.Thread(target=run_surveillance_sweep, daemon=True).start()
+        else:
+            logger.info(f"✅ Startup: {log_count} log entries — sweep not needed")
+    except Exception as e:
+        logger.warning(f"Startup sweep check (non-critical): {e}")
+    finally:
+        db.close()
+
+
+# ============================================
 # API Endpoints
 # ============================================
+
+@app.post("/api/admin/sweep")
+async def trigger_surveillance_sweep(background_tasks: BackgroundTasks):
+    """
+    Manually trigger a full hospital-wide LSTM surveillance sweep for ALL organisms.
+    Populates surveillance_logs with AI Forecast predictions for every
+    (ward, organism, antibiotic) combination including Staphylococcus aureus.
+    """
+    background_tasks.add_task(run_surveillance_sweep)
+    return {
+        "status": "triggered",
+        "message": "Full surveillance sweep started. Refresh the antibiogram in ~15 seconds."
+    }
+
+
+import asyncio
+
+async def trigger_nf_pipeline():
+    """
+    Executes the Phase 2 Non-Fermenter Controlled Sequence:
+    1. Stage B: Full Aggregation
+    2. Stage C: Baseline Recompute
+    3. Sweep: Prediction Engine
+    4. Phase 3A: Forecast Validation (populates forecast_validation_log)
+    5. Phase 3B: Rolling Model Performance Update
+    """
+    try:
+        import subprocess
+        from sqlalchemy import text as sql_text
+        # Wait 2 seconds for the synchronous SQLAlchemy connection pooling
+        # to fully release row-exclusive locks on PostgreSQL.
+        await asyncio.sleep(2)
+
+        logger.info("⚙️ Triggering Phase 2 NF Surveillance Pipeline...")
+        logger.info("   1. Running Stage B: Aggregation...")
+        subprocess.run(["python", "/app/data_processor/aggregate_weekly.py"], check=True)
+        logger.info("   2. Running Stage C: Baseline Recompute...")
+        subprocess.run(["python", "/app/data_processor/compute_baselines.py"], check=True)
+        logger.info("   3. Running Sweep: Prediction Engine...")
+        run_surveillance_sweep()
+
+        # ── Phase 3A: Validate closed-week predictions → populates forecast_validation_log ──
+        logger.info("   4. Running Phase 3A: Forecast Validation...")
+        try:
+            from cron.stage_e_continuous_learning import finalize_closed_week_predictions
+            db_3a = SessionLocal()
+            raw_conn = db_3a.connection().connection
+            raw_cur  = raw_conn.cursor()
+            finalize_closed_week_predictions(raw_cur, raw_conn)
+            raw_cur.close()
+            db_3a.close()
+            logger.info("   ✅ Phase 3A complete — forecast_validation_log updated")
+        except Exception as p3a_err:
+            logger.warning(f"   ⚠️ Phase 3A skipped: {p3a_err}")
+
+        # ── Phase 3B: Update rolling model performance metrics ──────────────────
+        logger.info("   5. Running Phase 3B: Rolling Performance Update...")
+        try:
+            from cron.stage_e_continuous_learning import update_rolling_performance_metrics
+            db_3b = SessionLocal()
+            raw_conn = db_3b.connection().connection
+            raw_cur  = raw_conn.cursor()
+            update_rolling_performance_metrics(raw_cur, raw_conn)
+            raw_cur.close()
+            db_3b.close()
+            logger.info("   ✅ Phase 3B complete — model_performance updated")
+        except Exception as p3b_err:
+            logger.warning(f"   ⚠️ Phase 3B skipped: {p3b_err}")
+
+        logger.info("✅ NF Pipeline Completed Successfully")
+    except Exception as e:
+        logger.error(f"NF Pipeline Error: {e}")
 
 @app.post("/api/entry")
 async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTasks):
     """
     Manual AST Data Entry Endpoint (Panel/Collection).
-    Saves raw data and triggers the Learning Loop.
+    Saves raw data and triggers the correctly sequenced Learning Loop.
     """
     db = SessionLocal()
     try:
+        culture_date_val = entry.culture_date or datetime.now().date()
+        
+        # Backend Guard: Reject Future Dates (Data Integrity)
+        if culture_date_val > datetime.now().date():
+            raise HTTPException(status_code=400, detail="Future culture date not allowed")
+
         # 1. SQL Query
         query = text("""
-            INSERT INTO esbl_lab_results (
-                encounter_id, lab_no, age, gender, bht, ward, specimen_type, organism, antibiotic, result
+            INSERT INTO ast_manual_entry (
+                culture_date, lab_no, age, gender, bht, ward, specimen_type, organism, antibiotic, result
             ) VALUES (
-                :enc_id, :lab, :age, :gen, :bht, :ward, :spec, :org, :abx, :res
+                :cd, :lab, :age, :gen, :bht, :ward, :spec, :org, :abx, :res
             )
         """)
         
         # 2. Iterate Collection and Insert
         for item in entry.results:
             db.execute(query, {
-                "enc_id": entry.lab_no,  # Use lab_no as encounter link
+                "cd": culture_date_val,
                 "lab": entry.lab_no, "age": entry.age, "gen": entry.gender,
                 "bht": entry.bht, "ward": entry.ward, "spec": entry.specimen_type,
                 "org": entry.organism, "abx": item.antibiotic, "res": item.result
@@ -227,12 +464,16 @@ async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTas
             except Exception as val_err:
                 logger.error(f"Validation Trigger Error: {val_err}")
 
+        # Explicit Commit to avoid race conditions with aggregate rebuild
         db.commit()
         
-        # 4. Trigger Background Pipeline ("Stage E" Prep)
-        background_tasks.add_task(trigger_pipeline_update)
+        # 4. Trigger Background Controlled Sequence
+        if entry.organism in ('Pseudomonas aeruginosa', 'Acinetobacter baumannii'):
+            background_tasks.add_task(trigger_nf_pipeline)
+        else:
+            background_tasks.add_task(trigger_pipeline_update)
         
-        return {"status": "success", "message": f"Panel saved ({len(entry.results)} results). AI Pipeline triggered."}
+        return {"status": "success", "message": f"Panel saved ({len(entry.results)} results). Execution Pipeline triggered."}
         
     except Exception as e:
         db.rollback()
@@ -241,25 +482,35 @@ async def create_ast_entry(entry: ASTPanelEntry, background_tasks: BackgroundTas
     finally:
         db.close()
 
+# Scope lock: Non-Fermenters only
+NF_ORGANISMS_SQL = "('Pseudomonas aeruginosa', 'Acinetobacter baumannii')"
+
 @app.get("/api/options", response_model=OptionsResponse)
 async def get_available_options():
     """
     Get available filter options (wards, organisms, antibiotics).
+    Non-Fermenter module: only Pseudomonas aeruginosa and Acinetobacter baumannii.
     """
     try:
         db = SessionLocal()
         
-        # Get distinct values from database
+        # Wards that have NF data only
         wards_query = """
             SELECT DISTINCT ward FROM ast_weekly_aggregated 
-            WHERE ward IS NOT NULL ORDER BY ward
+            WHERE ward IS NOT NULL
+              AND organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
+            ORDER BY ward
         """
+        # Strict NF organism list
         organisms_query = """
             SELECT DISTINCT organism FROM ast_weekly_aggregated 
+            WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             ORDER BY organism
         """
+        # Only antibiotics that appear for NF organisms
         antibiotics_query = """
             SELECT DISTINCT antibiotic FROM ast_weekly_aggregated 
+            WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             ORDER BY antibiotic
         """
         
@@ -270,8 +521,8 @@ async def get_available_options():
         db.close()
         
         return OptionsResponse(
-            wards=wards if wards else ["ICU", "Ward A", "Ward B"],  # Fallback for demo
-            organisms=organisms if organisms else ["Pseudomonas aeruginosa", "Acinetobacter spp.", "Escherichia coli"],
+            wards=wards if wards else ["ICU", "Ward A", "Ward B"],
+            organisms=organisms if organisms else ["Pseudomonas aeruginosa", "Acinetobacter baumannii"],
             antibiotics=antibiotics if antibiotics else ["Meropenem", "Ceftazidime", "Ciprofloxacin"]
         )
     except Exception as e:
@@ -547,27 +798,42 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
     """
     db = SessionLocal()
     try:
-        # 1. Fetch History (Last 12 weeks)
+        # 1. Fetch History — most recent 12 weeks, then reverse for ASC chart display
         query = """
             SELECT week_start_date, susceptible_count, total_tested
             FROM ast_weekly_aggregated
             WHERE ward = :ward AND organism = :organism AND antibiotic = :antibiotic
-            ORDER BY week_start_date ASC
+            ORDER BY week_start_date DESC
             LIMIT 12
         """
         results = db.execute(text(query), {
             "ward": ward, "organism": organism, "antibiotic": antibiotic
         }).fetchall()
-        
+
+        # Reverse so chart renders oldest → newest left to right
+        results = list(reversed(results))
+
+        # 1b. Fetch the true last signal date independently — never rely on list ordering
+        anchor_query = """
+            SELECT MAX(week_start_date)
+            FROM ast_weekly_aggregated
+            WHERE ward = :ward AND organism = :organism AND antibiotic = :antibiotic
+        """
+        anchor_row = db.execute(text(anchor_query), {
+            "ward": ward, "organism": organism, "antibiotic": antibiotic
+        }).fetchone()
+        true_last_date = anchor_row[0] if anchor_row and anchor_row[0] else None
+
         history = []
         s_values = []
-        
+
         for row in results:
             total = row[2]
             s_percent = (row[1] / total * 100.0) if total > 0 else 0.0
             history.append({
                 "week": row[0].strftime("%Y-W%U"),
                 "date": row[0].strftime("%b %d"),
+                "week_start_date": row[0].isoformat(),  # ISO string for frontend stale detection
                 "observed_s": round(s_percent, 1)
             })
             s_values.append(s_percent)
@@ -583,6 +849,20 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
                 "expected_s": round(avg, 1)
             })
             
+        # ── Safe defaults for model-performance locals (set inside if block below) ──
+        # These must be initialised here so the return-dict enrichment is always valid
+        # regardless of whether the if len(s_values) >= 3 branch runs.
+        observed_s        = s_values[-1] if s_values else None
+        baseline_val      = baseline[-1]["expected_s"] if baseline else (s_values[-1] if s_values else None)
+        adaptive_tolerance = 10.0
+        rolling_mae_4c    = None
+        mean_bias_4c      = None
+        degraded_4c       = False
+        validated_count_4b = 0
+        active_model_4b   = "BASELINE_MEAN"
+        pred_value        = s_values[-1] if s_values else 0.0
+        drift_analysis    = {}
+
         # 3. Generate ONE Forecast Point
         # We need the last 4 weeks of data for the LSTM
         forecast = None
@@ -602,27 +882,161 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
              else:
                 pred_value = s_values[-1] # Fallback to naive persistence
                 
-             # Create Forecast Object
-             last_date = datetime.strptime(history[-1]["date"] + f" {datetime.now().year}", "%b %d %Y") # Approx
-             next_date = last_date + timedelta(days=7)
-             
-             forecast = {
-                 "week": "Next Week",
-                 "date": "Next Week", # Simplified for UI
-                 "predicted_s": round(pred_value, 1)
-             }
-             
-             # Calculate Status for this specific target
-             # Using the logic from prediction_service (simplified here for display)
-             baseline_val = baseline[-1]["expected_s"]
-             alert_status, _, _ = PredictionService.get_hybrid_status(
-                 observed_s=s_values[-1],
-                 baseline_lower=baseline_val - 10, # Approximate lower bound
-                 lstm_forecast=pred_value
+             # Prediction anchor: always MAX(week_start_date) for this specific triple
+             # Never use results[-1] — list ordering assumptions are fragile
+             if true_last_date is None:
+                 forecast = None
+             else:
+                 last_actual_date = true_last_date
+                 next_week_start  = last_actual_date + timedelta(days=7)
+                 next_week_end    = last_actual_date + timedelta(days=13)
+
+                 # ── Phase 3B: Adaptive CI ──────────────────────────────────────
+                 # Use rolling MAE from model_performance when ≥ 6 validated weeks exist.
+                 # Fallback to static ±10% for cold-start or sparse targets.
+                 _ci_fallback_half = 10.0
+                 try:
+                     perf_row = db.execute(text("""
+                         SELECT mae_score, validated_count
+                         FROM model_performance
+                         WHERE ward        = :ward
+                           AND organism    = :org
+                           AND antibiotic  = :abx
+                           AND model_name  = 'Phase3B_Rolling'
+                         ORDER BY updated_at DESC
+                         LIMIT 1
+                     """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+
+                     if perf_row and perf_row[0] is not None and (perf_row[1] or 0) >= 6:
+                         ci_half   = float(perf_row[0]) * 1.96
+                         ci_source = "adaptive"
+                     else:
+                         ci_half   = _ci_fallback_half
+                         ci_source = "static_fallback"
+                 except Exception:
+                     ci_half   = _ci_fallback_half
+                     ci_source = "static_fallback"
+
+                 ci_lower = max(0.0,   round(pred_value - ci_half, 1))
+                 ci_upper = min(100.0, round(pred_value + ci_half, 1))
+
+                 forecast = {
+                     "week": f"Week of {next_week_start.strftime('%b %d, %Y')}",
+                     "date": next_week_start.strftime("%b %d"),
+                     "predicted_s": round(pred_value, 1),
+                     "predicted_week_start": next_week_start.isoformat(),
+                     "predicted_week_end":   next_week_end.isoformat(),
+                     "ci_lower":             ci_lower,
+                     "ci_upper":             ci_upper,
+                     "ci_half_width":        round(ci_half, 2),
+                     "ci_source":            ci_source,   # "adaptive" or "static_fallback"
+                 }
+
+
+             # ── Phase 4B + 4C: Adaptive tolerance + Drift + G8 hierarchy ─────
+             baseline_val = baseline[-1]["expected_s"] if baseline else s_values[-1]
+             observed_s   = s_values[-1]
+
+             drift_analysis = {}
+             try:
+                 from models.drift_detector import run_drift_analysis
+
+                 # ── Phase 4C (R6): Adaptive tolerance ─────────────────────────
+                 # tolerance = min(max(rolling_mae × 2, rolling_std), 25.0)
+                 # Computed before G8 alert classification
+                 rolling_std = statistics.stdev(s_values) if len(s_values) >= 2 else 10.0
+
+                 # Read Phase 3B rolling metrics for this target
+                 perf_4c = db.execute(text("""
+                     SELECT mae_score, mean_bias, degradation_flagged
+                     FROM model_performance
+                     WHERE ward = :ward AND organism = :org AND antibiotic = :abx
+                       AND model_name = 'Phase3B_Rolling'
+                     ORDER BY updated_at DESC LIMIT 1
+                 """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+
+                 rolling_mae_4c  = float(perf_4c[0]) if perf_4c and perf_4c[0] else None
+                 mean_bias_4c    = float(perf_4c[1]) if perf_4c and perf_4c[1] else None
+                 degraded_4c     = bool(perf_4c[2])  if perf_4c and perf_4c[2] else False
+
+                 if rolling_mae_4c is not None:
+                     # R6: tolerance = min(max(rolling_mae × 2, rolling_std), 25.0)
+                     adaptive_tolerance = min(max(rolling_mae_4c * 2, rolling_std), 25.0)
+                 else:
+                     adaptive_tolerance = max(rolling_std, 10.0)  # fallback
+
+                 # ── Phase 4B: CUSUM + slope + volatility + G8 ─────────────────
+                 # CHECK 6: Slice to last 16 weeks — prevents full multi-year history
+                 #          from being passed to CPU-heavy CUSUM/OLS each request.
+                 drift_history = s_values[-16:]
+
+                 # CHECK 5: Read active model + validated_count for cold-start bypass
+                 active_model_row = db.execute(text("""
+                     SELECT model_name
+                     FROM model_performance
+                     WHERE ward = :ward AND organism = :org AND antibiotic = :abx
+                       AND is_active = TRUE
+                     LIMIT 1
+                 """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+                 active_model_4b = active_model_row[0] if active_model_row else ""
+
+                 validated_ct_row = db.execute(text("""
+                     SELECT validated_count
+                     FROM model_performance
+                     WHERE ward = :ward AND organism = :org AND antibiotic = :abx
+                     ORDER BY updated_at DESC LIMIT 1
+                 """), {"ward": ward, "org": organism, "abx": antibiotic}).fetchone()
+                 validated_count_4b = int(validated_ct_row[0]) if validated_ct_row and validated_ct_row[0] else 0
+
+                 drift_analysis = run_drift_analysis(
+                     history              = drift_history,
+                     observed_s           = observed_s,
+                     baseline_s           = baseline_val,
+                     adaptive_tolerance   = adaptive_tolerance,
+                     degradation_flagged  = degraded_4c,
+                     mean_bias            = mean_bias_4c,
+                     rolling_mae          = rolling_mae_4c,
+                     validated_count      = validated_count_4b,   # CHECK 5
+                     active_model         = active_model_4b,       # CHECK 5
+                 )
+
+                 # Primary G8 alert now drives the status field
+                 # INSUFFICIENT_DATA falls back to GREEN for display
+                 primary = drift_analysis.get("primary_alert", "GREEN")
+                 status = primary if primary != "INSUFFICIENT_DATA" else "GREEN"
+
+
+             except Exception as _drift_err:
+                 logger.warning(f"Phase 4B drift analysis failed: {_drift_err}")
+                 # Graceful fallback to Phase 3-era hybrid status
+                 alert_status, _, _ = PredictionService.get_hybrid_status(
+                     observed_s     = observed_s,
+                     baseline_lower = baseline_val - 10,
+                     lstm_forecast  = pred_value
+                 )
+                 status = alert_status.upper()
+                 adaptive_tolerance = 10.0
+
+             _, domain = PredictionService.generate_detailed_stewardship(
+                 status.lower(), organism, antibiotic, ward
              )
-             status = alert_status.upper()
-             
-             _, domain = PredictionService.generate_detailed_stewardship(alert_status, organism, antibiotic, ward)
+
+        # ── Enrich drift_analysis with values the frontend needs for Panel B/D ──
+        # These locals exist inside the `if len(s_values) >= 3` block.
+        # Safe defaults cover cold-start / short-history targets.
+        _obs   = observed_s   if len(s_values) >= 3 else (s_values[-1] if s_values else None)
+        _base  = baseline_val if len(s_values) >= 3 else None
+        _tol   = adaptive_tolerance if len(s_values) >= 3 else 10.0
+
+        if isinstance(drift_analysis, dict):
+            drift_analysis["observed_s"]         = round(_obs,  1) if _obs  is not None else None
+            drift_analysis["baseline_s"]         = round(_base, 1) if _base is not None else None
+            drift_analysis["adaptive_tolerance"] = round(_tol,  1)
+            drift_analysis["degradation_flagged"]= degraded_4c     if len(s_values) >= 3 else False
+            drift_analysis["mean_bias"]          = round(mean_bias_4c,   2) if (len(s_values) >= 3 and mean_bias_4c   is not None) else None
+            drift_analysis["rolling_mae"]        = round(rolling_mae_4c, 2) if (len(s_values) >= 3 and rolling_mae_4c is not None) else None
+            drift_analysis["validated_count"]    = validated_count_4b if len(s_values) >= 3 else 0
+            drift_analysis["active_model_name"]  = active_model_4b   if len(s_values) >= 3 else "BASELINE_MEAN"
 
         return {
             "ward": ward,
@@ -633,7 +1047,18 @@ async def get_target_analysis(ward: str, organism: str, antibiotic: str):
             "forecast": forecast,
             "status": status,
             "stewardship_domain": domain,
-            "engine_version": "Hybrid_LSTM_v1"
+            "drift_analysis": drift_analysis,   # G8 full alert structure — now enriched
+            "engine_version": "Hybrid_LSTM_v4B",
+            # model_performance: convenience top-level copy for Panel D
+            "model_performance": {
+                "active_model":         active_model_4b   if len(s_values) >= 3 else "BASELINE_MEAN",
+                "rolling_mae":          round(rolling_mae_4c, 2) if (len(s_values) >= 3 and rolling_mae_4c is not None) else None,
+                "mean_bias":            round(mean_bias_4c,   2) if (len(s_values) >= 3 and mean_bias_4c   is not None) else None,
+                "degradation_flagged":  degraded_4c     if len(s_values) >= 3 else False,
+                "validated_count":      validated_count_4b if len(s_values) >= 3 else 0,
+                "ci_source":            forecast.get("ci_source")    if forecast else "static_fallback",
+                "ci_half_width":        forecast.get("ci_half_width") if forecast else 10.0,
+            },
         }
 
     except Exception as e:
@@ -658,6 +1083,8 @@ async def get_dashboard_summary():
                 SELECT ward, alert_status, log_date,
                        ROW_NUMBER() OVER(PARTITION BY ward, organism, antibiotic ORDER BY log_date DESC) as rn
                 FROM surveillance_logs
+                -- SCOPE LOCK: Non-Fermenters only
+                WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             )
             SELECT 
                 ward,
@@ -681,7 +1108,7 @@ async def get_dashboard_summary():
                 "amber": row[2],
                 "red": row[3],
                 "last_signal": row[4],
-                "highest_severity": "Critical" if row[3] > 0 else "Warning" if row[2] > 0 else "Stable"
+                "highest_severity": "Critical" if row[3] > 0 else "Warning" if row[2] > 0 else "Normal"
             })
             
         return {
@@ -711,7 +1138,9 @@ async def get_ward_status(ward_id: str):
                         alert_status, stewardship_domain, stewardship_prompt, log_date,
                         ROW_NUMBER() OVER(PARTITION BY organism, antibiotic ORDER BY log_date DESC) as rn
                  FROM surveillance_logs
+                 -- SCOPE LOCK: Non-Fermenters only
                  WHERE ward = :ward
+                   AND organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
             )
             SELECT organism, antibiotic, 
                    observed_s_percent, baseline_s_percent, predicted_s_percent,
@@ -746,6 +1175,20 @@ async def get_ward_status(ward_id: str):
             if row[3] is not None: d["base"].append(float(row[3]))
             if row[4] is not None: d["pred"].append(float(row[4]))
             
+        # Fetch last observed week per (organism, antibiotic) from aggregated data
+        # This is the true last date with sufficient isolates — different from global last_data_week
+        recency_query = """
+            SELECT organism, antibiotic,
+                   TO_CHAR(MAX(week_start_date), 'YYYY-MM-DD') as last_data_week
+            FROM ast_weekly_aggregated
+            WHERE ward = :ward
+              AND organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
+            GROUP BY organism, antibiotic
+        """
+        recency_rows = db.execute(text(recency_query), {"ward": ward_id}).fetchall()
+        # Map (organism, antibiotic) -> last_data_week
+        recency_map = { (r[0], r[1]): r[2] for r in recency_rows }
+
         # Build Final List
         details = []
         for (org, abx), d in details_map.items():
@@ -763,7 +1206,8 @@ async def get_ward_status(ward_id: str):
                 "current_s": round(obs_avg, 1),
                 "baseline_s": round(base_avg, 1),
                 "forecast_s": round(pred_avg, 1),
-                "trend": trend
+                "trend": trend,
+                "last_data_week": recency_map.get((org, abx))  # None if no aggregated data
             })
             
         return {
@@ -1218,70 +1662,298 @@ async def get_mrsa_validation_logs():
 async def get_antibiogram(ward: Optional[str] = None):
     """
     Generate Accumulative Antibiogram Matrix (Organism vs Antibiotic).
-    Returns both Current Observed S% and Next-Week Predicted S%.
+
+    ARCHITECTURE NOTE:
+    Reads from `ast_weekly_aggregated` — the true epidemiological data layer.
+    NOT from `surveillance_logs` (which is the AI prediction audit table).
+
+    Antibiogram = what is the current S% in the dataset?
+    That answer must come from aggregated AST data, not from prediction logs.
+
+    This ensures ALL organisms appear regardless of whether the AI engine
+    has been triggered for them — preventing silent data invisibility.
     """
     db = SessionLocal()
     try:
-        # Filter by Ward if provided, otherwise Hospital-Wide (Average)
-        where_clause = "WHERE ward = :ward" if ward else "WHERE 1=1"
-        
-        # 1. Fetch raw logs (last 4 entries per target) to build sparklines
-        query_history = f"""
-            WITH LatestLogs AS (
-                 SELECT ward, organism, antibiotic, observed_s_percent, predicted_s_percent, log_date,
-                        ROW_NUMBER() OVER(PARTITION BY ward, organism, antibiotic ORDER BY log_date DESC) as rn
-                 FROM surveillance_logs
-                 {where_clause}
-            )
-            SELECT organism, antibiotic, observed_s_percent, predicted_s_percent
-            FROM LatestLogs
-            WHERE rn <= 12
-            ORDER BY organism, antibiotic, log_date ASC
-        """
-        
-        params = {"ward": ward} if ward else {}
-        raw_rows = db.execute(text(query_history), params).fetchall()
-        
-        # 2. Aggregate in Python
-        # Structure: matrix[org][abx] = { history: [], current: float, predicted: float }
-        matrix = {}
-        antibiotics_set = set()
-        temp_agg = {} # Key: (org, abx) -> { obs_vals: [], pred_vals: [] }
+        # ----------------------------------------------------------------
+        # LAYER 1: DATA LAYER — ast_weekly_aggregated
+        # Get the most recent week's S% per (ward, organism, antibiotic)
+        # as the current observed value.
+        # ----------------------------------------------------------------
+        if ward:
+            current_query = text("""
+                WITH RankedWeeks AS (
+                    SELECT
+                        ward,
+                        organism,
+                        antibiotic,
+                        susceptibility_percent,
+                        week_start_date,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ward, organism, antibiotic
+                            ORDER BY week_start_date DESC
+                        ) AS rn
+                    FROM ast_weekly_aggregated
+                    WHERE ward = :ward
+                      AND total_tested >= 3
+                      AND susceptibility_percent IS NOT NULL
+                )
+                SELECT organism, antibiotic, susceptibility_percent
+                FROM RankedWeeks
+                WHERE rn = 1
+            """)
+            params = {"ward": ward}
+        else:
+            # Hospital-wide: aggregate all wards together for the latest week
+            current_query = text("""
+                WITH OrgWeekly AS (
+                    SELECT
+                        organism,
+                        antibiotic,
+                        week_start_date,
+                        SUM(susceptible_count)  AS total_s,
+                        SUM(total_tested)       AS total_n
+                    FROM ast_weekly_aggregated
+                    WHERE total_tested >= 3
+                    GROUP BY organism, antibiotic, week_start_date
+                ),
+                RankedWeeks AS (
+                    SELECT
+                        organism,
+                        antibiotic,
+                        week_start_date,
+                        CASE WHEN total_n > 0
+                            THEN ROUND((total_s::NUMERIC / total_n::NUMERIC) * 100, 2)
+                            ELSE NULL
+                        END AS susceptibility_percent,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY organism, antibiotic
+                            ORDER BY week_start_date DESC
+                        ) AS rn
+                    FROM OrgWeekly
+                    WHERE total_n > 0
+                )
+                SELECT organism, antibiotic, susceptibility_percent
+                FROM RankedWeeks
+                WHERE rn = 1
+                  AND susceptibility_percent IS NOT NULL
+            """)
+            params = {}
 
-        for row in raw_rows:
-            org, abx, obs, pred = row
-            antibiotics_set.add(abx)
+        current_rows = db.execute(current_query, params).fetchall()
+
+        # ----------------------------------------------------------------
+        # LAYER 2: HISTORY — last 4 weeks for sparkline trend display
+        # ----------------------------------------------------------------
+        if ward:
+            history_query = text("""
+                WITH RankedWeeks AS (
+                    SELECT
+                        organism,
+                        antibiotic,
+                        susceptibility_percent,
+                        week_start_date,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY organism, antibiotic
+                            ORDER BY week_start_date DESC
+                        ) AS rn
+                    FROM ast_weekly_aggregated
+                    WHERE ward = :ward
+                      AND total_tested >= 3
+                      AND susceptibility_percent IS NOT NULL
+                )
+                SELECT organism, antibiotic, susceptibility_percent
+                FROM RankedWeeks
+                WHERE rn <= 4
+                ORDER BY organism, antibiotic, week_start_date ASC
+            """)
+            history_params = {"ward": ward}
+        else:
+            history_query = text("""
+                WITH OrgWeekly AS (
+                    SELECT
+                        organism,
+                        antibiotic,
+                        week_start_date,
+                        SUM(susceptible_count) AS total_s,
+                        SUM(total_tested)      AS total_n
+                    FROM ast_weekly_aggregated
+                    WHERE total_tested >= 3
+                    GROUP BY organism, antibiotic, week_start_date
+                ),
+                Computed AS (
+                    SELECT
+                        organism,
+                        antibiotic,
+                        week_start_date,
+                        ROUND((total_s::NUMERIC / total_n::NUMERIC) * 100, 2) AS susceptibility_percent,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY organism, antibiotic
+                            ORDER BY week_start_date DESC
+                        ) AS rn
+                    FROM OrgWeekly
+                    WHERE total_n > 0
+                )
+                SELECT organism, antibiotic, susceptibility_percent
+                FROM Computed
+                WHERE rn <= 4
+                ORDER BY organism, antibiotic, week_start_date ASC
+            """)
+            history_params = {}
+
+        history_rows = db.execute(history_query, history_params).fetchall()
+
+        # ----------------------------------------------------------------
+        # LAYER 3 (Optional): Pull latest AI forecast from surveillance_logs
+        # for the "Predicted" toggle — this is the ONLY place surveillance_logs
+        # is used, and only as a supplemental AI layer, not as the primary source.
+        # ----------------------------------------------------------------
+        if ward:
+            pred_query = text("""
+                WITH LatestPred AS (
+                    SELECT organism, antibiotic, predicted_s_percent,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY organism, antibiotic
+                               ORDER BY log_date DESC
+                           ) AS rn
+                    FROM surveillance_logs
+                    WHERE ward = :ward
+                      AND predicted_s_percent IS NOT NULL
+                )
+                SELECT organism, antibiotic, predicted_s_percent
+                FROM LatestPred WHERE rn = 1
+            """)
+            pred_params = {"ward": ward}
+        else:
+            pred_query = text("""
+                WITH LatestPred AS (
+                    SELECT organism, antibiotic, predicted_s_percent,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY organism, antibiotic
+                               ORDER BY log_date DESC
+                           ) AS rn
+                    FROM surveillance_logs
+                    WHERE predicted_s_percent IS NOT NULL
+                      AND ward IS NULL
+                )
+                SELECT organism, antibiotic, predicted_s_percent
+                FROM LatestPred WHERE rn = 1
+            """)
+            pred_params = {}
+
+        pred_rows = db.execute(pred_query, pred_params).fetchall()
+
+        # ----------------------------------------------------------------
+        # BUILD MATRIX
+        # ----------------------------------------------------------------
+        antibiotics_set = set()
+        matrix = {}
+
+        # Index history
+        history_index = {}  # (org, abx) -> [s%, s%, ...]
+        for row in history_rows:
+            org, abx, val = row
             key = (org, abx)
-            
-            if key not in temp_agg:
-                temp_agg[key] = {'obs': [], 'pred': []}
-            
-            if obs is not None: temp_agg[key]['obs'].append(float(obs))
-            if pred is not None: temp_agg[key]['pred'].append(float(pred))
-            
-        # 3. Build Final Matrix
-        for (org, abx), vals in temp_agg.items():
-            if org not in matrix: matrix[org] = {}
-            
-            obs_list = vals['obs']
-            pred_list = vals['pred']
-            
-            # Weighted Average (giving more weight to recent?) - For now just simple Average
-            current_avg = sum(obs_list) / len(obs_list) if obs_list else 0.0
-            predicted_avg = sum(pred_list) / len(pred_list) if pred_list else 0.0
-            
+            if key not in history_index:
+                history_index[key] = []
+            if val is not None:
+                history_index[key].append(float(val))
+
+        # Index predicted values (from AI layer)
+        pred_index = {}  # (org, abx) -> predicted_s%
+        for row in pred_rows:
+            org, abx, val = row
+            if val is not None:
+                pred_index[(org, abx)] = round(float(val), 1)
+
+        def compute_ewma_forecast(history: list, alpha: float = 0.4) -> float:
+            """
+            Exponential-weighted moving average (EWMA) forecast.
+            Applies heavier weight to recent weeks — same logic as SMAModel in
+            models/sma_model.py (alpha=0.3 there, slightly higher here for responsiveness).
+            Returns the next-step forecast as a float clamped to [0, 100].
+            """
+            if not history:
+                return None
+            if len(history) == 1:
+                return round(history[0], 1)
+            # Build weights: most-recent week gets highest weight
+            n = len(history)
+            weights = [(1 - alpha) ** i for i in range(n)]
+            weights.reverse()  # oldest → newest
+            total_w = sum(weights)
+            ewma = sum(w * v for w, v in zip(weights, history)) / total_w
+            return round(float(max(0.0, min(100.0, ewma))), 1)
+
+        # Build matrix from current S% (data layer is authoritative)
+        for row in current_rows:
+            org, abx, curr_val = row
+            if curr_val is None:
+                continue
+
+            antibiotics_set.add(abx)
+            if org not in matrix:
+                matrix[org] = {}
+
+            key = (org, abx)
+            history = history_index.get(key, [])
+
+            # --- Predicted value resolution (3-tier priority) ---
+            # Priority 1: Real LSTM forecast from surveillance_logs
+            #             (only exists for organisms the cron sweep has run)
+            if key in pred_index:
+                predicted = pred_index[key]
+                forecast_method = "LSTM"
+                has_forecast = True
+
+            # Priority 2: Statistical EWMA computed from aggregated weekly history
+            #             (covers ALL organisms regardless of surveillance sweep coverage,
+            #              e.g. Staphylococcus aureus which is handled by the MRSA module)
+            elif history:
+                predicted = compute_ewma_forecast(history)
+                forecast_method = "EWMA-Stat"
+                has_forecast = True
+
+            # Priority 3: Genuinely no data at all — cannot forecast
+            else:
+                predicted = None
+                forecast_method = None
+                has_forecast = False
+
             matrix[org][abx] = {
-                "current": round(current_avg, 1),
-                "predicted": round(predicted_avg, 1),
-                "history": obs_list[-4:] # Send last 4 points for sparkline
+                "current": round(float(curr_val), 1),
+                "predicted": predicted,
+                "has_forecast": has_forecast,
+                "forecast_method": forecast_method,
+                "history": history
             }
-            
+
+        # ----------------------------------------------------------------
+        # LAYER 4: Last data week — for correct date labelling in UI
+        # The UI must show the date of the last actual data point, 
+        # NOT the current system clock date. This is the epidemiological
+        # time reference for both "Current Observed" and "Predicted" views.
+        # ----------------------------------------------------------------
+        last_week_row = db.execute(text("""
+            SELECT MAX(week_start_date) FROM ast_weekly_aggregated
+            WHERE organism IN ('Pseudomonas aeruginosa', 'Acinetobacter baumannii')
+              AND total_tested >= 3
+        """)).fetchone()
+        last_data_week = last_week_row[0] if last_week_row and last_week_row[0] else None
+        predicted_week_start = None
+        if last_data_week:
+            from datetime import timedelta
+            predicted_week_start = (last_data_week + timedelta(days=7)).isoformat()
+            last_data_week = last_data_week.isoformat()
+
         return {
             "matrix": matrix,
             "antibiotics": sorted(list(antibiotics_set)),
-            "scope": f"Ward {ward}" if ward else "Hospital-Wide"
+            "scope": f"Ward {ward}" if ward else "Hospital-Wide",
+            "last_data_week": last_data_week,
+            "predicted_week_start": predicted_week_start,
         }
-        
+
     except Exception as e:
         logger.error(f"Antibiogram Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1319,6 +1991,20 @@ async def log_governance_decision(decision: GovernanceDecisionCreate):
         return {"status": "Logged"}
     finally:
         db.close()
+
+@app.get("/api/mrsa/governance/status", tags=["MRSA"])
+async def get_governance_status(db: Session = Depends(get_db)):
+    """
+    Returns the current MRSA model governance decision based on 30-day rolling validation metrics.
+
+    Decision states:
+    - ACTIVE          — All safety thresholds met. System operating normally.
+    - MONITOR         — Sensitivity approaching lower limit. Increase review frequency.
+    - RETRAIN_REVIEW  — Performance degraded below threshold. Retraining required.
+    - DISABLE_MODULE  — CRITICAL: NPV below safe limit. Module should be suspended.
+    - NO_DATA         — No validation records in the last 30 days.
+    """
+    return mrsa_analytics_service.get_governance_status(db)
 
 @app.post("/api/mrsa/predict", response_model=MRSAPredictionResponse, tags=["MRSA"])
 async def predict_mrsa_risk(
@@ -1360,6 +2046,197 @@ def create_master_definition(def_in: MasterDefinitionCreate, db: Session = Depen
 def delete_master_definition(id: int, db: Session = Depends(get_db)):
     """Soft delete a master data definition"""
     return MasterDataService.delete_definition(db, id)
+
+# ============================================
+# PANEL CONFIGURATION ROUTES (Phase 2.5)
+# ============================================
+import re as _re
+from utils.normalization import normalize_antibiotic, normalize_organism
+
+# ── In-memory panel cache ────────────────────────────────────────────────────
+# Keyed by normalize_organism(name) → set of normalize_antibiotic(abx_name)
+# Populated at startup and refreshed after any panel write.
+_panel_cache: dict = {}
+
+def refresh_panel_cache(db: Session):
+    """Reload panel config from DB into _panel_cache. Called at startup + after writes."""
+    global _panel_cache
+    try:
+        rows = db.execute(text("""
+            SELECT o.name, a.name
+            FROM organism_antibiotic_panel oap
+            JOIN organisms  o ON oap.organism_id  = o.id
+            JOIN antibiotics a ON oap.antibiotic_id = a.id
+            WHERE o.is_active = TRUE AND a.is_active = TRUE AND oap.is_active = TRUE
+        """)).fetchall()
+        cache: dict = {}
+        for org_name, abx_name in rows:
+            cache.setdefault(normalize_organism(org_name), set()).add(
+                normalize_antibiotic(abx_name)
+            )
+        _panel_cache = cache
+        logger.info(f"Panel cache refreshed: {len(cache)} organisms loaded.")
+    except Exception as e:
+        logger.warning(f"Panel cache refresh failed (non-fatal): {e}")
+
+@app.on_event("startup")
+async def load_panel_cache_on_startup():
+    """Warm the panel cache so aggregation can use it immediately."""
+    db = next(get_db())
+    try:
+        refresh_panel_cache(db)
+    finally:
+        db.close()
+
+def get_panel_cache() -> dict:
+    """Return the current in-memory panel cache."""
+    return _panel_cache
+
+# ── READ endpoints ────────────────────────────────────────────────────────────
+
+@app.get("/api/panels/organisms", tags=["Panel Configuration"])
+def list_organisms(db: Session = Depends(get_db)):
+    """List all active organisms."""
+    rows = db.execute(text(
+        "SELECT id, name, group_name FROM organisms WHERE is_active = TRUE ORDER BY group_name, name"
+    )).fetchall()
+    return [{"id": r[0], "name": r[1], "group_name": r[2]} for r in rows]
+
+
+@app.get("/api/panels/antibiotics", tags=["Panel Configuration"])
+def list_antibiotics(db: Session = Depends(get_db)):
+    """List all active antibiotics (master list)."""
+    rows = db.execute(text(
+        "SELECT id, name, short_code FROM antibiotics WHERE is_active = TRUE ORDER BY name"
+    )).fetchall()
+    return [
+        {
+            "id": r[0], "name": r[1], "short_code": r[2],
+            "display_name": f"{r[1]} ({r[2]})" if r[2] else r[1]
+        }
+        for r in rows
+    ]
+
+
+@app.get("/api/panels/cache-status", tags=["Panel Configuration"])
+def panel_cache_status():
+    """Debug: return count of organisms and antibiotics currently in memory cache."""
+    total_abx = sum(len(v) for v in _panel_cache.values())
+    return {"organisms_in_cache": len(_panel_cache), "antibiotics_in_cache": total_abx}
+
+
+@app.get("/api/panels/{organism}", tags=["Panel Configuration"])
+def get_organism_panel(organism: str, db: Session = Depends(get_db)):
+    """Return the antibiotic panel for a given organism, with display_name."""
+    rows = db.execute(text("""
+        SELECT a.id, a.name, a.short_code
+        FROM organism_antibiotic_panel oap
+        JOIN organisms  o ON oap.organism_id  = o.id
+        JOIN antibiotics a ON oap.antibiotic_id = a.id
+        WHERE LOWER(o.name) = LOWER(:org)
+          AND o.is_active = TRUE AND a.is_active = TRUE AND oap.is_active = TRUE
+        ORDER BY a.name
+    """), {"org": organism}).fetchall()
+    return [
+        {
+            "id": r[0], "name": r[1], "short_code": r[2],
+            "display_name": f"{r[1]} ({r[2]})" if r[2] else r[1]
+        }
+        for r in rows
+    ]
+
+# ── WRITE endpoints (admin only in future — guarded by current_user dep) ─────
+
+@app.post("/api/panels/organisms", tags=["Panel Configuration"])
+def create_organism(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new organism (admin only). Case-insensitive duplicate prevention."""
+    name = payload.get("name", "").strip().title()
+    group = payload.get("group_name", "General").strip()
+    if not name:
+        raise HTTPException(400, "name is required")
+    existing = db.execute(
+        text("SELECT 1 FROM organisms WHERE LOWER(name) = LOWER(:n)"), {"n": name}
+    ).fetchone()
+    if existing:
+        raise HTTPException(400, f"Organism '{name}' already exists.")
+    db.execute(
+        text("INSERT INTO organisms (name, group_name) VALUES (:n, :g)"),
+        {"n": name, "g": group}
+    )
+    db.commit()
+    refresh_panel_cache(db)
+    return {"status": "created", "name": name}
+
+
+@app.post("/api/panels/antibiotics", tags=["Panel Configuration"])
+def create_antibiotic(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new antibiotic (admin only). Case-insensitive duplicate prevention."""
+    name = payload.get("name", "").strip().title()
+    short_code = payload.get("short_code", "").strip().upper() or None
+    if not name:
+        raise HTTPException(400, "name is required")
+    existing = db.execute(
+        text("SELECT 1 FROM antibiotics WHERE LOWER(name) = LOWER(:n)"), {"n": name}
+    ).fetchone()
+    if existing:
+        raise HTTPException(400, f"Antibiotic '{name}' already exists.")
+    db.execute(
+        text("INSERT INTO antibiotics (name, short_code) VALUES (:n, :s)"),
+        {"n": name, "s": short_code}
+    )
+    db.commit()
+    refresh_panel_cache(db)
+    return {"status": "created", "name": name, "short_code": short_code}
+
+
+@app.post("/api/panels/mapping", tags=["Panel Configuration"])
+def add_panel_mapping(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Assign an antibiotic to an organism panel (admin only)."""
+    org_id = payload.get("organism_id")
+    abx_id = payload.get("antibiotic_id")
+    if not org_id or not abx_id:
+        raise HTTPException(400, "organism_id and antibiotic_id are required")
+    # Upsert: if soft-deleted mapping exists, re-activate it
+    db.execute(text("""
+        INSERT INTO organism_antibiotic_panel (organism_id, antibiotic_id, is_active)
+        VALUES (:org, :abx, TRUE)
+        ON CONFLICT (organism_id, antibiotic_id) DO UPDATE SET is_active = TRUE
+    """), {"org": org_id, "abx": abx_id})
+    db.commit()
+    refresh_panel_cache(db)
+    return {"status": "mapped", "organism_id": org_id, "antibiotic_id": abx_id}
+
+
+@app.delete("/api/panels/mapping/{org_id}/{abx_id}", tags=["Panel Configuration"])
+def remove_panel_mapping(
+    org_id: int,
+    abx_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft-delete: remove antibiotic from organism panel (admin only). Historical data untouched."""
+    result = db.execute(text("""
+        UPDATE organism_antibiotic_panel
+        SET is_active = FALSE
+        WHERE organism_id = :org AND antibiotic_id = :abx
+    """), {"org": org_id, "abx": abx_id})
+    db.commit()
+    refresh_panel_cache(db)
+    if result.rowcount == 0:
+        raise HTTPException(404, "Mapping not found")
+    return {"status": "removed", "organism_id": org_id, "antibiotic_id": abx_id}
 
 # ============================================
 # STP STAGE 1: SURVEILLANCE ENDPOINTS
@@ -1765,6 +2642,84 @@ async def freeze_stp_dataset(
 # ============================================
 # Startup/Shutdown Events
 # ============================================
+
+
+# ============================================
+# PHASE 3B — PERFORMANCE SUMMARY ENDPOINT
+# ============================================
+
+@app.get("/api/performance/summary")
+def get_performance_summary(db: Session = Depends(get_db)):
+    """
+    Returns per-target rolling performance metrics computed by Phase 3B.
+
+    Each row contains:
+      - mae:              Rolling 12-week Mean Absolute Error (%)
+      - bias:             Mean signed bias — positive = over-predicting susceptibility
+      - mda:              Mean Directional Accuracy (%)
+      - validated_count:  Number of validated weeks in the rolling window
+      - performance_status:
+            EXCELLENT          (MAE ≤ 5%)
+            ACCEPTABLE         (MAE ≤ 10%)
+            NEEDS_RECAL        (MAE > 10%)
+            DEGRADED           (MAE > 12% with ≥ 8 samples — sticky until retrained)
+            INSUFFICIENT_DATA  (< 6 validated weeks)
+      - degraded:         True if degradation flag is set (sticky)
+      - adaptive_ci_half: Half-width of adaptive CI (MAE × 1.96), or 10.0 if insufficient data
+    """
+    try:
+        result = db.execute(text("""
+            SELECT
+                ward,
+                organism,
+                antibiotic,
+                mae_score,
+                mean_bias,
+                mda,
+                validated_count,
+                performance_status,
+                degradation_flagged,
+                updated_at
+            FROM model_performance
+            WHERE model_name = 'Phase3B_Rolling'
+            ORDER BY ward, organism, antibiotic
+        """)).fetchall()
+
+        rows = []
+        for r in result:
+            validated_count = r[6] or 0
+            mae = float(r[3]) if r[3] is not None else None
+
+            # Adaptive CI half-width: MAE × 1.96, fallback ±10% when insufficient data
+            adaptive_ci_half = (
+                round(float(mae) * 1.96, 2)
+                if mae is not None and validated_count >= 6
+                else 10.0
+            )
+
+            rows.append({
+                "ward":              r[0],
+                "organism":          r[1],
+                "antibiotic":        r[2],
+                "mae":               round(mae, 2) if mae is not None else None,
+                "bias":              round(float(r[4]), 2) if r[4] is not None else None,
+                "mda":               round(float(r[5]), 1) if r[5] is not None else None,
+                "validated_count":   validated_count,
+                "performance_status":r[7] or "INSUFFICIENT_DATA",
+                "degraded":          bool(r[8]) if r[8] is not None else False,
+                "adaptive_ci_half":  adaptive_ci_half,
+                "updated_at":        r[9].isoformat() if r[9] else None,
+            })
+
+        return {
+            "total_targets": len(rows),
+            "summary": rows
+        }
+
+    except Exception as e:
+        logger.error(f"Performance summary error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.on_event("startup")
 async def startup_event():

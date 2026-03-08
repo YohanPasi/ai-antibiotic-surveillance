@@ -1,7 +1,14 @@
 """
 Stage A: Scope Control & Data Ingestion
 STRICTLY enforces Non-Fermenter filtering rules.
-Allowed: 'Pseudomonas aeruginosa', 'Acinetobacter baumannii'
+
+Accepted organisms (mapped to canonical names):
+  Pseudomonas aeruginosa  → 'Pseudomonas aeruginosa'
+  Acinetobacter baumannii → 'Acinetobacter baumannii'
+  Acinetobacter spp.      → 'Acinetobacter baumannii'  (common lab shorthand)
+  Acinetobacter spp       → 'Acinetobacter baumannii'
+  Acinetobacter calcoaceticus-baumannii complex → 'Acinetobacter baumannii'
+
 Restricted: Patient Identifiers, Demographics.
 """
 import pandas as pd
@@ -21,7 +28,7 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 
 
 # File path
-EXCEL_FILE_PATH = '/app/data/raw/Stage_D_Expanded_10000_Final_Schema_Aligned.xlsx.xlsx'
+EXCEL_FILE_PATH = '/app/data/raw/NF.xlsx'
 
 def standardize_sir_value(value):
     """Standardize S/I/R values."""
@@ -33,37 +40,53 @@ def standardize_sir_value(value):
     if value_str in ['R', 'RESISTANT']: return 'R'
     return None
 
+# Canonical names used throughout the system
+NF_ORGANISMS = {
+    'Pseudomonas aeruginosa': 'Pseudomonas aeruginosa',
+    'Acinetobacter baumannii': 'Acinetobacter baumannii',
+}
+
 def get_allowed_organism(organism, sub_organism, organism_group):
     """
-    STAGE A FILTER RULE:
-    Accept ONLY: 'Pseudomonas aeruginosa', 'Acinetobacter baumannii'
-    Reject ALL others.
+    STAGE A FILTER RULE — Strict Non-Fermenter scope.
+
+    Accepted and mapped to canonical name:
+      - Pseudomonas aeruginosa (any spelling/case)
+      - Acinetobacter baumannii
+      - Acinetobacter spp. / Acinetobacter spp (common lab shorthand → baumannii)
+      - Acinetobacter calcoaceticus-baumannii complex → baumannii
+      - Any row with organism_group = 'NonFermenters' AND 'acinetobacter' in name
+
+    All Enterobacteriaceae, Staphylococcus, Enterococcus, etc. → REJECTED.
     """
-    # 1. Check Organism Group Scope
-    # Note: Sometimes Group is missing, so we double check the name.
-    # But if Group is explicit "Enterobacteriaceae", we should probably drop it.
-    # The requirement says: KEEP rows where Organism_Group == "NonFermenters"
-    
-    org_grp_str = str(organism_group).strip().lower() if pd.notna(organism_group) else ""
-    
-    # 2. Check Specific Sub-Organisms
-    sub_org_str = str(sub_organism).strip().lower() if pd.notna(sub_organism) else ""
-    
-    # Normalization Logic
-    final_organism = None
-    
+    # Build normalised string for all inputs
+    sub_org_str  = str(sub_organism).strip().lower()  if pd.notna(sub_organism)  else ""
+    org_str      = str(organism).strip().lower()      if pd.notna(organism)      else ""
+    org_grp_str  = str(organism_group).strip().lower() if pd.notna(organism_group) else ""
+
+    # --- Pseudomonas aeruginosa ---
     if 'pseudomonas' in sub_org_str and 'aeruginosa' in sub_org_str:
-        final_organism = 'Pseudomonas aeruginosa'
-    elif 'acinetobacter' in sub_org_str and 'baumannii' in sub_org_str:
-        final_organism = 'Acinetobacter baumannii'
-    
-    # If not found by name, check if strictly labeled NonFermenter group and try to map?
-    # Requirement says: "Normalize sub-organism to ONLY PsA or Ab. Anything else -> DROP"
-    # So if it's "Acinetobacter spp", strictly speaking, Stage A should DROP it if the rule is strict.
-    # The user said: "Acinetobacter baumannii". "Anything else -> DROP".
-    # So "Acinetobacter spp" is DROPPED.
-    
-    return final_organism
+        return 'Pseudomonas aeruginosa'
+    if 'pseudomonas' in org_str and 'aeruginosa' in org_str:
+        return 'Pseudomonas aeruginosa'
+
+    # --- Acinetobacter (all varieties → baumannii) ---
+    # Accept: baumannii, spp., spp, calcoaceticus-baumannii complex
+    if 'acinetobacter' in sub_org_str:
+        return 'Acinetobacter baumannii'
+    if 'acinetobacter' in org_str:
+        return 'Acinetobacter baumannii'
+
+    # --- Fall-through: NonFermenters group label (paranoid catch) ---
+    if 'nonfermenter' in org_grp_str or 'non-fermenter' in org_grp_str or 'non fermenter' in org_grp_str:
+        # Only remap if it's one of our two genera
+        if 'pseudomonas' in sub_org_str or 'pseudomonas' in org_str:
+            return 'Pseudomonas aeruginosa'
+        if 'acinetobacter' in sub_org_str or 'acinetobacter' in org_str:
+            return 'Acinetobacter baumannii'
+
+    # Everything else is OUT OF SCOPE
+    return None
 
 def extract_antibiotic_columns(df):
     """Extract antibiotic columns."""
