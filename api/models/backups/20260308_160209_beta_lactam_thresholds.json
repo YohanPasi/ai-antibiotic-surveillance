@@ -1,0 +1,10 @@
+{
+    "default": {
+        "green_min_probability": 0.7,
+        "amber_min_probability": 0.4
+    },
+    "Carbapenem": {
+        "green_min_probability": 0.85,
+        "amber_min_probability": 0.5
+    }
+}

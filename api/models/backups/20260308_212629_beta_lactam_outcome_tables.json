@@ -1,0 +1,32 @@
+{
+    "Gen1": {
+        "success": 3,
+        "total": 7,
+        "baseline_prob": 0.4286
+    },
+    "Gen2": {
+        "success": 1,
+        "total": 6,
+        "baseline_prob": 0.1667
+    },
+    "Gen3": {
+        "success": 1,
+        "total": 7,
+        "baseline_prob": 0.1429
+    },
+    "Gen4": {
+        "success": 2,
+        "total": 7,
+        "baseline_prob": 0.2857
+    },
+    "Carbapenem": {
+        "success": 1,
+        "total": 7,
+        "baseline_prob": 0.1429
+    },
+    "BL_Combo": {
+        "success": 2,
+        "total": 7,
+        "baseline_prob": 0.2857
+    }
+}

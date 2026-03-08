@@ -5,7 +5,7 @@ AST Prediction & Surveillance System
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import logging
 import json
@@ -1262,364 +1262,6 @@ async def get_audit_logs(limit: int = 50):
     finally:
         db.close()
 
-# ============================================
-# ESBL CDSS ENDPOINTS (Stage 9)
-# ============================================
-from pydantic import BaseModel
-from typing import Dict, Any, List, Optional
-from esbl_service import esbl_service, ValidationResponse
-
-class ESBLEvaluateRequest(BaseModel):
-    inputs: Dict[str, Any]
-    ast_available: bool = False
-
-class ESBLScopeRequest(BaseModel):
-    organism: str
-    gram: str
-
-class ESBLOverrideRequest(BaseModel):
-    encounter_id: str
-    user_id: str
-    model_version: str
-    recommendation_id: str
-    decision: str # OVERRIDE / ACCEPT
-    reason_code: Optional[str] = None
-    selected_antibiotic: Optional[str] = None
-
-class ESBLPostASTRequest(BaseModel):
-    empiric_drug: str
-    ast_panel: Dict[str, str] # e.g. {"MEM": "S", "TZP": "R"}
-
-@app.post("/api/esbl/evaluate")
-async def evaluate_esbl_risk(request: ESBLEvaluateRequest):
-    """
-    Main CDSS Engine Endpoint.
-    - Checks Governance (AST Lock, Scope).
-    - Predicts Risk (Stage 5).
-    - Generates Recommendations (Stage 7).
-    - Flags OOD (Stage 9).
-    """
-    try:
-        return esbl_service.predict_and_evaluate(request.dict())
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        logger.error(f"ESBL Evaluate Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/esbl/validate-scope", response_model=ValidationResponse)
-async def validate_esbl_scope(request: ESBLScopeRequest):
-    """
-    Pre-check to prevent out-of-scope usage in UI.
-    """
-    return esbl_service.validate_scope(request.organism, request.gram)
-
-@app.post("/api/esbl/override")
-async def log_esbl_override(request: ESBLOverrideRequest):
-    """
-    Audit logging for clinician overrides.
-    Mandatory reason code if overriding.
-    """
-    # In a full system, this would write to the 'audit_logs' table defined in Stage 8.
-    # For now, we log to file/console as a mock proof of governance.
-    log_entry = request.dict()
-    log_entry["timestamp"] = datetime.utcnow().isoformat()
-    
-    logger.info(f"🛡️ ESBL AUDIT LOG: {json.dumps(log_entry)}")
-    
-    # Save to a local JSONL file for verification
-    with open("esbl_audit_log.jsonl", "a") as f:
-        f.write(json.dumps(log_entry) + "\n")
-        
-    return {"status": "logged", "message": "Decision recorded in audit trail."}
-
-
-
-# ============================================
-# ESBL: Encounter Persistence (Backend - SQL)
-# ============================================
-
-@app.post("/api/encounters")
-async def save_encounter(data: dict):
-    """
-    Save encounter to PostgreSQL with explicit columns.
-    """
-    db = SessionLocal()
-    try:
-        inputs = data.get("inputs", {})
-        result = data.get("result", {})
-        risk = result.get("risk", {})
-        metadata = result.get("metadata", {})
-        
-        encounter_id = inputs.get("id")
-        if not encounter_id:
-            raise HTTPException(status_code=400, detail="Missing Encounter ID")
-
-        # Insert with explicit columns
-        query = text("""
-            INSERT INTO esbl_encounters (
-                encounter_id, age, gender, ward, organism, gram_stain,
-                sample_type, cell_count_level, pus_type, pure_growth,
-                esbl_probability, risk_group, ood_warning,
-                model_version, evidence_version, threshold_version,
-                recommendations, status, created_at
-            ) VALUES (
-                :enc_id, :age, :gender, :ward, :organism, :gram,
-                :sample_type, :cell_count, :pus_type, :pure_growth,
-                :esbl_prob, :risk_group, :ood_warning,
-                :model_ver, :evidence_ver, :threshold_ver,
-                :recommendations, :status, :created_at
-            )
-            ON CONFLICT (encounter_id) 
-            DO UPDATE SET
-                esbl_probability = :esbl_prob,
-                risk_group = :risk_group,
-                recommendations = :recommendations,
-                updated_at = :created_at
-        """)
-        
-        db.execute(query, {
-            "enc_id": encounter_id,
-            "age": int(inputs.get("Age", 0)) if inputs.get("Age") else None,
-            "gender": inputs.get("Gender"),
-            "ward": inputs.get("Ward"),
-            "organism": inputs.get("Organism"),
-            "gram": inputs.get("Gram"),
-            "sample_type": inputs.get("Sample_Type"),
-            "cell_count": inputs.get("Cell_Count_Level"),
-            "pus_type": inputs.get("PUS_Type"),
-            "pure_growth": inputs.get("Pure_Growth"),
-            "esbl_prob": risk.get("probability"),
-            "risk_group": risk.get("group"),
-            "ood_warning": risk.get("ood_warning", False),
-            "model_ver": metadata.get("model_version"),
-            "evidence_ver": metadata.get("evidence_version"),
-            "threshold_ver": metadata.get("threshold_version"),
-            "recommendations": json.dumps(result.get("recommendations", [])),
-            "status": "PENDING",
-            "created_at": datetime.utcnow()
-        })
-        db.commit()
-        
-        # Also save to audit logs for governance tracking
-        try:
-            audit_query = text("""
-                INSERT INTO esbl_audit_logs (
-                    log_date, encounter_id, ward, organism, age,
-                    esbl_probability, risk_group, top_recommendation,
-                    recommendation_efficacy, model_version, ood_detected
-                ) VALUES (
-                    :log_date, :enc_id, :ward, :organism, :age,
-                    :esbl_prob, :risk_group, :top_rec,
-                    :top_efficacy, :model_ver, :ood_detected
-                )
-            """)
-            
-            # Extract top recommendation
-            recommendations = result.get("recommendations", [])
-            top_drug = recommendations[0].get("drug", "N/A") if recommendations else "N/A"
-            top_efficacy = recommendations[0].get("success_prob", 0) if recommendations else 0
-            
-            db.execute(audit_query, {
-                "log_date": datetime.utcnow(),
-                "enc_id": encounter_id,
-                "ward": inputs.get("Ward"),
-                "organism": inputs.get("Organism"),
-                "age": int(inputs.get("Age", 0)) if inputs.get("Age") else None,
-                "esbl_prob": risk.get("probability"),
-                "risk_group": risk.get("group"),
-                "top_rec": top_drug,
-                "top_efficacy": top_efficacy,
-                "model_ver": metadata.get("model_version"),
-                "ood_detected": risk.get("ood_warning", False)
-            })
-            db.commit()
-        except Exception as audit_err:
-            logger.warning(f"Failed to save audit log: {audit_err}")
-            # Don't fail the main save if audit fails
-            
-        return {"status": "success", "message": f"Encounter {encounter_id} saved to Database."}
-            
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Failed to save encounter to DB: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
-
-@app.get("/api/encounters/{encounter_id}")
-async def get_encounter(encounter_id: str):
-    """
-    Retrieve encounter from SQL Database.
-    """
-    db = SessionLocal()
-    try:
-        query = text("""
-            SELECT 
-                encounter_id, age, gender, ward, organism, gram_stain,
-                sample_type, cell_count_level, pus_type, pure_growth,
-                esbl_probability, risk_group, ood_warning,
-                model_version, evidence_version, threshold_version,
-                recommendations, status
-            FROM esbl_encounters 
-            WHERE encounter_id = :id
-        """)
-        row = db.execute(query, {"id": encounter_id}).fetchone()
-        
-        if row:
-            # Reconstruct the format expected by frontend
-            return {
-                "inputs": {
-                    "id": row[0],
-                    "Age": str(row[1]) if row[1] else "",
-                    "Gender": row[2] or "",
-                    "Ward": row[3] or "",
-                    "Organism": row[4] or "",
-                    "Gram": row[5] or "",
-                    "Sample_Type": row[6] or "",
-                    "Cell_Count_Level": row[7] or "",
-                    "PUS_Type": row[8] or "",
-                    "Pure_Growth": row[9] or ""
-                },
-                "result": {
-                    "risk": {
-                        "probability": float(row[10]) if row[10] else 0,
-                        "group": row[11] or "Low",
-                        "ood_warning": row[12] or False
-                    },
-                    "metadata": {
-                        "model_version": row[13] or "",
-                        "evidence_version": row[14] or "",
-                        "threshold_version": row[15] or ""
-                    },
-                    "recommendations": row[16] if row[16] else []
-                }
-            }
-        else:
-            raise HTTPException(status_code=404, detail="Encounter ID not found in Database.")
-            
-    except Exception as e:
-        logger.error(f"Failed to fetch encounter from DB: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
-
-@app.get("/api/esbl/lab-results/{encounter_id}")
-async def get_lab_results(encounter_id: str):
-    """
-    Fetch confirmed lab results for an encounter.
-    """
-    db = SessionLocal()
-    try:
-        query = text("""
-            SELECT antibiotic, result
-            FROM esbl_lab_results
-            WHERE encounter_id = :enc_id
-            ORDER BY antibiotic
-        """)
-        
-        rows = db.execute(query, {"enc_id": encounter_id}).fetchall()
-        
-        if not rows:
-            raise HTTPException(status_code=404, detail="No lab results found for this encounter.")
-        
-        # Convert to dict
-        results = {row[0]: row[1] for row in rows}
-        return {"encounter_id": encounter_id, "results": results}
-        
-    except Exception as e:
-        logger.error(f"Failed to fetch lab results: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
-
-@app.get("/api/esbl/audit-logs")
-async def get_esbl_audit_logs():
-    """
-    Fetch ESBL governance/audit logs for the dashboard.
-    """
-    db = SessionLocal()
-    try:
-        query = text("""
-            SELECT 
-                id, log_date, encounter_id, ward, organism, age,
-                esbl_probability, risk_group, top_recommendation,
-                recommendation_efficacy, model_version, ood_detected
-            FROM esbl_audit_logs
-            ORDER BY log_date DESC
-            LIMIT 100
-        """)
-        
-        rows = db.execute(query).fetchall()
-        
-        logs = []
-        for row in rows:
-            logs.append({
-                "id": row[0],
-                "timestamp": row[1].isoformat() if row[1] else None,
-                "encounter_id": row[2],
-                "ward": row[3],
-                "organism": row[4],
-                "age": row[5],
-                "esbl_probability": float(row[6]) if row[6] else 0,
-                "risk_group": row[7],
-                "top_recommendation": row[8],
-                "recommendation_efficacy": float(row[9]) if row[9] else 0,
-                "model_version": row[10],
-                "ood_detected": row[11]
-            })
-        
-        return {"logs": logs, "total": len(logs)}
-        
-    except Exception as e:
-        logger.error(f"Failed to fetch audit logs: {e}")
-        # Return empty if table doesn't have data yet
-        return {"logs": [], "total": 0}
-    finally:
-        db.close()
-
-@app.post("/api/esbl/post-ast-review")
-async def post_ast_review(request: ESBLPostASTRequest):
-    """
-    Stage 8: Confirmatory Stewardship & De-escalation Rules.
-    """
-    # Simplified Logic from post_ast_rules.json
-    empiric = request.empiric_drug
-    panel = request.ast_panel
-    
-    feedback = {
-        "action": "MAINTAIN",
-        "message": "Continue current therapy.",
-        "alert_level": "GREEN"
-    }
-    
-    # Rule 1: Resistance Check
-    if panel.get(empiric) == "R":
-        feedback = {
-            "action": "ESCALATION_REQUIRED",
-            "message": f"Pathogen is RESISTANT to Empiric Choice ({empiric}). Change therapy immediately.",
-            "alert_level": "RED"
-        }
-    
-    # Rule 2: De-escalation (Carbapenem Sparing)
-    elif empiric in ["MEM", "IMP", "ETP"] and panel.get("TZP") == "S":
-         feedback = {
-            "action": "DE_ESCALATION_RECOMMENDED",
-            "message": "Pathogen is sensitive to Pip-Tazo. De-escalate from Carbapenem.",
-            "alert_level": "YELLOW"
-        }
-        
-    # Rule 3: ESBL Negative check?
-    # (Requires knowing if ESBL-neg, inferred from CTX/CRO S status often).
-    elif panel.get("CTX") == "S" and panel.get("CRO") == "S":
-         if empiric in ["MEM", "IMP", "ETP"]:
-             feedback = {
-                "action": "DE_ESCALATION_RECOMMENDED",
-                "message": "Non-ESBL phenotype detected. Carbapenem not required.",
-                "alert_level": "YELLOW"
-            }
-
-    return feedback
 
 
 
@@ -2749,6 +2391,582 @@ async def shutdown_event():
     """Execute on application shutdown"""
     logger.info("AST Prediction API shutting down...")
 
+# ============================================================
+# BETA-LACTAM RESISTANCE SPECTRUM CDSS ENDPOINTS
+# Replaces: /api/esbl/* endpoints
+# ============================================================
+from beta_lactam_service import beta_lactam_service, ValidationResponse as BLValidationResponse
+
+class BLEvaluateRequest(BaseModel):
+    inputs: Dict[str, Any]
+    ast_available: bool = False
+
+class BLScopeRequest(BaseModel):
+    organism: str
+    gram: str
+
+class BLOverrideRequest(BaseModel):
+    encounter_id: str
+    user_id: str
+    model_version: str
+    generation_recommended: str        # Generation the AI recommended
+    decision: str                       # ACCEPT / OVERRIDE
+    reason_code: Optional[str] = None
+    selected_generation: Optional[str] = None  # What the clinician picked instead
+
+class BLPostASTRequest(BaseModel):
+    empiric_generation: str            # Generation used empirically, e.g. "Gen1"
+    ast_panel: Dict[str, str]          # e.g. {"Meropenem": "S", "Ceftriaxone": "R"}
+
+class BLLabResultItem(BaseModel):
+    antibiotic: str
+    result: str
+    mic_value: Optional[float] = None
+    breakpoint_standard: Optional[str] = None
+
+class BLLabResultsRequest(BaseModel):
+    encounter_id: str
+    lab_no: Optional[str] = None
+    bht: Optional[str] = None
+    ward: str
+    specimen_type: str
+    organism: str
+    results: List[BLLabResultItem]
+
+
+@app.post("/api/beta-lactam/evaluate")
+async def evaluate_beta_lactam_spectrum(request: BLEvaluateRequest):
+    """
+    Main CDSS engine for beta-lactam spectrum prediction.
+
+    - Enforces governance: AST lock + scope check.
+    - Predicts susceptibility probability per generation (Gen1–Gen4, Carbapenem, BL_Combo).
+    - Applies stewardship-weighted Bayesian recommendation scoring.
+    - Flags OOD inputs.
+    """
+    try:
+        return beta_lactam_service.predict_and_evaluate(request.dict())
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Beta-Lactam Evaluate Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/beta-lactam/validate-scope", response_model=BLValidationResponse)
+async def validate_beta_lactam_scope(request: BLScopeRequest):
+    """
+    Scope pre-check — returns { allowed: bool, reason?: str }.
+    Prevents UI from proceeding with out-of-scope organisms.
+    """
+    return beta_lactam_service.validate_scope(request.organism, request.gram)
+
+
+@app.post("/api/beta-lactam/override")
+async def log_beta_lactam_override(request: BLOverrideRequest):
+    """
+    Audit log for clinician override decisions.
+    A mandatory reason_code is expected if decision = OVERRIDE.
+    Writes to beta_lactam_audit_logs table and local JSONL file.
+    """
+    db = SessionLocal()
+    try:
+        log_entry = request.dict()
+        log_entry["timestamp"] = datetime.utcnow().isoformat()
+
+        logger.info(f"🛡️ BETA-LACTAM AUDIT OVERRIDE: {json.dumps(log_entry)}")
+
+        # Append to local JSONL for file-based audit trail
+        with open("beta_lactam_audit_log.jsonl", "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+
+        # Update the clinician_override field in beta_lactam_audit_logs
+        update_query = text("""
+            UPDATE beta_lactam_audit_logs
+            SET clinician_override = :decision,
+                override_reason    = :reason
+            WHERE id IN (
+                SELECT id FROM beta_lactam_audit_logs
+                WHERE encounter_id = :enc_id
+                ORDER BY log_date DESC
+                LIMIT 1
+            )
+        """)
+        db.execute(update_query, {
+            "decision": request.decision,
+            "reason":   request.reason_code,
+            "enc_id":   request.encounter_id,
+        })
+        db.commit()
+
+        return {
+            "status":  "logged",
+            "message": "Clinician decision recorded in audit trail."
+        }
+    except Exception as e:
+        logger.error(f"Override log error: {e}")
+        return {"status": "partial", "message": "Decision logged to file; DB update failed."}
+    finally:
+        db.close()
+
+
+@app.post("/api/beta-lactam/encounters")
+async def save_beta_lactam_encounter(data: dict):
+    """
+    Persist a new beta-lactam encounter + auto-write governance audit log.
+    Uses UPSERT on encounter_id for idempotency.
+    """
+    db = SessionLocal()
+    try:
+        inputs   = data.get("inputs", {})
+        result   = data.get("result", {})
+        metadata = result.get("metadata", {})
+
+        encounter_id = inputs.get("id")
+        if not encounter_id:
+            raise HTTPException(status_code=400, detail="Missing encounter_id in inputs.")
+
+        recommendations = result.get("recommendations", [])
+        top_rec = recommendations[0] if recommendations else {}
+
+        # --- Upsert into beta_lactam_encounters ---
+        upsert_q = text("""
+            INSERT INTO beta_lactam_encounters (
+                encounter_id, age, gender, ward, organism, gram_stain,
+                sample_type, cell_count_level, pus_type, pure_growth,
+                predicted_beta_lactam_spectrum, top_generation_recommendation,
+                predicted_success_probability, spectrum_ood_warning,
+                recommendations, model_version, evidence_version,
+                status, created_at
+            ) VALUES (
+                :enc_id, :age, :gender, :ward, :organism, :gram,
+                :sample_type, :cell_count, :pus_type, :pure_growth,
+                :spectrum, :top_gen,
+                :success_prob, :ood_warning,
+                :recommendations, :model_ver, :evidence_ver,
+                :status, :created_at
+            )
+            ON CONFLICT (encounter_id)
+            DO UPDATE SET
+                predicted_beta_lactam_spectrum    = EXCLUDED.predicted_beta_lactam_spectrum,
+                top_generation_recommendation      = EXCLUDED.top_generation_recommendation,
+                predicted_success_probability      = EXCLUDED.predicted_success_probability,
+                recommendations                    = EXCLUDED.recommendations,
+                updated_at                         = EXCLUDED.created_at
+        """)
+
+        db.execute(upsert_q, {
+            "enc_id":       encounter_id,
+            "age":          int(inputs.get("Age", 0)) if inputs.get("Age") else None,
+            "gender":       inputs.get("Gender"),
+            "ward":         inputs.get("Ward"),
+            "organism":     inputs.get("Organism"),
+            "gram":         inputs.get("Gram"),
+            "sample_type":  inputs.get("Sample_Type"),
+            "cell_count":   inputs.get("Cell_Count_Level"),
+            "pus_type":     inputs.get("PUS_Type"),
+            "pure_growth":  inputs.get("Pure_Growth"),
+            "spectrum":     json.dumps(result.get("spectrum", {})),
+            "top_gen":      result.get("top_generation_recommendation"),
+            "success_prob": result.get("predicted_success_probability"),
+            "ood_warning":  result.get("ood_warning", False),
+            "recommendations": json.dumps(recommendations),
+            "model_ver":    metadata.get("model_version"),
+            "evidence_ver": metadata.get("evidence_version"),
+            "status":       "PENDING",
+            "created_at":   datetime.utcnow(),
+        })
+        db.commit()
+
+        # --- Auto-write governance audit log ---
+        try:
+            audit_q = text("""
+                INSERT INTO beta_lactam_audit_logs (
+                    log_date, encounter_id, ward, organism, age, gender, sample_type,
+                    predicted_beta_lactam_spectrum, top_generation_recommendation,
+                    traffic_light_summary, predicted_success_probability,
+                    model_version, ood_detected
+                ) VALUES (
+                    :log_date, :enc_id, :ward, :organism, :age, :gender, :sample_type,
+                    :spectrum, :top_gen,
+                    :traffic_light, :success_prob,
+                    :model_ver, :ood_detected
+                )
+            """)
+
+            # Determine overall traffic light (worst case)
+            spectrum = result.get("spectrum", {})
+            lights = [v.get("traffic_light", "Green") for v in spectrum.values()]
+            overall_light = "Red" if "Red" in lights else "Amber" if "Amber" in lights else "Green"
+
+            db.execute(audit_q, {
+                "log_date":     datetime.utcnow(),
+                "enc_id":       encounter_id,
+                "ward":         inputs.get("Ward"),
+                "organism":     inputs.get("Organism"),
+                "age":          int(inputs.get("Age", 0)) if inputs.get("Age") else None,
+                "gender":       inputs.get("Gender"),
+                "sample_type":  inputs.get("Sample_Type"),
+                "spectrum":     json.dumps(spectrum),
+                "top_gen":      result.get("top_generation_recommendation"),
+                "traffic_light": overall_light,
+                "success_prob": result.get("predicted_success_probability"),
+                "model_ver":    metadata.get("model_version"),
+                "ood_detected": result.get("ood_warning", False),
+            })
+            db.commit()
+        except Exception as audit_err:
+            logger.warning(f"Audit log write failed (non-fatal): {audit_err}")
+
+        return {"status": "success", "message": f"Encounter {encounter_id} saved."}
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Save encounter error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+@app.get("/api/beta-lactam/encounters/{encounter_id}")
+async def get_beta_lactam_encounter(encounter_id: str):
+    """
+    Retrieve a beta-lactam encounter from the database.
+    Returns in the format expected by the frontend.
+    """
+    db = SessionLocal()
+    try:
+        q = text("""
+            SELECT
+                encounter_id, age, gender, ward, organism, gram_stain,
+                sample_type, cell_count_level, pus_type, pure_growth,
+                predicted_beta_lactam_spectrum, top_generation_recommendation,
+                predicted_success_probability, spectrum_ood_warning,
+                model_version, evidence_version, recommendations, status
+            FROM beta_lactam_encounters
+            WHERE encounter_id = :id
+        """)
+        row = db.execute(q, {"id": encounter_id}).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Encounter not found.")
+
+        return {
+            "inputs": {
+                "id":               row[0],
+                "Age":              str(row[1]) if row[1] else "",
+                "Gender":           row[2] or "",
+                "Ward":             row[3] or "",
+                "Organism":         row[4] or "",
+                "Gram":             row[5] or "",
+                "Sample_Type":      row[6] or "",
+                "Cell_Count_Level": row[7] or "",
+                "PUS_Type":         row[8] or "",
+                "Pure_Growth":      row[9] or "",
+            },
+            "result": {
+                "spectrum":                      row[10] if row[10] else {},
+                "top_generation_recommendation": row[11] or "",
+                "predicted_success_probability": float(row[12]) if row[12] else 0,
+                "ood_warning":                   row[13] or False,
+                "metadata": {
+                    "model_version":    row[14] or "",
+                    "evidence_version": row[15] or "",
+                },
+                "recommendations": row[16] if row[16] else [],
+            }
+        }
+    except Exception as e:
+        logger.error(f"Get encounter error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+@app.post("/api/beta-lactam/lab-results")
+async def save_beta_lactam_lab_results(request: BLLabResultsRequest):
+    """
+    Save confirmed AST results for a beta-lactam encounter.
+    Auto-maps antibiotics to their generations via antibiotic_generation_map.
+    Also updates the encounter status to COMPLETED.
+    """
+    db = SessionLocal()
+    try:
+        # Check if encounter exists
+        enc = db.execute(text("SELECT status FROM beta_lactam_encounters WHERE encounter_id = :id"), {"id": request.encounter_id}).fetchone()
+        if not enc:
+            raise HTTPException(status_code=404, detail="Encounter not found.")
+            
+        insert_q = text("""
+            INSERT INTO beta_lactam_lab_results (
+                encounter_id, lab_no, bht, ward, specimen_type, organism,
+                antibiotic, result, mic_value, breakpoint_standard, generation
+            )
+            VALUES (
+                :enc_id, :lab_no, :bht, :ward, :spec_type, :org,
+                :abx, :res, :mic, :bkpt,
+                COALESCE((SELECT generation FROM antibiotic_generation_map WHERE antibiotic_name = :abx LIMIT 1), 'Non_BL')
+            )
+        """)
+        
+        for item in request.results:
+            db.execute(insert_q, {
+                "enc_id": request.encounter_id,
+                "lab_no": request.lab_no,
+                "bht": request.bht,
+                "ward": request.ward,
+                "spec_type": request.specimen_type,
+                "org": request.organism,
+                "abx": item.antibiotic,
+                "res": item.result,
+                "mic": item.mic_value,
+                "bkpt": item.breakpoint_standard
+            })
+            
+        # Update encounter status to signify AST has arrived
+        db.execute(
+            text("UPDATE beta_lactam_encounters SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP WHERE encounter_id = :id"), 
+            {"id": request.encounter_id}
+        )
+        
+        db.commit()
+        return {"status": "success", "message": f"{len(request.results)} AST results saved successfully."}
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Save lab results error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+
+@app.get("/api/beta-lactam/lab-results/{encounter_id}")
+async def get_beta_lactam_lab_results(encounter_id: str):
+    """
+    Fetch confirmed AST results (with generation mapping) for an encounter.
+    Used by PostASTReview screen.
+    """
+    db = SessionLocal()
+    try:
+        q = text("""
+            SELECT antibiotic, result, generation
+            FROM beta_lactam_lab_results
+            WHERE encounter_id = :enc_id
+            ORDER BY generation, antibiotic
+        """)
+        rows = db.execute(q, {"enc_id": encounter_id}).fetchall()
+
+        if not rows:
+            raise HTTPException(status_code=404, detail="No lab results found for this encounter.")
+
+        # Return both flat dict (for quick lookup) and grouped-by-generation view
+        flat    = {row[0]: row[1] for row in rows}
+        by_gen  = {}
+        for row in rows:
+            gen = row[2] or "Non_BL"
+            if gen not in by_gen:
+                by_gen[gen] = {}
+            by_gen[gen][row[0]] = row[1]
+
+        return {
+            "encounter_id": encounter_id,
+            "results":      flat,          # { "Meropenem": "S", ... }
+            "by_generation": by_gen        # { "Carbapenem": { "Meropenem": "S" }, ... }
+        }
+    except Exception as e:
+        logger.error(f"Lab results fetch error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
+@app.get("/api/beta-lactam/audit-logs")
+async def get_beta_lactam_audit_logs(limit: int = 100):
+    """
+    Fetch governance audit trail for the beta-lactam CDSS dashboard.
+    Returns most recent predictions with spectrum summary.
+    """
+    db = SessionLocal()
+    try:
+        q = text("""
+            SELECT
+                id, log_date, encounter_id, ward, organism, age, gender, sample_type,
+                predicted_beta_lactam_spectrum, top_generation_recommendation,
+                traffic_light_summary, predicted_success_probability,
+                model_version, ood_detected, clinician_override, override_reason
+            FROM beta_lactam_audit_logs
+            ORDER BY log_date DESC
+            LIMIT :limit
+        """)
+        rows = db.execute(q, {"limit": limit}).fetchall()
+
+        logs = []
+        for row in rows:
+            logs.append({
+                "id":                            row[0],
+                "timestamp":                     row[1].isoformat() if row[1] else None,
+                "encounter_id":                  row[2],
+                "ward":                          row[3],
+                "organism":                      row[4],
+                "age":                           row[5],
+                "gender":                        row[6],
+                "sample_type":                   row[7],
+                "predicted_beta_lactam_spectrum": row[8],
+                "top_generation_recommendation": row[9],
+                "traffic_light_summary":         row[10],
+                "predicted_success_probability": float(row[11]) if row[11] else 0,
+                "model_version":                 row[12],
+                "ood_detected":                  row[13],
+                "clinician_override":            row[14],
+                "override_reason":               row[15],
+            })
+
+        return {"logs": logs, "total": len(logs)}
+
+    except Exception as e:
+        logger.error(f"Audit logs fetch error: {e}")
+        return {"logs": [], "total": 0}
+    finally:
+        db.close()
+
+
+@app.post("/api/beta-lactam/post-ast-review")
+async def post_ast_review_beta_lactam(request: BLPostASTRequest):
+    """
+    Stage 8: Stewardship de-escalation logic after confirmatory AST.
+
+    Compares the empiric generation used vs. confirmed AST sensitivity panel.
+    Returns actionable stewardship advice.
+    """
+    empiric_gen = request.empiric_generation
+    panel       = request.ast_panel   # { "Meropenem": "S", "Ceftriaxone": "R", ... }
+
+    # Helper: check if any drug in a generation is susceptible
+    gen_drugs = {
+        "Gen1":       ["Cefalexin", "Cefazolin"],
+        "Gen2":       ["Cefuroxime", "CXM"],
+        "Gen3":       ["Ceftriaxone", "CRO", "Cefotaxime", "CTX", "Ceftazidime", "CAZ"],
+        "Gen4":       ["Cefepime", "FEP"],
+        "Carbapenem": ["Meropenem", "MEM", "Imipenem", "IMP", "Ertapenem", "ETP"],
+        "BL_Combo":   ["Piperacillin-Tazobactam", "Pip-Tazo", "TZP", "Amoxicillin-Clavulanate", "AMC"],
+    }
+
+    def any_susceptible(generation: str) -> bool:
+        drugs = gen_drugs.get(generation, [])
+        return any(panel.get(d) == "S" for d in drugs)
+
+    def any_resistant(generation: str) -> bool:
+        drugs = gen_drugs.get(generation, [])
+        matched = [panel.get(d) for d in drugs if d in panel]
+        return all(r == "R" for r in matched) and bool(matched)
+
+    # Determine if empiric drug was concordant
+    empiric_susceptible = any_susceptible(empiric_gen)
+
+    # Build stewardship recommendation
+    if not empiric_susceptible:
+        # Empiric drug is resistant — urgent escalation
+        feedback = {
+            "action":      "ESCALATION_REQUIRED",
+            "message":     (
+                f"Pathogen is RESISTANT to empiric generation ({empiric_gen}). "
+                "Change therapy immediately based on AST results."
+            ),
+            "alert_level": "RED",
+        }
+    elif empiric_gen == "Carbapenem" and any_susceptible("Gen1"):
+        feedback = {
+            "action":      "DE_ESCALATION_RECOMMENDED",
+            "message":     (
+                "Pathogen is susceptible to Gen1 cephalosporins. "
+                "De-escalate from Carbapenem to preserve reserve agents."
+            ),
+            "alert_level": "GREEN",
+        }
+    elif empiric_gen == "Carbapenem" and any_susceptible("BL_Combo"):
+        feedback = {
+            "action":      "DE_ESCALATION_RECOMMENDED",
+            "message":     (
+                "Pathogen is susceptible to BL Combination agents (Pip-Tazo / Amoxiclav). "
+                "Consider de-escalating from Carbapenem."
+            ),
+            "alert_level": "YELLOW",
+        }
+    elif empiric_gen in ["Gen3", "Gen4"] and any_susceptible("Gen1"):
+        feedback = {
+            "action":      "DE_ESCALATION_RECOMMENDED",
+            "message":     (
+                "Pathogen is susceptible to Gen1 cephalosporins. "
+                "De-escalate from higher generation if clinically appropriate."
+            ),
+            "alert_level": "YELLOW",
+        }
+    else:
+        feedback = {
+            "action":      "MAINTAIN",
+            "message":     "Current empiric generation is concordant with AST. Continue therapy.",
+            "alert_level": "GREEN",
+        }
+
+    return feedback
+
+
+# ============================================================
+# SHADOW-MODE PILOT ENDPOINTS (Step 9)
+# For recording true AST outcomes and computing weekly stats
+# ============================================================
+from shadow_mode_logger import record_shadow_outcome, compute_weekly_report
+
+class ShadowOutcomeRequest(BaseModel):
+    encounter_id:       str
+    empiric_generation: str
+    predicted_spectrum: Dict[str, Any]
+    ast_panel:          Dict[str, str]      # {"Cefazolin": "S", "Meropenem": "R"}
+    generation_map:     Dict[str, str]      # {"Cefazolin": "Gen1", "Meropenem": "Carbapenem"}
+    patient_meta:       Optional[Dict[str, Any]] = None
+
+@app.post("/api/beta-lactam/shadow-outcome")
+async def record_shadow_outcome_endpoint(request: ShadowOutcomeRequest):
+    """
+    Step 9: Record a confirmed Day-3 AST outcome against the Day-0 AI prediction.
+    Used to power the shadow-mode pilot validation and weekly stewardship reports.
+    """
+    try:
+        log_entry = record_shadow_outcome(
+            encounter_id       = request.encounter_id,
+            empiric_generation = request.empiric_generation,
+            predicted_spectrum = request.predicted_spectrum,
+            ast_panel          = request.ast_panel,
+            generation_map     = request.generation_map,
+            patient_meta       = request.patient_meta
+        )
+        return {
+            "status": "recorded",
+            "encounter_id": request.encounter_id,
+            "de_escalation_possible": log_entry.get("de_escalation_possible"),
+            "per_gen_outcome": log_entry.get("per_gen_outcome")
+        }
+    except Exception as e:
+        logger.error(f"Shadow outcome record error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/beta-lactam/stewardship-report")
+async def get_stewardship_report():
+    """
+    Step 9: Generate weekly per-generation stewardship metrics.
+    Returns NPV, Sensitivity, Specificity, and carbapenem-days avoided.
+    """
+    try:
+        report = compute_weekly_report()
+        return report
+    except Exception as e:
+        logger.error(f"Stewardship report error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

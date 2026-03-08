@@ -1,0 +1,39 @@
+{
+    "scope_enforcement": {
+        "allowed_organisms": [
+            "E_coli",
+            "Klebsiella_pneumoniae",
+            "Enterobacter_spp"
+        ],
+        "allowed_gram_result": "GNB",
+        "action_on_scope_violation": "REFUSE_PREDICTION"
+    },
+    "hard_stop_conditions": {
+        "ast_available": {
+            "check": "ast_results_present",
+            "action": "DISABLE_EMPIRIC_MODE",
+            "message": "AST results available. Empiric prediction disabled."
+        },
+        "missing_critical_inputs": {
+            "required_fields": [
+                "Age",
+                "Ward",
+                "Sample_Type"
+            ],
+            "action": "REFUSE_PREDICTION",
+            "message": "Missing critical inputs."
+        },
+        "out_of_distribution": {
+            "check": "feature_bounds_check",
+            "action": "FLAG_UNCERTAIN",
+            "message": "Input features out of training distribution."
+        }
+    },
+    "model_governance": {
+        "online_learning": false,
+        "automatic_retraining": false,
+        "manual_update_only": true,
+        "min_auroc_required": 0.70,
+        "min_npv_required": 0.85
+    }
+}
