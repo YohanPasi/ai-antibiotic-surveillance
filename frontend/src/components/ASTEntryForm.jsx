@@ -11,8 +11,8 @@ const API = import.meta.env.VITE_API_URL;
 // ── Design tokens ──────────────────────────────────────────────────────────
 const glass = `bg-white/[0.03] border border-white/[0.07]`;
 
-const inputCls = `w-full bg-[#0b0f14] border border-white/[0.08] rounded-xl px-3.5 py-2.5
-  text-[13px] text-slate-200 placeholder-slate-600
+const inputCls = `w-full bg-white dark:bg-[#0b0f14] border border-slate-300 dark:border-white/[0.08] rounded-xl px-3.5 py-2.5
+  text-[13px] text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600
   focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/10
   transition-all duration-200`;
 
@@ -21,7 +21,7 @@ const selectCls = `${inputCls} appearance-none cursor-pointer pr-8`;
 // ── Field wrapper ──────────────────────────────────────────────────────────
 const Field = ({ label, icon: Icon, children }) => (
     <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+        <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600 dark:text-slate-500">
             {Icon && <Icon className="w-3 h-3" />}
             {label}
         </label>
@@ -36,7 +36,7 @@ const Select = ({ name, value, onChange, children, highlight }) => (
             className={`${selectCls} ${highlight ? 'text-violet-300 font-semibold border-violet-500/20' : ''}`}>
             {children}
         </select>
-        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600 pointer-events-none" />
+        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 dark:text-slate-600 pointer-events-none" />
     </div>
 );
 
@@ -44,18 +44,18 @@ const Select = ({ name, value, onChange, children, highlight }) => (
 const SIRBtn = ({ opt, selected, onClick }) => {
     const cfg = {
         S: {
-            active: 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/30',
-            idle: 'border-white/[0.07] text-slate-600 hover:border-emerald-500/40 hover:text-emerald-400 hover:bg-emerald-500/5',
+            active: 'bg-emerald-500 border-emerald-400 text-slate-900 dark:text-white shadow-emerald-500/30',
+            idle: 'border-white/[0.07] text-slate-500 dark:text-slate-600 hover:border-emerald-500/40 hover:text-emerald-400 hover:bg-emerald-500/5',
             label: 'Susceptible',
         },
         I: {
-            active: 'bg-amber-500 border-amber-400 text-white shadow-amber-500/30',
-            idle: 'border-white/[0.07] text-slate-600 hover:border-amber-500/40 hover:text-amber-400 hover:bg-amber-500/5',
+            active: 'bg-amber-500 border-amber-400 text-slate-900 dark:text-white shadow-amber-500/30',
+            idle: 'border-white/[0.07] text-slate-500 dark:text-slate-600 hover:border-amber-500/40 hover:text-amber-400 hover:bg-amber-500/5',
             label: 'Intermediate',
         },
         R: {
-            active: 'bg-red-500 border-red-400 text-white shadow-red-500/30',
-            idle: 'border-white/[0.07] text-slate-600 hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/5',
+            active: 'bg-red-500 border-red-400 text-slate-900 dark:text-white shadow-red-500/30',
+            idle: 'border-white/[0.07] text-slate-500 dark:text-slate-600 hover:border-red-500/40 hover:text-red-400 hover:bg-red-500/5',
             label: 'Resistant',
         },
     };
@@ -68,7 +68,7 @@ const SIRBtn = ({ opt, selected, onClick }) => {
                         transition-all duration-150 active:scale-90
                         ${selected
                     ? `${cfg[opt].active} shadow-lg scale-105`
-                    : `bg-white/[0.03] ${cfg[opt].idle}`}`}>
+                    : `bg-slate-50 dark:bg-white/[0.03] border-slate-200 dark:${cfg[opt].idle}`}`}>
             {opt}
             {selected && (
                 <motion.span
@@ -245,17 +245,17 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                                 <FlaskConical className="w-4 h-4 text-indigo-400" />
                             </div>
                             <div>
-                                <h2 className="text-[15px] font-semibold text-white tracking-tight">
+                                <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white tracking-tight">
                                     Clinical Isolate Entry
                                 </h2>
-                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                <p className="text-[11px] text-slate-500 dark:text-slate-500 mt-0.5">
                                     Record susceptibility panel for a single patient isolate
                                 </p>
                             </div>
                         </div>
                         <button onClick={onClose}
                             className="w-8 h-8 rounded-lg flex items-center justify-center
-                                       text-slate-600 hover:text-slate-300 hover:bg-white/[0.06]
+                                       text-slate-500 dark:text-slate-600 hover:text-slate-700 dark:text-slate-300 hover:bg-white/[0.06]
                                        border border-transparent hover:border-white/[0.08]
                                        transition-all duration-150">
                             <X className="w-4 h-4" />
@@ -281,7 +281,7 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                                     <p className="text-[12px] font-semibold text-indigo-300">
                                         Submitting for Predicted Week
                                     </p>
-                                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                                    <p className="text-[11px] text-slate-500 dark:text-slate-500 mt-0.5 leading-relaxed">
                                         Culture date pre-filled to{' '}
                                         <span className="text-indigo-300 font-medium">{effectiveDefault}</span>
                                         {' '}(AI-forecasted week start). Adjust below if the actual collection date differs.
@@ -292,7 +292,7 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
 
                         {/* ── Metadata grid ────────────────────────────── */}
                         <div className={`${glass} rounded-xl p-5`}>
-                            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600 mb-4">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-600 mb-4">
                                 Isolate Information
                             </p>
                             <div className="grid grid-cols-3 gap-4">
@@ -369,14 +369,14 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                             {/* Table header bar */}
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2.5">
-                                    <p className="text-[13px] font-semibold text-white">
+                                    <p className="text-[13px] font-semibold text-slate-900 dark:text-white">
                                         Antibiogram
                                     </p>
                                     {panelLoading && (
                                         <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
                                     )}
                                     {!panelLoading && panel.length > 0 && (
-                                        <span className="text-[11px] text-slate-600">
+                                        <span className="text-[11px] text-slate-500 dark:text-slate-600">
                                             {completedCount}/{panel.length} marked
                                         </span>
                                     )}
@@ -403,11 +403,11 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                                     <thead>
                                         <tr className="border-b border-white/[0.05] bg-white/[0.02]">
                                             <th className="px-5 py-3 text-left text-[10px] font-bold uppercase
-                                                           tracking-[0.12em] text-slate-600 w-1/2">
+                                                           tracking-[0.12em] text-slate-500 dark:text-slate-600 w-1/2">
                                                 Antibiotic
                                             </th>
                                             <th className="px-5 py-3 text-center text-[10px] font-bold uppercase
-                                                           tracking-[0.12em] text-slate-600">
+                                                           tracking-[0.12em] text-slate-500 dark:text-slate-600">
                                                 S &nbsp;·&nbsp; I &nbsp;·&nbsp; R
                                             </th>
                                             <th className="w-12" />
@@ -437,7 +437,7 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                                                                     row.result === 'I' ? 'bg-amber-500' :
                                                                         row.result === 'R' ? 'bg-red-500' :
                                                                             'bg-white/[0.08]'}`} />
-                                                            <span className="text-[13px] text-slate-300 font-medium">
+                                                            <span className="text-[13px] text-slate-700 dark:text-slate-300 font-medium">
                                                                 {row.antibiotic}
                                                             </span>
                                                         </div>
@@ -473,8 +473,8 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                                         {!panelLoading && panel.length === 0 && (
                                             <tr>
                                                 <td colSpan={3} className="px-5 py-14 text-center">
-                                                    <FlaskConical className="w-7 h-7 text-slate-800 mx-auto mb-2" />
-                                                    <p className="text-[13px] text-slate-600">
+                                                    <FlaskConical className="w-7 h-7 text-slate-300 dark:text-slate-800 mx-auto mb-2" />
+                                                    <p className="text-[13px] text-slate-500 dark:text-slate-600">
                                                         Select an organism to load its antibiotic panel
                                                     </p>
                                                 </td>
@@ -520,7 +520,7 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                         {/* Actions */}
                         <div className="flex items-center gap-3">
                             <button type="button" onClick={onClose}
-                                className="px-4 py-2.5 text-[13px] text-slate-500 hover:text-slate-200
+                                className="px-4 py-2.5 text-[13px] text-slate-500 dark:text-slate-500 hover:text-slate-300 dark:text-slate-800 dark:text-slate-200
                                            transition-colors duration-150">
                                 Cancel
                             </button>
@@ -528,7 +528,7 @@ const ASTEntryForm = ({ isOpen, onClose, onEntrySaved, defaultCultureDate }) => 
                                 onClick={handleSubmit}
                                 disabled={loading || completedCount === 0}
                                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px]
-                                           font-semibold text-white bg-indigo-600 hover:bg-indigo-500
+                                           font-semibold text-slate-900 dark:text-white bg-indigo-600 hover:bg-indigo-500
                                            shadow-lg shadow-indigo-600/20
                                            disabled:opacity-30 disabled:cursor-not-allowed
                                            transition-all duration-200 active:scale-95">

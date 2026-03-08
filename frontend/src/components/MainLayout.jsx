@@ -138,12 +138,12 @@ function MainLayout() {
             case 'settings': return <SettingsPage onClose={() => setActiveView('dashboard')} />;
 
             default:
-                return <div className="text-white">View Not Found</div>;
+                return <div className="text-slate-900 dark:text-white">View Not Found</div>;
         }
     };
 
     return (
-        <div className="flex h-screen bg-gray-950 text-gray-100 font-sans overflow-hidden">
+        <div className="flex h-screen bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-gray-100 font-sans overflow-hidden">
             {/* Sidebar (Fixed Left) */}
             <Sidebar
                 activeView={activeView}
@@ -156,13 +156,13 @@ function MainLayout() {
                 <Header />
 
                 {/* Scrollable Content */}
-                <main className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                <main className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10 scrollbar-track-transparent">
                     <div className="max-w-7xl mx-auto">
                         {renderContent()}
                     </div>
                 </main>
 
-                <footer className="py-3 px-6 border-t border-white/5 text-center text-xs text-gray-600 bg-gray-950 flex-shrink-0">
+                <footer className="py-3 px-6 border-t border-slate-200 dark:border-white/5 text-center text-xs text-slate-400 dark:text-gray-600 bg-slate-50 dark:bg-gray-950 flex-shrink-0">
                     <p>© 2026 Sentinel AMR Surveillance · Teaching Hospital Peradeniya × SLIIT · Confidential Clinical Data</p>
                 </footer>
             </div>

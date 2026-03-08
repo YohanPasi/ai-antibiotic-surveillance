@@ -1992,6 +1992,20 @@ async def log_governance_decision(decision: GovernanceDecisionCreate):
     finally:
         db.close()
 
+@app.get("/api/mrsa/governance/status", tags=["MRSA"])
+async def get_governance_status(db: Session = Depends(get_db)):
+    """
+    Returns the current MRSA model governance decision based on 30-day rolling validation metrics.
+
+    Decision states:
+    - ACTIVE          — All safety thresholds met. System operating normally.
+    - MONITOR         — Sensitivity approaching lower limit. Increase review frequency.
+    - RETRAIN_REVIEW  — Performance degraded below threshold. Retraining required.
+    - DISABLE_MODULE  — CRITICAL: NPV below safe limit. Module should be suspended.
+    - NO_DATA         — No validation records in the last 30 days.
+    """
+    return mrsa_analytics_service.get_governance_status(db)
+
 @app.post("/api/mrsa/predict", response_model=MRSAPredictionResponse, tags=["MRSA"])
 async def predict_mrsa_risk(
     request: MRSAPredictionRequest, 

@@ -19,11 +19,11 @@ const fmtWeekRange = (start, year = false) => {
     return `${fmtIso(start)} – ${fmtIso(end, year)}`;
 };
 
-/* ── Severity — pure inline styles, no dynamic Tailwind ──────────────── */
+/* ── Severity ──────────────────────────────────────────────────────────── */
 const SEV_STYLES = {
-    Critical: { strip: '#ef4444', dot: '#ef4444', text: '#f87171', badgeBg: 'rgba(239,68,68,0.1)', badgeBorder: 'rgba(239,68,68,0.25)', label: 'Critical' },
-    Warning: { strip: '#f59e0b', dot: '#fbbf24', text: '#fcd34d', badgeBg: 'rgba(245,158,11,0.1)', badgeBorder: 'rgba(245,158,11,0.25)', label: 'Warning' },
-    Normal: { strip: '#10b981', dot: '#34d399', text: '#6ee7b7', badgeBg: 'rgba(16,185,129,0.1)', badgeBorder: 'rgba(16,185,129,0.25)', label: 'Normal' },
+    Critical: { strip: '#ef4444', dot: '#ef4444', text: '#ef4444', darkText: '#f87171', badgeBg: 'rgba(239,68,68,0.1)', badgeBorder: 'rgba(239,68,68,0.25)', label: 'Critical' },
+    Warning: { strip: '#f59e0b', dot: '#fbbf24', text: '#d97706', darkText: '#fcd34d', badgeBg: 'rgba(245,158,11,0.1)', badgeBorder: 'rgba(245,158,11,0.25)', label: 'Warning' },
+    Normal: { strip: '#10b981', dot: '#34d399', text: '#059669', darkText: '#6ee7b7', badgeBg: 'rgba(16,185,129,0.1)', badgeBorder: 'rgba(16,185,129,0.25)', label: 'Normal' },
 };
 
 /* ── Animated counter ─────────────────────────────────────────────────── */
@@ -51,59 +51,36 @@ const KPI_DATA = (kpis) => [
 ];
 
 const KpiStrip = ({ kpis }) => (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 32 }}>
+    <div className="flex flex-col md:flex-row gap-3 mb-8">
         {KPI_DATA(kpis).map(({ label, value, color, topColor, icon: Icon, sub }, i) => (
             <motion.div
                 key={label}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.07, duration: 0.35, ease: 'easeOut' }}
-                style={{
-                    flex: i === 0 ? '1.6' : '1',
-                    minWidth: 0,
-                    background: '#0d1117',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 18,
-                    overflow: 'hidden',
-                    position: 'relative',
-                }}>
+                className={`relative overflow-hidden rounded-[18px] bg-white dark:bg-[#0d1117] border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none min-w-0 ${i === 0 ? 'md:flex-[1.6]' : 'md:flex-1'}`}
+            >
                 {/* coloured top accent bar */}
                 <div style={{ height: 3, background: `linear-gradient(90deg, ${topColor}, ${color}88)` }} />
                 {/* glow spot */}
-                <div style={{
-                    position: 'absolute', top: -30, right: -30, width: 130, height: 130,
-                    background: `radial-gradient(circle, ${color}18 0%, transparent 70%)`,
-                    pointerEvents: 'none',
-                }} />
-                <div style={{ padding: '22px 24px 22px 24px' }}>
+                <div className="absolute -top-8 -right-8 w-32 h-32 pointer-events-none opacity-50 dark:opacity-100"
+                    style={{ background: `radial-gradient(circle, ${color}30 0%, transparent 70%)` }} />
+                <div className="p-6 relative z-10">
                     {/* icon + label row */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                        <span style={{
-                            fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
-                            textTransform: 'uppercase', color: '#374151'
-                        }}>{sub}</span>
-                        <div style={{
-                            width: 30, height: 30, borderRadius: 8,
-                            background: `${color}14`,
-                            border: `1px solid ${color}30`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            <Icon style={{ width: 13, height: 13, color }} strokeWidth={1.8} />
+                    <div className="flex items-center justify-between mb-5">
+                        <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-slate-500 dark:text-slate-400">{sub}</span>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white dark:bg-transparent"
+                            style={{ background: `${color}14`, border: `1px solid ${color}30` }}>
+                            <Icon style={{ color }} className="w-3.5 h-3.5" strokeWidth={1.8} />
                         </div>
                     </div>
                     {/* number */}
-                    <div style={{
-                        fontSize: i === 0 ? 64 : 48,
-                        fontWeight: 800,
-                        color,
-                        lineHeight: 1,
-                        letterSpacing: '-2px',
-                        fontVariantNumeric: 'tabular-nums',
-                    }}>
+                    <div className="font-extrabold leading-none tracking-tight tabular-nums"
+                        style={{ fontSize: i === 0 ? 64 : 48, color }}>
                         <Counter value={value} />
                     </div>
                     {/* label */}
-                    <p style={{ fontSize: 13, color: '#64748b', marginTop: 10, fontWeight: 500 }}>{label}</p>
+                    <p className="text-[13px] font-medium text-slate-500 dark:text-[#64748b] mt-2.5">{label}</p>
                 </div>
             </motion.div>
         ))}
@@ -125,51 +102,42 @@ const WardCard = ({ row, idx, onClick }) => {
             transition={{ delay: 0.08 + idx * 0.05, duration: 0.3 }}
             whileHover={{ y: -2, transition: { duration: 0.15 } }}
             onClick={onClick}
-            style={{
-                background: '#0b0f18',
-                border: `1px solid rgba(255,255,255,0.07)`,
-                borderRadius: 16,
-                overflow: 'hidden',
-                cursor: 'pointer',
-                position: 'relative',
-            }}>
-
+            className="relative overflow-hidden cursor-pointer rounded-2xl bg-white dark:bg-[#0b0f18] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none hover:shadow-md transition-shadow"
+        >
             {/* left severity strip */}
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: sv.strip }} />
+            <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: sv.strip }} />
 
-            <div style={{ paddingLeft: 20, paddingRight: 16, paddingTop: 16, paddingBottom: 16 }}>
-
+            <div className="pl-5 pr-4 py-4 relative z-10">
                 {/* Top: ward name + badge */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div className="flex items-start justify-between mb-3.5">
                     <div>
-                        <p style={{ fontSize: 13, fontWeight: 700, color: '#e2e8f0', marginBottom: 2 }}>
+                        <p className="text-[13px] font-bold text-slate-800 dark:text-slate-200 mb-0.5">
                             {row.ward}
                         </p>
                         {row.active_alerts > 0 && (
-                            <p style={{ fontSize: 11, color: sv.text }}>
+                            <p className="text-[11px] font-medium dark:hidden" style={{ color: sv.text }}>
+                                {row.active_alerts} alert{row.active_alerts !== 1 ? 's' : ''}
+                            </p>
+                        )}
+                        {row.active_alerts > 0 && (
+                            <p className="text-[11px] font-medium hidden dark:block" style={{ color: sv.darkText }}>
                                 {row.active_alerts} alert{row.active_alerts !== 1 ? 's' : ''}
                             </p>
                         )}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                        <span style={{
-                            fontSize: 9, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
-                            padding: '3px 8px', borderRadius: 99,
-                            background: sv.badgeBg, border: `1px solid ${sv.badgeBorder}`, color: sv.text,
-                        }}>
+                    <div className="flex flex-col items-end gap-1.5">
+                        <span className="text-[9px] font-extrabold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full"
+                            style={{ background: sv.badgeBg, border: `1px solid ${sv.badgeBorder}`, color: sv.darkText }}>
                             {sv.label}
                         </span>
-                        <ArrowUpRight style={{ width: 13, height: 13, color: '#334155' }} />
+                        <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                     </div>
                 </div>
 
                 {/* Stacked bar */}
                 {total > 0 ? (
                     <>
-                        <div style={{
-                            height: 6, borderRadius: 99, overflow: 'hidden', background: 'rgba(255,255,255,0.05)',
-                            display: 'flex', gap: 1, marginBottom: 10
-                        }}>
+                        <div className="h-1.5 rounded-full overflow-hidden flex gap-[1px] mb-2.5 bg-slate-100 dark:bg-white/5">
                             {[
                                 { pct: safePct, color: '#10b981' },
                                 { pct: warnPct, color: '#f59e0b' },
@@ -184,27 +152,26 @@ const WardCard = ({ row, idx, onClick }) => {
                                 />
                             ))}
                         </div>
-                        <div style={{ display: 'flex', gap: 16 }}>
+                        <div className="flex gap-4">
                             {[
                                 { val: row.green || 0, color: '#34d399', label: 'Safe' },
                                 { val: row.amber || 0, color: '#fbbf24', label: 'Watch' },
                                 { val: row.red || 0, color: '#f87171', label: 'Alert' },
                             ].map(({ val, color, label }) => (
-                                <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                                    <span style={{
-                                        fontSize: 13, fontWeight: 700, color: val ? color : '#1e293b',
-                                        fontVariantNumeric: 'tabular-nums'
-                                    }}>{val}</span>
-                                    <span style={{
-                                        fontSize: 9, color: '#334155', textTransform: 'uppercase',
-                                        letterSpacing: '0.08em', fontWeight: 600
-                                    }}>{label}</span>
+                                <div key={label} className="flex items-baseline gap-1">
+                                    <span className={`text-[13px] font-bold tabular-nums ${val ? '' : 'text-slate-300 dark:text-slate-700'}`}
+                                        style={{ color: val ? color : undefined }}>
+                                        {val}
+                                    </span>
+                                    <span className="text-[9px] uppercase tracking-[0.08em] font-semibold text-slate-400 dark:text-slate-500">
+                                        {label}
+                                    </span>
                                 </div>
                             ))}
                         </div>
                     </>
                 ) : (
-                    <p style={{ fontSize: 11, color: '#1e293b', fontStyle: 'italic' }}>No data this period</p>
+                    <p className="text-[11px] italic text-slate-400 dark:text-slate-600">No data this period</p>
                 )}
             </div>
         </motion.div>
@@ -213,23 +180,14 @@ const WardCard = ({ row, idx, onClick }) => {
 
 /* ── Loading ──────────────────────────────────────────────────────────── */
 const Loading = () => (
-    <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        minHeight: '60vh', gap: 20
-    }}>
-        <div style={{ position: 'relative', width: 48, height: 48 }}>
-            <div style={{
-                position: 'absolute', inset: 0, borderRadius: '50%',
-                border: '2px solid rgba(16,185,129,0.3)'
-            }} />
-            <div style={{
-                position: 'absolute', inset: 0, borderRadius: '50%',
-                borderTop: '2px solid #10b981', animation: 'spin 1s linear infinite'
-            }} />
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5">
+        <div className="relative w-12 h-12">
+            <div className="absolute inset-0 rounded-full border-2 border-emerald-500/30" />
+            <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin" />
         </div>
-        <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 14, color: '#cbd5e1', fontWeight: 600 }}>Loading Surveillance</p>
-            <p style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>Analysing ward data and AI signals…</p>
+        <div className="text-center">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Loading Surveillance</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-500 mt-1">Analysing ward data and AI signals…</p>
         </div>
     </div>
 );
@@ -275,37 +233,27 @@ const Dashboard = ({ setActiveView, setSelectedWard }) => {
             transition={{ duration: 0.3 }} className="pb-14">
 
             {/* ── Header ──────────────────────────────────────────── */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}>
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
                 <div>
-                    <p style={{
-                        fontSize: 10, fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase',
-                        color: 'rgba(52,211,153,0.6)', marginBottom: 8
-                    }}>
+                    <p className="text-[10px] font-extrabold tracking-[0.2em] uppercase text-emerald-600 dark:text-emerald-500/80 mb-2">
                         AMR Intelligence · Live
                     </p>
-                    <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1 }}>
+                    <h1 className="text-[26px] font-extrabold text-slate-900 dark:text-white tracking-tight leading-none">
                         Hospital Surveillance
                     </h1>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 20px', marginTop: 12 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#475569' }}>
-                            <span style={{
-                                width: 7, height: 7, borderRadius: '50%', background: '#34d399',
-                                boxShadow: '0 0 6px #34d399', display: 'inline-block'
-                            }} />
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3">
+                        <span className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981] dark:bg-emerald-400 dark:shadow-[0_0_6px_#34d399]" />
                             Real-time monitoring
                         </span>
                         {lastDataWeek && (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#475569' }}>
-                                <Calendar style={{ width: 11, height: 11 }} />
+                            <span className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                <Calendar className="w-3 h-3" />
                                 {fmtWeekRange(lastDataWeek)}
                             </span>
                         )}
                         {predictedWeekStart && (
-                            <span style={{
-                                fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 99,
-                                background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)',
-                                color: '#a5b4fc'
-                            }}>
+                            <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/25 text-indigo-700 dark:text-indigo-300">
                                 AI Forecasting → {fmtWeekRange(predictedWeekStart, true)}
                             </span>
                         )}
@@ -315,13 +263,9 @@ const Dashboard = ({ setActiveView, setSelectedWard }) => {
                 <motion.button
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     onClick={() => setIsEntryOpen(true)}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
-                        borderRadius: 12, fontSize: 13, fontWeight: 600, color: '#fff',
-                        background: '#4f46e5', border: 'none', cursor: 'pointer',
-                        boxShadow: '0 4px 24px rgba(79,70,229,0.35)'
-                    }}>
-                    <PlusCircle style={{ width: 16, height: 16 }} />
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-600/30 transition-colors"
+                >
+                    <PlusCircle className="w-4 h-4" />
                     New AST Entry
                 </motion.button>
             </div>
@@ -331,36 +275,31 @@ const Dashboard = ({ setActiveView, setSelectedWard }) => {
 
             {/* ── Antibiogram ─────────────────────────────────────── */}
             <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.25 }} style={{ marginBottom: 32 }}>
+                transition={{ duration: 0.4, delay: 0.25 }} className="mb-8">
                 <AntibiogramTable />
             </motion.div>
 
             {/* ── Ward grid ───────────────────────────────────────── */}
             <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div className="flex items-baseline justify-between mb-5">
                     <div>
-                        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>Ward Risk Overview</h2>
-                        <p style={{ fontSize: 11, color: '#334155', marginTop: 3 }}>
+                        <h2 className="text-[15px] font-bold text-slate-900 dark:text-slate-100">Ward Risk Overview</h2>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                             Select a ward to view detailed drug–bug analysis
                         </p>
                     </div>
-                    <span style={{ fontSize: 11, color: '#334155' }}>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
                         {summary.length} ward{summary.length !== 1 ? 's' : ''}
                     </span>
                 </div>
 
                 {summary.length === 0 ? (
-                    <div style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        justifyContent: 'center', padding: '64px 0', gap: 12,
-                        background: 'rgba(255,255,255,0.01)', borderRadius: 16,
-                        border: '1px solid rgba(255,255,255,0.05)', color: '#1e293b'
-                    }}>
-                        <Activity style={{ width: 28, height: 28, opacity: 0.3 }} />
-                        <p style={{ fontSize: 13 }}>No ward data available</p>
+                    <div className="flex flex-col items-center justify-center py-16 gap-3 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 text-slate-500">
+                        <Activity className="w-7 h-7 opacity-30" />
+                        <p className="text-[13px]">No ward data available</p>
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
                         {summary.map((row, idx) => (
                             <WardCard
                                 key={row.ward}

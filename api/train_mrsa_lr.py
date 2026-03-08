@@ -10,9 +10,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import roc_auc_score, recall_score
+from sklearn.metrics import roc_auc_score, confusion_matrix, recall_score
 
-# Configuration
+# ── Configuration ─────────────────────────────────────────────────────────────
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     DATABASE_URL = "postgresql://postgres.zdhvyhijuriggezelyxq:Yohan%26pasi80253327@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require"
@@ -22,53 +22,95 @@ if os.name == 'nt':
     ARTIFACT_DIR = r'd:\Yohan\Project\api\models\mrsa_artifacts'
 os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
+# ── Feature Set v2 (canonical — matches docs/mrsa_features.md) ────────────────
+MODEL_VERSION = 'v2'
+
+FEATURE_COLS = [
+    'ward',
+    'sample_type',
+    'gram_stain',
+    'cell_count_category',
+    'growth_time',
+    'recent_antibiotic_use',
+    'length_of_stay',
+]
+
+CATEGORICAL_FEATURES = [
+    'ward',
+    'sample_type',
+    'gram_stain',
+    'cell_count_category',
+    'recent_antibiotic_use',
+]
+
+NUMERIC_FEATURES = [
+    'growth_time',
+    'length_of_stay',
+]
+
+
 def train_lr():
-    print("Starting Logistic Regression Training (Baseline)...")
-    
+    print("Starting Logistic Regression Training (Baseline) — Schema v2...")
+
     engine = create_engine(DATABASE_URL)
     df = pd.read_sql("SELECT * FROM mrsa_raw_clean", engine)
-    
-    feature_cols = ['age', 'gender', 'ward', 'sample_type', 
-                   'pus_type', 'cell_count', 'gram_positivity', 'growth_time']
-    X = df[feature_cols].copy()
+    print(f"Loaded {len(df)} records.")
+
+    X = df[FEATURE_COLS].copy()
     y = df['mrsa_label'].values
-    
-    X['age'] = X['age'].fillna(X['age'].median())
-    X['growth_time'] = X['growth_time'].fillna(X['growth_time'].median())
-    for col in ['gender', 'ward', 'sample_type', 'pus_type', 'gram_positivity']:
+
+    # growth_time: -1 sentinel for NULL (non-blood samples)
+    X['growth_time'] = X['growth_time'].fillna(-1)
+    for col in CATEGORICAL_FEATURES:
         X[col] = X[col].fillna('Unknown')
-        
+
+    # CRITICAL: remainder='drop' prevents undefined column order from passthrough
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['age', 'growth_time']),
-            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), ['ward', 'sample_type', 'pus_type', 'gram_positivity', 'gender'])
+            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), CATEGORICAL_FEATURES),
+            ('num', StandardScaler(), NUMERIC_FEATURES),
         ],
-        remainder='passthrough'
+        remainder='drop'
     )
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
-    
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
+    )
+
     lr = LogisticRegression(max_iter=1000, class_weight='balanced', random_state=42)
     pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('classifier', lr)])
-    
+
     print("Fitting LR...")
     pipeline.fit(X_train, y_train)
-    
+
     y_prob = pipeline.predict_proba(X_test)[:, 1]
     y_pred = pipeline.predict(X_test)
-    
+    tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+
     metrics = {
         "model": "Logistic Regression",
-        "version": "LR_v1",
+        "version": f"LR_{MODEL_VERSION}",
         "auc": float(roc_auc_score(y_test, y_prob)),
         "sensitivity": float(recall_score(y_test, y_pred)),
-        "timestamp": datetime.now().isoformat()
+        "npv": float(tn / (tn + fn)) if (tn + fn) > 0 else 0.0,
+        "timestamp": datetime.now().isoformat(),
     }
     print(json.dumps(metrics, indent=2))
-    
-    path = os.path.join(ARTIFACT_DIR, 'mrsa_lr_pipeline.pkl')
-    joblib.dump(pipeline, path)
-    print(f"Saved to {path}")
+
+    pipeline_path = os.path.join(ARTIFACT_DIR, f'mrsa_lr_pipeline_{MODEL_VERSION}.pkl')
+    joblib.dump(pipeline, pipeline_path)
+    print(f"Saved pipeline to {pipeline_path}")
+
+    # Feature lock (same as RF — all scripts must agree)
+    feature_lock_path = os.path.join(ARTIFACT_DIR, f'feature_columns_{MODEL_VERSION}.json')
+    with open(feature_lock_path, 'w') as f:
+        json.dump(FEATURE_COLS, f, indent=2)
+    print(f"Saved feature order lock to {feature_lock_path}")
+
+    metrics_path = os.path.join(ARTIFACT_DIR, f'lr_training_report_{MODEL_VERSION}.json')
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=2)
+
 
 if __name__ == "__main__":
     train_lr()
