@@ -38,6 +38,12 @@ const Header = () => {
                         : <Moon className="w-4 h-4" />}
                 </button>
 
+                {/* Status Indicator */}
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">System Online</span>
+                </div>
+
                 {/* Notifications */}
                 <NotificationDropdown />
 
