@@ -32,13 +32,13 @@ const menuGroups = [
         title: 'STP Surveillance',
         subtitle: 'Streptococcus & Enterococcus',
         items: [
-            { id: 'stp_dashboard', label: 'Overview', icon: Activity },
+            //{ id: 'stp_dashboard', label: 'Overview', icon: Activity },
             { id: 'stp_ward_trends', label: 'Ward Trends', icon: Database },
             { id: 'stp_predictions', label: 'Early Warning', icon: Brain },
             { id: 'stp_alerts', label: 'Alerts & Review', icon: FileText },
             { id: 'stp_antibiogram_entry', label: 'Antibiogram Entry', icon: Beaker },
-            { id: 'stp_validation', label: 'Validation', icon: Shield },
-            { id: 'stp_model_status', label: 'Model Status', icon: Activity },
+            // { id: 'stp_validation', label: 'Validation', icon: Shield },
+            //{ id: 'stp_model_status', label: 'Model Status', icon: Activity },
         ],
     },
     {

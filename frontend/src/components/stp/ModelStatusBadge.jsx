@@ -1,29 +1,25 @@
-
 import React from 'react';
-import { Shield, Eye } from 'lucide-react';
+import { Shield, Clock, Activity, RefreshCw } from 'lucide-react';
 
-const ModelStatusBadge = ({ mode }) => {
-    // mode: ACTIVE, SHADOW, RETIRED
+const STATUS_MAP = {
+    'ACTIVE': { icon: <Shield className="w-3.5 h-3.5" />, label: 'Surveillance Active', className: 'bg-emerald-100 border-emerald-300 text-emerald-700' },
+    'SHADOW': { icon: <Clock className="w-3.5 h-3.5" />, label: 'In Testing', className: 'bg-blue-100 border-blue-300 text-blue-700' },
+    'CALIBRATING': { icon: <Activity className="w-3.5 h-3.5" />, label: 'Calibrating', className: 'bg-amber-100 border-amber-300 text-amber-700' },
+    'RETRAINING': { icon: <RefreshCw className="w-3.5 h-3.5 animate-spin" />, label: 'Updating', className: 'bg-purple-100 border-purple-300 text-purple-700' },
+};
 
-    if (mode === 'SHADOW') {
-        return (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 border border-gray-200 text-gray-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                <Eye className="w-3 h-3" />
-                Shadow Mode
-            </div>
-        );
-    }
-
-    if (mode === 'ACTIVE') {
-        return (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 border border-green-200 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider">
-                <Shield className="w-3 h-3" />
-                Active Surveillance
-            </div>
-        );
-    }
-
-    return null;
+/**
+ * ModelStatusBadge — shows surveillance system status in plain English.
+ * mode: 'ACTIVE' | 'SHADOW' | 'CALIBRATING' | 'RETRAINING'
+ */
+const ModelStatusBadge = ({ mode = 'ACTIVE' }) => {
+    const cfg = STATUS_MAP[mode?.toUpperCase()] || STATUS_MAP['ACTIVE'];
+    return (
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${cfg.className}`}>
+            {cfg.icon}
+            {cfg.label}
+        </div>
+    );
 };
 
 export default ModelStatusBadge;

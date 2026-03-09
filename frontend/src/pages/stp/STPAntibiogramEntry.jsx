@@ -1,231 +1,209 @@
-
 import React, { useState } from 'react';
-import { Plus, Trash2, Save, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Save, ShieldAlert, ClipboardList, CheckCircle } from 'lucide-react';
+
+const API = 'http://localhost:8000';
+
+const ANTIBIOTICS = [
+    'Ceftriaxone', 'Ciprofloxacin', 'Meropenem', 'Amikacin',
+    'Vancomycin', 'Linezolid', 'Gentamicin', 'Ampicillin',
+    'Piperacillin-Tazobactam', 'Cefepime'
+];
+const WARDS = ['ICU', 'Surgical Ward A', 'Surgical Ward B', 'Surgical Ward C', 'Medical Ward A', 'Medical Ward B', 'Burn Unit'];
+const ORGANISMS = [
+    'Streptococcus pneumoniae', 'Streptococcus agalactiae', 'Viridans streptococci',
+    'Enterococcus faecalis', 'Enterococcus faecium',
+    'Escherichia coli', 'Klebsiella pneumoniae', 'Pseudomonas aeruginosa',
+    'Staphylococcus aureus', 'Acinetobacter baumannii'
+];
+
+const AST_COLORS = {
+    S: { active: 'bg-emerald-500 text-white border-emerald-500', label: 'S — Sensitive' },
+    I: { active: 'bg-amber-500 text-white border-amber-500', label: 'I — Intermediate' },
+    R: { active: 'bg-red-500 text-white border-red-500', label: 'R — Resistant' },
+    NA: { active: 'bg-gray-500 text-white border-gray-500', label: 'Not Tested' },
+};
 
 const STPAntibiogramEntry = () => {
-    const [formData, setFormData] = useState({
-        ward: '',
-        organism: '',
-        sample_date: '',
-        data_source: 'MANUAL',
-        isolates: [[]]
-    });
+    const [form, setForm] = useState({ ward: '', organism: '', sample_date: '', data_source: 'MANUAL', isolates: [[]] });
     const [acknowledged, setAcknowledged] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [result, setResult] = useState(null); // {type: 'success'|'error', msg}
 
-    const antibiotics = [
-        'Ceftriaxone', 'Ciprofloxacin', 'Meropenem', 'Amikacin',
-        'Vancomycin', 'Linezolid', 'Gentamicin', 'Ampicillin',
-        'Piperacillin-Tazobactam', 'Cefepime'
-    ];
+    const addIsolate = () => setForm(p => ({ ...p, isolates: [...p.isolates, []] }));
+    const removeIsolate = (idx) => setForm(p => ({ ...p, isolates: p.isolates.filter((_, i) => i !== idx) }));
 
-    const wards = ['ICU', 'Surgical Ward A', 'Surgical Ward B', 'Surgical Ward C', 'Medical Ward A', 'Medical Ward B', 'Burn Unit'];
-    const organisms = [
-        'Escherichia coli', 'Klebsiella pneumoniae', 'Pseudomonas aeruginosa',
-        'Staphylococcus aureus', 'Enterococcus faecalis', 'Enterococcus faecium',
-        'Acinetobacter baumannii'
-    ];
-
-    const addIsolate = () => {
-        setFormData(prev => ({
-            ...prev,
-            isolates: [...prev.isolates, []]
-        }));
+    const updateAST = (isolateIdx, antibiotic, value) => {
+        const newIsolates = form.isolates.map((iso, i) => {
+            if (i !== isolateIdx) return iso;
+            const existing = iso.findIndex(a => a.antibiotic === antibiotic);
+            if (existing >= 0) return iso.map((a, ai) => ai === existing ? { ...a, result: value } : a);
+            return [...iso, { antibiotic, result: value }];
+        });
+        setForm(p => ({ ...p, isolates: newIsolates }));
     };
 
-    const removeIsolate = (idx) => {
-        setFormData(prev => ({
-            ...prev,
-            isolates: prev.isolates.filter((_, i) => i !== idx)
-        }));
-    };
-
-    const updateAST = (isolateIdx, antibiotic, result) => {
-        const newIsolates = [...formData.isolates];
-        const isolate = newIsolates[isolateIdx];
-
-        const astIdx = isolate.findIndex(a => a.antibiotic === antibiotic);
-        if (astIdx >= 0) {
-            isolate[astIdx].result = result;
-        } else {
-            isolate.push({ antibiotic, result });
-        }
-
-        setFormData(prev => ({ ...prev, isolates: newIsolates }));
-    };
+    const getAST = (isolate, antibiotic) => isolate.find(a => a.antibiotic === antibiotic)?.result;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
-
+        setResult(null);
         try {
-            const response = await fetch('http://localhost:8000/api/stp/feedback/antibiogram', {
+            const res = await fetch(`${API}/api/stp/feedback/antibiogram`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(form)
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                alert(`Success! ${data.inserted} isolates inserted. ${data.duplicates_rejected} duplicates rejected.`);
-                // Reset form
-                setFormData({
-                    ward: '',
-                    organism: '',
-                    sample_date: '',
-                    data_source: 'MANUAL',
-                    isolates: [[]]
-                });
+            const data = await res.json();
+            if (res.ok) {
+                setResult({ type: 'success', msg: `${data.inserted} record(s) saved successfully.${data.duplicates_rejected > 0 ? ` ${data.duplicates_rejected} duplicate(s) were skipped.` : ''}` });
+                setForm({ ward: '', organism: '', sample_date: '', data_source: 'MANUAL', isolates: [[]] });
                 setAcknowledged(false);
             } else {
-                alert(`Error: ${data.detail || 'Submission failed'}`);
+                setResult({ type: 'error', msg: data.detail || 'Submission failed. Please try again.' });
             }
-        } catch (error) {
-            console.error('Failed to submit:', error);
-            alert('Network error. Please try again.');
+        } catch {
+            setResult({ type: 'error', msg: 'Network error. Please check your connection.' });
         } finally {
             setSubmitting(false);
         }
     };
 
+    const canSubmit = acknowledged && !submitting && form.ward && form.organism && form.sample_date;
+
     return (
         <div className="space-y-6">
-            {/* FIX #6: Safety Acknowledgment */}
-            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+            {/* Header */}
+            <div>
+                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Lab Results Entry</h1>
+                <p className="text-sm text-slate-500 mt-0.5">Submit culture and sensitivity test results for surveillance tracking</p>
+            </div>
+
+            {/* Success / Error Banner */}
+            {result && (
+                <div className={`rounded-xl p-4 flex items-start gap-3 border ${result.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+                    {result.type === 'success' ? <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" /> : <ShieldAlert className="w-5 h-5 flex-shrink-0 mt-0.5" />}
+                    <p className="text-sm font-medium">{result.msg}</p>
+                </div>
+            )}
+
+            {/* Acknowledgment */}
+            <div className={`rounded-xl border-2 p-4 transition-colors ${acknowledged ? 'bg-emerald-50 border-emerald-300' : 'bg-red-50 border-red-300'}`}>
                 <label className="flex items-start gap-3 cursor-pointer">
                     <input
                         type="checkbox"
                         checked={acknowledged}
-                        onChange={(e) => setAcknowledged(e.target.checked)}
-                        className="mt-1 w-5 h-5"
-                        required
+                        onChange={e => setAcknowledged(e.target.checked)}
+                        className="mt-1 w-5 h-5 accent-emerald-600 cursor-pointer"
                     />
-                    <div className="flex-1">
+                    <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <AlertCircle className="text-red-600" size={20} />
-                            <span className="font-bold text-red-900">Required Acknowledgment</span>
+                            <ShieldAlert className={`w-4 h-4 ${acknowledged ? 'text-emerald-600' : 'text-red-600'}`} />
+                            <span className={`font-bold text-sm ${acknowledged ? 'text-emerald-900' : 'text-red-900'}`}>Acknowledgment Required</span>
                         </div>
-                        <span className="text-sm text-red-800">
-                            I understand this system is for <strong>surveillance only</strong> and{' '}
-                            <strong>NOT for patient treatment decisions</strong>. Data entered here supports
-                            epidemiological monitoring and model validation.
-                        </span>
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                            I confirm that the results entered here are for <strong>surveillance and epidemiological monitoring only</strong>.
+                            This data must <strong>not</strong> be used to guide individual patient treatment.
+                        </p>
                     </div>
                 </label>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                    📊 <strong>Data Entry Guide:</strong> Enter individual isolate results (S/I/R/NA).
-                    The system will automatically calculate resistance rates using validated algorithms.
-                </p>
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Metadata */}
-                <div className="grid grid-cols-4 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Ward *</label>
-                        <select
-                            value={formData.ward}
-                            onChange={(e) => setFormData(prev => ({ ...prev, ward: e.target.value }))}
-                            className="w-full border rounded px-3 py-2"
-                            required
-                        >
-                            <option value="">Select Ward</option>
-                            {wards.map(w => <option key={w} value={w}>{w}</option>)}
-                        </select>
+                {/* Specimen Info */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <ClipboardList className="w-5 h-5 text-purple-600" />
+                        <h2 className="font-semibold text-slate-800 dark:text-white">Specimen Information</h2>
                     </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Organism *</label>
-                        <select
-                            value={formData.organism}
-                            onChange={(e) => setFormData(prev => ({ ...prev, organism: e.target.value }))}
-                            className="w-full border rounded px-3 py-2"
-                            required
-                        >
-                            <option value="">Select Organism</option>
-                            {organisms.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Sample Date *</label>
-                        <input
-                            type="date"
-                            value={formData.sample_date}
-                            onChange={(e) => setFormData(prev => ({ ...prev, sample_date: e.target.value }))}
-                            className="w-full border rounded px-3 py-2"
-                            max={new Date().toISOString().split('T')[0]}
-                            required
-                        />
-                    </div>
-
-                    {/* FIX #2: Data Source */}
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Data Source</label>
-                        <select
-                            value={formData.data_source}
-                            onChange={(e) => setFormData(prev => ({ ...prev, data_source: e.target.value }))}
-                            className="w-full border rounded px-3 py-2"
-                        >
-                            <option value="MANUAL">Manual Entry</option>
-                            <option value="LIS">LIS Export</option>
-                        </select>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                            { label: 'Ward', key: 'ward', options: WARDS, placeholder: 'Select Ward' },
+                            { label: 'Organism', key: 'organism', options: ORGANISMS, placeholder: 'Select Organism' },
+                        ].map(({ label, key, options, placeholder }) => (
+                            <div key={key}>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{label} *</label>
+                                <select
+                                    value={form[key]}
+                                    onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                                    required
+                                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+                                >
+                                    <option value="">{placeholder}</option>
+                                    {options.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                            </div>
+                        ))}
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sample Date *</label>
+                            <input
+                                type="date"
+                                value={form.sample_date}
+                                onChange={e => setForm(p => ({ ...p, sample_date: e.target.value }))}
+                                max={new Date().toISOString().split('T')[0]}
+                                required
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Entry Method</label>
+                            <select
+                                value={form.data_source}
+                                onChange={e => setForm(p => ({ ...p, data_source: e.target.value }))}
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+                            >
+                                <option value="MANUAL">Manual Entry</option>
+                                <option value="LIS">Lab System (LIS)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                {/* Isolates Grid */}
+                {/* AST Results per Isolate */}
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold">Isolates ({formData.isolates.length})</h3>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="font-semibold text-slate-800 dark:text-white">Sensitivity Results</h2>
+                            <p className="text-xs text-slate-500 mt-0.5">Select S (Sensitive), I (Intermediate), R (Resistant), or leave unselected if not tested</p>
+                        </div>
                         <button
                             type="button"
                             onClick={addIsolate}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm"
                         >
-                            <Plus size={16} /> Add Isolate
+                            <Plus className="w-4 h-4" /> Add Isolate
                         </button>
                     </div>
 
-                    {formData.isolates.map((isolate, idx) => (
-                        <div key={idx} className="border rounded-lg p-4 bg-gray-50">
-                            <div className="flex justify-between items-center mb-3">
-                                <h4 className="font-medium">Isolate {idx + 1}</h4>
+                    {form.isolates.map((isolate, idx) => (
+                        <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+                            <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
+                                <h3 className="font-semibold text-sm text-slate-700 dark:text-gray-200">Isolate {idx + 1}</h3>
                                 {idx > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => removeIsolate(idx)}
-                                        className="text-red-600 hover:text-red-800 flex items-center gap-1"
-                                    >
-                                        <Trash2 size={16} /> Remove
+                                    <button type="button" onClick={() => removeIsolate(idx)}
+                                        className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700">
+                                        <Trash2 className="w-3.5 h-3.5" /> Remove
                                     </button>
                                 )}
                             </div>
-
-                            <div className="grid grid-cols-5 gap-3">
-                                {antibiotics.map(antibiotic => {
-                                    const ast = isolate.find(a => a.antibiotic === antibiotic);
+                            <div className="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                                {ANTIBIOTICS.map(ab => {
+                                    const selected = getAST(isolate, ab);
                                     return (
-                                        <div key={antibiotic}>
-                                            <label className="block text-xs font-medium mb-1">{antibiotic}</label>
-                                            <div className="flex gap-1">
-                                                {['S', 'I', 'R', 'NA'].map(result => (
+                                        <div key={ab}>
+                                            <label className="block text-xs font-semibold text-slate-500 mb-2 truncate" title={ab}>{ab}</label>
+                                            <div className="grid grid-cols-4 gap-0.5">
+                                                {['S', 'I', 'R', 'NA'].map(r => (
                                                     <button
-                                                        key={result}
+                                                        key={r}
                                                         type="button"
-                                                        onClick={() => updateAST(idx, antibiotic, result)}
-                                                        className={`flex-1 px-1 py-1 text-xs rounded border ${ast?.result === result
-                                                                ? result === 'S' ? 'bg-green-600 text-white border-green-600' :
-                                                                    result === 'I' ? 'bg-yellow-600 text-white border-yellow-600' :
-                                                                        result === 'R' ? 'bg-red-600 text-white border-red-600' :
-                                                                            'bg-gray-600 text-white border-gray-600'
-                                                                : 'bg-white hover:bg-gray-100'
+                                                        onClick={() => updateAST(idx, ab, r)}
+                                                        className={`py-1.5 text-xs font-bold rounded border transition-all ${selected === r
+                                                            ? AST_COLORS[r].active
+                                                            : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-slate-500 hover:border-gray-400'
                                                             }`}
                                                     >
-                                                        {result}
+                                                        {r}
                                                     </button>
                                                 ))}
                                             </div>
@@ -237,21 +215,28 @@ const STPAntibiogramEntry = () => {
                     ))}
                 </div>
 
+                {/* Legend */}
+                <div className="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
+                    {Object.entries(AST_COLORS).map(([k, v]) => (
+                        <span key={k} className="flex items-center gap-1.5">
+                            <span className={`w-5 h-5 rounded flex items-center justify-center text-white text-xs font-bold ${v.active.split(' ')[0]}`}>{k}</span>
+                            {v.label}
+                        </span>
+                    ))}
+                </div>
+
+                {/* Submit */}
                 <button
                     type="submit"
-                    disabled={!acknowledged || submitting}
-                    className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition ${acknowledged && !submitting
-                            ? 'bg-green-600 text-white hover:bg-green-700'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
+                    disabled={!canSubmit}
+                    className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm ${canSubmit ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                 >
-                    <Save size={20} /> {submitting ? 'Submitting...' : 'Submit Antibiogram'}
+                    <Save className="w-4 h-4" />
+                    {submitting ? 'Saving results…' : 'Save Lab Results'}
                 </button>
 
                 {!acknowledged && (
-                    <p className="text-sm text-red-600 text-center">
-                        ⚠️ Please acknowledge the surveillance-only disclaimer to submit
-                    </p>
+                    <p className="text-xs text-red-500 text-center">Please acknowledge the notice above before saving</p>
                 )}
             </form>
         </div>
