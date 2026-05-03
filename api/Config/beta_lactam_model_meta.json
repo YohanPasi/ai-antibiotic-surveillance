@@ -1,68 +1,40 @@
 {
-    "version": "v2",
-    "training_timestamp": "2026-03-08T21:26:36.095203",
-    "total_samples": 7,
-    "dataset_fingerprint": "7 rows",
+    "model_version": "v2_2026_05_03",
+    "training_rows": 12000,
+    "features_used": 37,
+    "training_timestamp": "2026-05-03T03:27:16.177638",
     "metrics": {
         "Gen1": {
-            "AUC": 0.5,
-            "Brier_Score": 0.3221055579410044,
-            "Sensitivity": 0.0,
-            "NPV": 0.5,
-            "TP": 0,
-            "FP": 0,
-            "TN": 1,
-            "FN": 1
+            "AUROC": 0.5,
+            "Precision": 0.0,
+            "Recall": 0.0,
+            "F1_Score": 0.0,
+            "Brier_Score": 0.0,
+            "Optimal_Threshold": 0.5
         },
         "Gen2": {
-            "AUC": 0.5,
-            "Brier_Score": 0.053580777071520425,
-            "Sensitivity": 0.0,
-            "NPV": 1.0,
-            "TP": 0,
-            "FP": 0,
-            "TN": 2,
-            "FN": 0
+            "AUROC": 0.49773534993706214,
+            "Precision": 0.5128498001142204,
+            "Recall": 0.734860883797054,
+            "F1_Score": 0.6041035990581903,
+            "Brier_Score": 0.2498758920843122,
+            "Optimal_Threshold": 0.5089961191018423
         },
         "Gen3": {
-            "AUC": 0.5,
-            "Brier_Score": 0.014209335970684356,
-            "Sensitivity": 0.0,
-            "NPV": 1.0,
-            "TP": 0,
-            "FP": 0,
-            "TN": 2,
-            "FN": 0
-        },
-        "Gen4": {
-            "AUC": 0.5,
-            "Brier_Score": 0.3950064166663134,
-            "Sensitivity": 0.0,
-            "NPV": 0.5,
-            "TP": 0,
-            "FP": 0,
-            "TN": 1,
-            "FN": 1
-        },
-        "Carbapenem": {
-            "AUC": 0.5,
-            "Brier_Score": 0.014209335970684356,
-            "Sensitivity": 0.0,
-            "NPV": 1.0,
-            "TP": 0,
-            "FP": 0,
-            "TN": 2,
-            "FN": 0
+            "AUROC": 0.5103414989843573,
+            "Precision": 0.5193236714975845,
+            "Recall": 0.35684647302904565,
+            "F1_Score": 0.4230201672405312,
+            "Brier_Score": 0.2503014658089899,
+            "Optimal_Threshold": 0.5067096749941508
         },
         "BL_Combo": {
-            "AUC": 0.5,
-            "Brier_Score": 0.3950064166663134,
-            "Sensitivity": 0.0,
-            "NPV": 0.5,
-            "TP": 0,
-            "FP": 0,
-            "TN": 1,
-            "FN": 1
+            "AUROC": 0.49731808802560856,
+            "Precision": 0.5108408249603384,
+            "Recall": 0.7963726298433635,
+            "F1_Score": 0.6224226804123711,
+            "Brier_Score": 0.2506489406773263,
+            "Optimal_Threshold": 0.4917185306549072
         }
     }
 }

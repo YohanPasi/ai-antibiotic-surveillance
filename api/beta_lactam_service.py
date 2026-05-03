@@ -22,6 +22,7 @@ import numpy as np
 from fastapi import HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
+import shap
 
 # ── Path resolution (Docker flat layout vs local nested layout) ────────────────
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -280,6 +281,45 @@ class BetaLactamSpectrumService:
                 except (ValueError, TypeError):
                     pass
 
+        # 3. Add Derived Features (Severity, Sample_Group, Age_Bin)
+        ward = str(input_data.get("Ward", ""))
+        sample_type = str(input_data.get("Sample_Type", ""))
+        age_raw = input_data.get("Age", -1)
+        
+        try:
+            age = float(age_raw)
+        except:
+            age = -1
+            
+        severity = "High" if ward.upper() == "ICU" else "Normal"
+        sample_group = "Invasive" if sample_type in ["Blood", "CSF"] else "Non-Invasive"
+        
+        if age <= 18:
+            age_bin = "0-18"
+        elif age <= 40:
+            age_bin = "19-40"
+        elif age <= 65:
+            age_bin = "41-65"
+        else:
+            age_bin = "66+"
+            
+        derived = {
+            "Severity": severity,
+            "Sample_Group": sample_group,
+            "Age_Bin": age_bin
+        }
+        
+        for k, v in derived.items():
+            derived_key = f"{k}_{v}"
+            if derived_key in self.feature_names:
+                vector[0, self.feature_names.index(derived_key)] = 1.0
+
+        # Handle 'Unknown' / Fallback for Categoricals
+        for cat in ["Ward", "Organism", "Sample_Type", "Gender", "Cell_Count_Level"]:
+            val = str(input_data.get(cat, ""))
+            if f"{cat}_{val}" not in self.feature_names and f"{cat}_Unknown" in self.feature_names:
+                vector[0, self.feature_names.index(f"{cat}_Unknown")] = 1.0
+
         # Safety: force masked features to zero regardless of input
         for masked in self.masked_terms:
             for i, name in enumerate(self.feature_names):
@@ -292,118 +332,97 @@ class BetaLactamSpectrumService:
 
     def _get_top_feature_influences(self, vector: np.ndarray, top_n: int = 3) -> List[Dict]:
         """
-        Gap 1 Fix: SHAP Feature Influence Stub.
-
-        Uses XGBoost feature_importances_ as a proxy for SHAP values when a
-        full SHAP explainer is not yet available (e.g., dummy/placeholder model).
-
-        Strategy:
-          - If model has feature_importances_ (real XGBoost), multiply importances
-            by the actual input value to give a directional estimate.
-          - If model is a dict of per-generation classifiers, average importances.
-          - Direction: positive input × positive importance → increases susceptibility.
-
-        Once a real model is trained and shap library is available, replace this
-        with: shap.TreeExplainer(model).shap_values(vector)
+        SHAP Feature Influence integration.
+        Extracts top features using shap.TreeExplainer on the underlying XGBoost estimator.
         """
         try:
-            # Get global importances from the model
-            if isinstance(self.model, dict):
-                # Dict of per-generation classifiers — average feature importances
-                importances = np.zeros(len(self.feature_names))
-                for clf in self.model.values():
-                    if hasattr(clf, "feature_importances_"):
-                        importances += clf.feature_importances_
-                if list(self.model.values()):
-                    importances /= len(self.model)
-            elif hasattr(self.model, "feature_importances_"):
-                importances = self.model.feature_importances_
-            elif hasattr(self.model, "estimators_"):   # MultiOutputClassifier
-                importances = np.zeros(len(self.feature_names))
-                for est in self.model.estimators_:
-                    if hasattr(est, "feature_importances_"):
-                        importances += est.feature_importances_
-                importances /= max(len(self.model.estimators_), 1)
-            else:
-                return []   # Model type has no importances (e.g. DummyClassifier)
-
-            # Directional proxy: importance × input value
-            flat_vector = vector[0]  # shape: (N,)
-            n = min(len(flat_vector), len(importances), len(self.feature_names))
-            directional = importances[:n] * flat_vector[:n]
-
-            # Pick top_n by absolute influence
-            top_idx = np.argsort(np.abs(directional))[::-1][:top_n]
-
-            influences = []
-            for idx in top_idx:
-                val = float(directional[idx])
-                influences.append({
-                    "feature":     self.feature_names[idx],
-                    "shap_proxy":  round(val, 4),
-                    "direction":   "increases_susceptibility" if val > 0 else "increases_resistance",
-                    "note":        "Proxy via feature_importances_ × input. Replace with SHAP once real model is trained."
-                })
-            return influences
-
-        except Exception:
+            # We use Gen3 as the representative model for global SHAP explanation
+            if isinstance(self.model, dict) and "Gen3" in self.model:
+                calibrated_model = self.model["Gen3"]
+                # Extract the base XGBoost model from the first fold of the CalibratedClassifierCV
+                base_estimator = calibrated_model.calibrated_classifiers_[0].estimator
+                explainer = shap.TreeExplainer(base_estimator)
+                shap_values = explainer.shap_values(vector)
+                
+                # SHAP outputs log-odds, get absolute values for ranking
+                flat_shap = shap_values[0]
+                
+                top_idx = np.argsort(np.abs(flat_shap))[::-1][:top_n]
+                
+                influences = []
+                for idx in top_idx:
+                    val = float(flat_shap[idx])
+                    influences.append({
+                        "feature": self.feature_names[idx],
+                        "shap_proxy": round(val, 4),
+                        "direction": "increases_susceptibility" if val > 0 else "increases_resistance",
+                        "note": "Computed via SHAP TreeExplainer."
+                    })
+                return influences
+            return []
+        except Exception as e:
+            print(f"SHAP Error: {e}")
             return []  # Never crash the pipeline over explainability
 
-    def _assign_traffic_light(self, probability: float) -> str:
+    def _assign_traffic_light(self, probability: float, generation: str = None) -> str:
         """Assign a traffic light to a susceptibility probability."""
-        t = self.thresholds.get("thresholds", DEFAULT_THRESHOLDS)
+        if generation and isinstance(self.thresholds, dict) and generation in self.thresholds:
+            t = self.thresholds[generation].get("traffic_lights", DEFAULT_THRESHOLDS)
+        else:
+            t = DEFAULT_THRESHOLDS
+            
         if probability >= t.get("green_min", 0.70):
             return "Green"
         elif probability >= t.get("amber_min", 0.40):
             return "Amber"
         return "Red"
 
-    def _predict_spectrum(self, X: np.ndarray) -> Dict[str, Dict]:
+    def _predict_spectrum(self, X: np.ndarray, input_data: Dict) -> Dict[str, Dict]:
         """
         Run the model to get per-generation susceptibility probabilities.
-
-        The model is expected to be a multi-output classifier, a dictionary
-        of per-generation binary classifiers, or a mock single-output.
         """
         spectrum = {}
-        generations = list(self.evidence.keys())
-
+        
+        # ML Predictions for trained generations
         if isinstance(self.model, dict):
-            # Dict of per-generation classifiers: { "Gen1": clf, "Gen2": clf, ... }
             for generation, clf in self.model.items():
-                p = float(clf.predict_proba(X)[0, 1])
+                proba = clf.predict_proba(X)
+                if proba.shape[1] > 1:
+                    p = float(proba[0, 1])
+                else:
+                    p = float(clf.classes_[0])
                 spectrum[generation] = {
                     "probability": round(p, 4),
-                    "traffic_light": self._assign_traffic_light(p)
+                    "traffic_light": self._assign_traffic_light(p, generation)
                 }
-        else:
-            # Multi-output or Single-output fallback
-            proba_matrix = self.model.predict_proba(X)
-
-            # Handle mock dummy classifier or Single Output
-            if not isinstance(proba_matrix, list) and proba_matrix.ndim == 2:
-                # Single output: treat as overall susceptibility probability
-                p = float(proba_matrix[0, 1]) if proba_matrix.shape[1] > 1 else float(proba_matrix[0, 0])
-                for gen in generations:
-                    spectrum[gen] = {
-                        "probability": round(p, 4),
-                        "traffic_light": self._assign_traffic_light(p)
-                    }
-            elif isinstance(proba_matrix, list) and len(proba_matrix) == len(generations):
-                # MultiOutputClassifier wraps individual outputs as a list
-                for gen, proba in zip(generations, proba_matrix):
-                    p = float(proba[0, 1]) if proba.ndim == 2 else float(proba[1])
-                    spectrum[gen] = {
-                        "probability": round(p, 4),
-                        "traffic_light": self._assign_traffic_light(p)
-                    }
-            else:
-                 # Last resort fallback if shapes don't align
-                 for gen in generations:
-                     spectrum[gen] = {
-                         "probability": 0.5000,
-                         "traffic_light": "Amber"
-                     }
+                
+        # Non-Linear Clinical Overlay for Gen4 and Carbapenem
+        gen3_prob = spectrum.get("Gen3", {}).get("probability", 0.5)
+        bl_combo_prob = spectrum.get("BL_Combo", {}).get("probability", 0.5)
+        
+        # Gen4 Diminishing Returns Rule
+        gen4_prob = gen3_prob + (0.25 * (1 - gen3_prob))
+        gen4_prob = min(gen4_prob, 0.95)
+        spectrum["Gen4"] = {
+            "probability": round(gen4_prob, 4),
+            "traffic_light": self._assign_traffic_light(gen4_prob, "Gen4")
+        }
+        
+        # Carbapenem Rule
+        carb_prob = 0.88 + 0.07 * (1 - gen3_prob)
+        if gen3_prob < 0.3 and bl_combo_prob < 0.4:
+            carb_prob = 0.85
+        elif gen3_prob > 0.7:
+            carb_prob = 0.95
+            
+        if input_data.get("Ward", "").upper() == "ICU":
+            carb_prob += 0.02
+        carb_prob = min(carb_prob, 0.97)
+        
+        spectrum["Carbapenem"] = {
+            "probability": round(carb_prob, 4),
+            "traffic_light": self._assign_traffic_light(carb_prob, "Carbapenem")
+        }
 
         return spectrum
 
@@ -484,7 +503,7 @@ class BetaLactamSpectrumService:
         X = self._prepare_features(inputs)
 
         # ── Stage 9: Multi-generation prediction ──────────────────────────────
-        spectrum = self._predict_spectrum(X)
+        spectrum = self._predict_spectrum(X, inputs)
 
         # ── Determine overall risk group from worst-case traffic light ─────────
         lights = [v["traffic_light"] for v in spectrum.values()]

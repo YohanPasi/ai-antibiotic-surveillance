@@ -1,4 +1,30 @@
 {
-    "green_min": 0.7,
-    "amber_min": 0.4
+    "Gen1": {
+        "decision_threshold": 0.5,
+        "traffic_lights": {
+            "green_min": 0.75,
+            "amber_min": 0.45
+        }
+    },
+    "Gen2": {
+        "decision_threshold": 0.5089961191018423,
+        "traffic_lights": {
+            "green_min": 0.6589961191018423,
+            "amber_min": 0.35899611910184226
+        }
+    },
+    "Gen3": {
+        "decision_threshold": 0.5067096749941508,
+        "traffic_lights": {
+            "green_min": 0.6567096749941508,
+            "amber_min": 0.35670967499415074
+        }
+    },
+    "BL_Combo": {
+        "decision_threshold": 0.4917185306549072,
+        "traffic_lights": {
+            "green_min": 0.6417185306549072,
+            "amber_min": 0.3417185306549072
+        }
+    }
 }
